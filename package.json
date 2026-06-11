@@ -1,0 +1,19 @@
+{
+  "name": "gamepilot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-powered gameplay synthesis agent that turns ideas into playable 2D no-asset game prototypes.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsx src/engine/engine.smoke.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}
