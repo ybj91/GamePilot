@@ -44,19 +44,25 @@ const snapshot = async (label) => {
 await snapshot("after-load");
 await page.screenshot({ path: "scripts/shot-before.png" });
 
+// Probe the API endpoint directly.
+const apiProbe = await page.evaluate(async () => {
+  const r = await fetch("/api/compile", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ idea: "test" }),
+  });
+  return { status: r.status, body: await r.text() };
+});
+logs.push(`[api /api/compile] ${apiProbe.status} ${apiProbe.body}`);
+
 // Type a description and click Generate.
 await page.type("#idea-input", "a fast purple blob with a swarm of enemies");
 await page.click("#idea-go");
-await new Promise((r) => setTimeout(r, 900));
+await new Promise((r) => setTimeout(r, 2500));
+const status = await page.$eval("#status", (el) => el.textContent);
+logs.push(`[status] ${status}`);
 await snapshot("after-generate");
 await page.screenshot({ path: "scripts/shot-after.png" });
-
-// Also test a generic description with NO keyword matches.
-await page.click("#idea-input", { clickCount: 3 });
-await page.type("#idea-input", "a little hero exploring a quiet meadow");
-await page.click("#idea-go");
-await new Promise((r) => setTimeout(r, 900));
-await page.screenshot({ path: "scripts/shot-generic.png" });
 
 console.log(logs.join("\n"));
 await browser.close();

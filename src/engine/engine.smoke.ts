@@ -1,17 +1,17 @@
 /**
  * Headless smoke test for the DSL runtime (no DOM). Run with:
- *   node --experimental-strip-types src/engine/engine.smoke.ts
+ *   npm run smoke   (tsx — resolves extensionless imports like Vite does)
  *
  * Validates the parts that don't need a browser: world population, collision
  * rule firing (eat food -> grow + slow + score + respawn), gameover on enemy
  * contact, and win-condition evaluation. Exits non-zero on failure.
  */
 
-import { World } from "./world.ts";
-import { RuleTimers, evaluateRules } from "./rules.ts";
-import { evalCondition } from "./conditions.ts";
-import { growAndSlow } from "../dsl/samples/growAndSlow.ts";
-import { validateGameSpec } from "../dsl/validate.ts";
+import { World } from "./world";
+import { RuleTimers, evaluateRules } from "./rules";
+import { evalCondition } from "./conditions";
+import { growAndSlow } from "../dsl/samples/growAndSlow";
+import { validateGameSpec } from "../dsl/validate";
 
 let failures = 0;
 function check(name: string, cond: boolean): void {

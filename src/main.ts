@@ -1,15 +1,16 @@
 /**
  * App entry. Wires the DOM together with the engine:
  *
- *   idea input -> MockCompiler.compile() -> GameSpec -> Engine + Renderer
+ *   idea input -> compiler -> GameSpec -> Engine + Renderer
  *
- * Loads the canonical sample on boot so there's always something playable, and
- * lets you type an idea to "recompile" a new game. The compiler is the only AI
- * touch-point; everything else is deterministic runtime.
+ * The compiler is the AI seam. We try the real Claude-backed compiler (via the
+ * dev server's /api/compile), and fall back to the offline keyword mock when no
+ * API key is configured or the call fails — so the app is always usable.
  */
 
 import { Engine } from "./engine/engine";
 import { Renderer } from "./render/renderer";
+import { HttpCompiler, CompilerUnavailableError } from "./ai/httpCompiler";
 import { MockCompiler } from "./ai/mockCompiler";
 import { growAndSlow } from "./dsl/samples/growAndSlow";
 import type { GameSpec } from "./dsl/types";
@@ -18,11 +19,18 @@ const gameCanvas = document.getElementById("game") as HTMLCanvasElement;
 const hudCanvas = document.getElementById("hud") as HTMLCanvasElement;
 const ideaInput = document.getElementById("idea-input") as HTMLInputElement;
 const goButton = document.getElementById("idea-go") as HTMLButtonElement;
+const statusEl = document.getElementById("status") as HTMLDivElement;
 
-const compiler = new MockCompiler();
+const claude = new HttpCompiler();
+const mock = new MockCompiler();
 
 let engine: Engine | null = null;
 let currentSpec: GameSpec = growAndSlow;
+
+function setStatus(text: string, warn = false): void {
+  statusEl.textContent = text;
+  statusEl.classList.toggle("warn", warn);
+}
 
 function load(spec: GameSpec): void {
   engine?.dispose();
@@ -33,16 +41,36 @@ function load(spec: GameSpec): void {
   engine.start((world) => renderer.draw(world));
 }
 
+/** Try Claude; fall back to the mock so the loop never dead-ends. */
+async function compile(idea: string): Promise<{ spec: GameSpec; via: string }> {
+  try {
+    const spec = await claude.compile({ idea });
+    return { spec, via: "claude" };
+  } catch (err) {
+    if (err instanceof CompilerUnavailableError) {
+      const spec = await mock.compile({ idea });
+      return { spec, via: "mock-nokey" };
+    }
+    console.error("Claude compile failed; falling back to mock:", err);
+    const spec = await mock.compile({ idea });
+    return { spec, via: "mock-error" };
+  }
+}
+
 async function generate(): Promise<void> {
   const idea = ideaInput.value.trim();
   goButton.disabled = true;
   goButton.textContent = "Compiling…";
+  setStatus("Compiling with Claude…");
   try {
-    const spec = await compiler.compile({ idea });
+    const { spec, via } = await compile(idea);
     load(spec);
+    if (via === "claude") setStatus(`Compiled by Claude — "${spec.meta?.title ?? "game"}"`);
+    else if (via === "mock-nokey")
+      setStatus("Offline mock (set ANTHROPIC_API_KEY to compile with Claude)", true);
+    else setStatus("Claude unavailable — used offline mock (see console)", true);
   } catch (err) {
-    console.error(err);
-    alert(`Could not compile that idea:\n${(err as Error).message}`);
+    setStatus(`Could not compile that idea: ${(err as Error).message}`, true);
   } finally {
     goButton.disabled = false;
     goButton.textContent = "Generate";
@@ -63,3 +91,4 @@ window.addEventListener("keydown", (e) => {
 });
 
 load(growAndSlow);
+setStatus('Playing the sample. Type an idea and hit Generate to compile a new game.');

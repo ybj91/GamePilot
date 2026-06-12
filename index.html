@@ -48,6 +48,14 @@
         cursor: pointer;
       }
       .idea-bar button:hover { background: #243657; }
+      .idea-bar button:disabled { opacity: 0.5; cursor: default; }
+      .status {
+        width: min(800px, 100%);
+        min-height: 16px;
+        font-size: 12px;
+        opacity: 0.55;
+      }
+      .status.warn { color: #ffcf6b; opacity: 0.85; }
       .stage { position: relative; }
       canvas {
         display: block;
@@ -80,6 +88,7 @@
         <input id="idea-input" type="text" placeholder="e.g. a blob that grows by eating food but moves slower as it grows" />
         <button id="idea-go">Generate</button>
       </div>
+      <div id="status" class="status"></div>
       <div class="stage">
         <canvas id="game"></canvas>
         <canvas id="hud"></canvas>

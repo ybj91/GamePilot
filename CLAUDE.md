@@ -48,11 +48,16 @@ Per fixed 60Hz step, the update order is **movement → rules → reap dead → 
 - `renderer.ts` — draws shapes (circle/dot/square) with glow on the game canvas; score + win/lose overlay on a separate HUD canvas.
 
 ### `src/ai/` — the AI seam
-- `compiler.ts` — `GameplayCompiler` interface: `compile({ idea }) → Promise<GameSpec>`. The single AI touch-point.
-- `mockCompiler.ts` — keyword-based stand-in (no key/network) that mutates the base spec. **When wiring a real LLM, implement `GameplayCompiler` and keep this as the offline fallback / test double.** The contract: output must pass `validateGameSpec`.
+- `compiler.ts` — `GameplayCompiler` interface: `compile({ idea }) → Promise<GameSpec>`. The single AI touch-point; every implementation's output must pass `validateGameSpec`.
+- `anthropicCompiler.ts` — **the real compiler (server-side only)**: `idea → GameSpec` via `@anthropic-ai/sdk` (`claude-opus-4-8`, adaptive thinking). Prompts with the DSL + sample, parses JSON, validates, and retries once with the errors. Runs in the Node process (loaded by the Vite middleware via `ssrLoadModule`) so the SDK never enters the client bundle.
+- `buildPrompt.ts` — the system prompt (DSL contract + `growAndSlow` as one-shot), user prompt, and repair prompt. Shared by `anthropicCompiler`.
+- `httpCompiler.ts` — browser `GameplayCompiler` that POSTs to `/api/compile`. 503 → `CompilerUnavailableError` (no key) so `main.ts` falls back to the mock.
+- `mockCompiler.ts` — keyword-based offline stand-in / test double (no key/network). The fallback when Claude is unavailable.
+
+The key path: browser `httpCompiler` → Vite dev middleware `POST /api/compile` (`vite.config.ts`) → `anthropicCompiler`. The API key (`ANTHROPIC_API_KEY`, from shell or `.env.local`) is read in `vite.config.ts` and **never leaves the Node process**. No key → 503 → app silently uses the mock. There is no production server for `/api/compile` yet — it's a dev-only middleware.
 
 ### `src/main.ts`
-Wires DOM → compiler → `Engine` + `Renderer`. Loads the sample on boot; typing an idea recompiles a new game; `R` restarts.
+Wires DOM → compiler → `Engine` + `Renderer`. Tries the Claude `HttpCompiler`, falls back to the `MockCompiler` (showing why in the `#status` line). Loads the sample on boot; typing an idea recompiles a new game; `R` restarts.
 
 ## Conventions / gotchas
 
