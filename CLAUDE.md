@@ -27,9 +27,11 @@ Build stages:
 1. **Library + management backend** (done) — engine/DSL/renderer as a library
    (`src/index.ts`) plus a standalone server (`server/`) that validates, stores,
    and serves playable games.
-2. **MCP server** (next) — expose create/validate/save/list/play over MCP
-   (stdio + HTTP) so any agent can author games.
-3. **Skills** — teach the agent the DSL (progressive disclosure).
+2. **MCP server** (done) — `server/mcp.ts` exposes the tools over stdio
+   (`server/mcp-stdio.ts`) and Streamable HTTP (`/mcp` on the backend) so any
+   agent can author games. `.mcp.json` registers it for Claude Code.
+3. **Skills** (next) — teach the agent the DSL (progressive disclosure); reuse
+   `src/dsl/reference.ts`.
 4. **Agent** — orchestrates idea → game using the skill + MCP tools.
 
 The direct-API `anthropicCompiler` (below) is kept as an **optional fallback**
@@ -41,8 +43,9 @@ for anyone who *does* have a key; it is not the primary path.
 - `npm run build` — type-check (`tsc --noEmit`) then production build to `dist/`
 - `npm run typecheck` — type-check only
 - `npm run smoke` — headless runtime test (`src/engine/engine.smoke.ts` via tsx). Tests the non-DOM core: spawning, collision rules, gameover, win conditions. **Run this after any engine/DSL change** — it's the fast feedback loop that doesn't need a browser.
-- `npm run serve` — standalone backend (`server/index.ts` via tsx) on `:4321`. Serves the REST API + playable games at `/play/:id`. Requires `dist/` (run `build` first).
+- `npm run serve` — standalone backend (`server/index.ts` via tsx) on `:4321`. Serves the REST API, the MCP-over-HTTP endpoint (`/mcp`), and playable games at `/play/:id`. Requires `dist/` (run `build` first).
 - `npm run start` — `build` then `serve` (the full backend with a fresh client).
+- `npm run mcp` — the MCP server over **stdio** (`server/mcp-stdio.ts`). This is what an agent client launches; stdout is the JSON-RPC channel (logs go to stderr). For games to actually open, also run `npm run serve` (the play host).
 
 There is no separate lint step; strict TS (`noUncheckedIndexedAccess`, `noUnusedLocals`, `verbatimModuleSyntax`) is the gate. To run a single check during dev, edit `engine.smoke.ts`.
 
@@ -54,6 +57,7 @@ Three layers, strictly separated so the AI layer is swappable and the engine sta
 - `types.ts` — the `GameSpec` shape: `world` + `entities` (typed shapes with `kind`/`color`/`size`/`spawn`/`behavior`/`control`/`props`) + `rules` (`on` trigger → `effects`) + `win`/`lose`. **This file is the spec.** Read it first; extending the DSL starts here.
 - `validate.ts` — dependency-free runtime validator. This is the guard at the **untrusted-AI-output seam** — keep it in sync with `types.ts` whenever the DSL grows.
 - `samples/growAndSlow.ts` — the canonical hand-written game ("eat food → grow + slow; enemies chase"). Exercises every runtime feature; use it as the reference when adding DSL capabilities.
+- `reference.ts` — the DSL contract as prose (`DSL_REFERENCE`) + worked example. **Single source of truth for teaching an AI the DSL**, reused by the Claude system prompt (`src/ai/buildPrompt.ts`), the MCP `get_dsl_reference` tool, and the future skill. Keep in sync with `types.ts`/`validate.ts`.
 
 ### `src/engine/` — deterministic runtime (no DOM except `input.ts`)
 Per fixed 60Hz step, the update order is **movement → rules → reap dead → maintain populations → check win/lose** (see `engine.ts`). Respect this order — e.g. respawn happens after reaping so destroyed pickups reappear.
@@ -81,11 +85,13 @@ The key path: browser `httpCompiler` → Vite dev middleware `POST /api/compile`
 ### `src/index.ts` — the library barrel
 Public API for "create a game": `GameSpec` types, `validateGameSpec`, `Engine`, `World`, `Renderer`, `growAndSlow`. The backend and (future) MCP server import the engine/DSL through here.
 
-### `server/` — management backend (stage 1)
+### `server/` — management backend + MCP server (stages 1–2)
 Standalone, runs independently of Vite so the MCP server / agent can drive it as a separate process.
-- `store.ts` — file-based GameSpec store (`data/games/<id>.json`, gitignored). `saveGame` validates before writing — the write-side guard at the seam. Shared by the HTTP server and the future MCP server. Uses `node:crypto`/`Date` for ids/timestamps (fine — it's server code, not the deterministic engine).
-- `http.ts` — Fastify app: REST API (`POST /api/validate`, `POST /api/games`, `GET /api/games`, `GET /api/games/:id`, `DELETE /api/games/:id`) + serves the built client, with `/play/:id` returning `index.html` for deep links.
-- `index.ts` — entry; `PORT`/`HOST` env (default `127.0.0.1:4321`).
+- `store.ts` — file-based GameSpec store (`data/games/<id>.json`, gitignored; dir overridable via `GAMEPILOT_DATA_DIR`). `saveGame` validates before writing — the write-side guard at the seam. Shared by the HTTP server AND the MCP server. Uses `node:crypto`/`Date` for ids/timestamps (fine — server code, not the deterministic engine).
+- `http.ts` — Fastify app: REST API (`POST /api/validate`, `POST /api/games`, `GET /api/games`, `GET /api/games/:id`, `DELETE /api/games/:id`), MCP-over-HTTP (`POST /mcp`, stateless Streamable HTTP — fresh server+transport per request via `reply.hijack()`), and the built client with `/play/:id` for deep links.
+- `index.ts` — HTTP entry; `PORT`/`HOST` env (default `127.0.0.1:4321`).
+- `mcp.ts` — `buildMcpServer()`: the `@modelcontextprotocol/sdk` `McpServer` with tools `get_dsl_reference`, `validate_game`, `create_game`, `list_games`, `get_game`, `delete_game`. The single place tools are defined; both transports use it. Tools go through the same `validateGameSpec` + store. `create_game` returns a `play_url` built from `GAMEPILOT_BASE_URL` (default `http://localhost:4321`).
+- `mcp-stdio.ts` — stdio transport entry (`npm run mcp`).
 
 ### `src/main.ts`
 Wires DOM → compiler → `Engine` + `Renderer`. On `/play/:id` it fetches the saved spec from the backend and loads it; otherwise loads the sample. The idea-bar still tries the Claude `HttpCompiler` and falls back to the `MockCompiler` (showing why in the `#status` line). `R` restarts.

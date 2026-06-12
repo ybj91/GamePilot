@@ -16,7 +16,11 @@ import { randomUUID } from "node:crypto";
 import type { GameSpec } from "../src/dsl/types";
 import { validateGameSpec } from "../src/dsl/validate";
 
-const DATA_DIR = path.resolve(process.cwd(), "data", "games");
+// Resolvable via env so the stdio MCP server and the HTTP backend can share a
+// games dir even when launched from different working directories.
+const DATA_DIR = process.env.GAMEPILOT_DATA_DIR
+  ? path.resolve(process.env.GAMEPILOT_DATA_DIR)
+  : path.resolve(process.cwd(), "data", "games");
 
 export interface StoredGame {
   id: string;

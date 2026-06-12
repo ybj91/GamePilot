@@ -15,10 +15,12 @@
 
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyStatic from "@fastify/static";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import type { GameSpec } from "../src/dsl/types";
 import { validateGameSpec } from "../src/dsl/validate";
+import { buildMcpServer } from "./mcp";
 import {
   saveGame,
   getGame,
@@ -71,6 +73,37 @@ export function buildServer(): FastifyInstance {
     const ok = await deleteGame(req.params.id);
     return reply.code(ok ? 200 : 404).send({ ok });
   });
+
+  // --- MCP over Streamable HTTP -------------------------------------------
+
+  // Stateless: a fresh McpServer + transport per request (no session id).
+  // We hijack the reply so the transport owns the raw Node response, and pass
+  // Fastify's already-parsed JSON body as parsedBody.
+  app.post("/mcp", async (req, reply) => {
+    reply.hijack();
+    const mcp = buildMcpServer();
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    reply.raw.on("close", () => {
+      void transport.close();
+      void mcp.close();
+    });
+    try {
+      await mcp.connect(transport);
+      await transport.handleRequest(req.raw, reply.raw, req.body);
+    } catch (err) {
+      app.log.error(err);
+      if (!reply.raw.headersSent) {
+        reply.raw.writeHead(500, { "content-type": "application/json" });
+        reply.raw.end(JSON.stringify({ error: "MCP request failed" }));
+      }
+    }
+  });
+
+  // Stateless mode has no server-initiated streams or sessions to resume.
+  const noStream = (_req: unknown, reply: { code: (n: number) => { send: (b: unknown) => unknown } }) =>
+    reply.code(405).send({ error: "Method Not Allowed (stateless MCP: use POST)" });
+  app.get("/mcp", noStream);
+  app.delete("/mcp", noStream);
 
   // --- Playable runtime ----------------------------------------------------
 

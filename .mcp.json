@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "gamepilot": {
+      "command": "npx",
+      "args": ["tsx", "server/mcp-stdio.ts"],
+      "env": {
+        "GAMEPILOT_BASE_URL": "http://localhost:4321"
+      }
+    }
+  }
+}
