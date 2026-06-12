@@ -53,12 +53,18 @@
         display: block;
         border-radius: 12px;
         border: 1px solid #1c1c2a;
-        background: #0b0b12;
         touch-action: none;
+      }
+      /* Only the game layer gets a backdrop. The HUD canvas sits on top and
+         must stay transparent, or its CSS background would hide the game. */
+      #game {
+        background: #0b0b12;
       }
       #hud {
         position: absolute;
         inset: 0;
+        background: transparent;
+        border-color: transparent;
         pointer-events: none;
         font-variant-numeric: tabular-nums;
       }
