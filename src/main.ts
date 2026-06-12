@@ -90,5 +90,28 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-load(growAndSlow);
-setStatus('Playing the sample. Type an idea and hit Generate to compile a new game.');
+/** Load a saved game by id from the backend (used on /play/:id routes). */
+async function loadById(id: string): Promise<void> {
+  setStatus(`Loading game ${id}…`);
+  try {
+    const res = await fetch(`/api/games/${id}`);
+    if (!res.ok) throw new Error(`game "${id}" not found`);
+    const game = (await res.json()) as { spec: GameSpec; title?: string };
+    load(game.spec);
+    setStatus(`Playing "${game.title ?? game.spec.meta?.title ?? id}"`);
+    ideaInput.value = game.spec.meta?.idea ?? "";
+  } catch (err) {
+    console.error(err);
+    load(growAndSlow);
+    setStatus(`Could not load ${id} — playing the sample instead.`, true);
+  }
+}
+
+// /play/:id (served by the backend) loads a saved game; otherwise the sample.
+const playMatch = location.pathname.match(/^\/play\/([A-Za-z0-9_-]+)/);
+if (playMatch?.[1]) {
+  loadById(playMatch[1]);
+} else {
+  load(growAndSlow);
+  setStatus("Playing the sample. Type an idea and hit Generate to compile a new game.");
+}

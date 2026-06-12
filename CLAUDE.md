@@ -12,8 +12,28 @@ GamePilot is an **AI gameplay compiler**: it turns a natural-language idea into 
 
 ```
 idea ─▶ GameplayCompiler ─▶ GameSpec (DSL) ─▶ Engine ─▶ Renderer
-        (AI seam; mocked)    ★ the contract ★   (sim+rules)  (shapes on canvas)
+        (AI seam)            ★ the contract ★   (sim+rules)  (shapes on canvas)
 ```
+
+## Direction (agent-driven; in progress)
+
+The intended primary flow is **not** an app that holds an API key. Instead an
+**agent the user is already logged into** (Claude Code / Desktop / any MCP
+client) supplies the intelligence and drives GamePilot through tools. The agent
+emits a `GameSpec` (data, never code); GamePilot validates, stores, and hosts
+it. This needs no `ANTHROPIC_API_KEY` anywhere.
+
+Build stages:
+1. **Library + management backend** (done) — engine/DSL/renderer as a library
+   (`src/index.ts`) plus a standalone server (`server/`) that validates, stores,
+   and serves playable games.
+2. **MCP server** (next) — expose create/validate/save/list/play over MCP
+   (stdio + HTTP) so any agent can author games.
+3. **Skills** — teach the agent the DSL (progressive disclosure).
+4. **Agent** — orchestrates idea → game using the skill + MCP tools.
+
+The direct-API `anthropicCompiler` (below) is kept as an **optional fallback**
+for anyone who *does* have a key; it is not the primary path.
 
 ## Commands
 
@@ -21,6 +41,8 @@ idea ─▶ GameplayCompiler ─▶ GameSpec (DSL) ─▶ Engine ─▶ Renderer
 - `npm run build` — type-check (`tsc --noEmit`) then production build to `dist/`
 - `npm run typecheck` — type-check only
 - `npm run smoke` — headless runtime test (`src/engine/engine.smoke.ts` via tsx). Tests the non-DOM core: spawning, collision rules, gameover, win conditions. **Run this after any engine/DSL change** — it's the fast feedback loop that doesn't need a browser.
+- `npm run serve` — standalone backend (`server/index.ts` via tsx) on `:4321`. Serves the REST API + playable games at `/play/:id`. Requires `dist/` (run `build` first).
+- `npm run start` — `build` then `serve` (the full backend with a fresh client).
 
 There is no separate lint step; strict TS (`noUncheckedIndexedAccess`, `noUnusedLocals`, `verbatimModuleSyntax`) is the gate. To run a single check during dev, edit `engine.smoke.ts`.
 
@@ -56,8 +78,17 @@ Per fixed 60Hz step, the update order is **movement → rules → reap dead → 
 
 The key path: browser `httpCompiler` → Vite dev middleware `POST /api/compile` (`vite.config.ts`) → `anthropicCompiler`. The API key (`ANTHROPIC_API_KEY`, from shell or `.env.local`) is read in `vite.config.ts` and **never leaves the Node process**. No key → 503 → app silently uses the mock. There is no production server for `/api/compile` yet — it's a dev-only middleware.
 
+### `src/index.ts` — the library barrel
+Public API for "create a game": `GameSpec` types, `validateGameSpec`, `Engine`, `World`, `Renderer`, `growAndSlow`. The backend and (future) MCP server import the engine/DSL through here.
+
+### `server/` — management backend (stage 1)
+Standalone, runs independently of Vite so the MCP server / agent can drive it as a separate process.
+- `store.ts` — file-based GameSpec store (`data/games/<id>.json`, gitignored). `saveGame` validates before writing — the write-side guard at the seam. Shared by the HTTP server and the future MCP server. Uses `node:crypto`/`Date` for ids/timestamps (fine — it's server code, not the deterministic engine).
+- `http.ts` — Fastify app: REST API (`POST /api/validate`, `POST /api/games`, `GET /api/games`, `GET /api/games/:id`, `DELETE /api/games/:id`) + serves the built client, with `/play/:id` returning `index.html` for deep links.
+- `index.ts` — entry; `PORT`/`HOST` env (default `127.0.0.1:4321`).
+
 ### `src/main.ts`
-Wires DOM → compiler → `Engine` + `Renderer`. Tries the Claude `HttpCompiler`, falls back to the `MockCompiler` (showing why in the `#status` line). Loads the sample on boot; typing an idea recompiles a new game; `R` restarts.
+Wires DOM → compiler → `Engine` + `Renderer`. On `/play/:id` it fetches the saved spec from the backend and loads it; otherwise loads the sample. The idea-bar still tries the Claude `HttpCompiler` and falls back to the `MockCompiler` (showing why in the `#status` line). `R` restarts.
 
 ## Conventions / gotchas
 

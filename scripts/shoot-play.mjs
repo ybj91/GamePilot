@@ -1,0 +1,14 @@
+import puppeteer from "puppeteer-core";
+const URL = process.env.URL;
+const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--no-sandbox"] });
+const page = await browser.newPage();
+const logs = [];
+page.on("pageerror", (e) => logs.push("[pageerror] " + e.message));
+await page.goto(URL, { waitUntil: "networkidle2", timeout: 15000 });
+await new Promise((r) => setTimeout(r, 1200));
+const status = await page.$eval("#status", (el) => el.textContent).catch(() => "(no status)");
+logs.push("[status] " + status);
+await page.screenshot({ path: "scripts/shot-play.png" });
+console.log(logs.join("\n"));
+await browser.close();
