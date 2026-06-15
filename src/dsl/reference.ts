@@ -39,8 +39,15 @@ Rule (event -> effects):
   "on": "collision" | "tick" | "interval",
   "between": [idA, idB],        // required when on=collision
   "every": number,              // seconds; required when on=interval
+  "when": "<condition>",        // optional guard — rule only fires if this holds
   "effects": Effect[]
 }
+
+A rule's "when" uses the SAME expression grammar as win/lose (left side: "score", "<id>.count", "<id>.<prop>", or "self"/"other".<prop> in collisions; operators >= <= > < == != ; right side a number). Use it to branch the same trigger on state. Example — a shield that makes enemy hits harmless while it's up:
+  { "on": "collision", "between": ["player","enemy"], "when": "player.shield <= 0", "effects": [ { "op": "gameover" } ] },
+  { "on": "collision", "between": ["player","enemy"], "when": "player.shield > 0",
+    "effects": [ { "op": "destroy", "target": "other" }, { "op": "set", "target": "player.shield", "value": 0 } ] }
+A power-up could grant the shield: collision player+shieldItem -> set player.shield 1, destroy other.
 
 Effect:
 { "op": "add"|"set"|"mul"|"destroy"|"spawn"|"score"|"win"|"gameover", "target"?: string, "value"?: number }

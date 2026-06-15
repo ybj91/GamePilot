@@ -121,6 +121,7 @@ A game is `world` + `entities` + `rules` (+ optional `win`/`lose`). Entities are
 
 - **Shapes:** `circle` · `square` · `dot`. **Control:** `follow-pointer` · `arrows`. **Behavior:** `chase:<id>` · `flee:<id>` · `wander`.
 - **Effect ops:** `add` · `set` · `mul` · `destroy` · `spawn` · `score` · `win` · `gameover`. In a collision, `self` = first id, `other` = second.
+- **Conditions:** any rule can carry an optional **`when`** guard, so the same trigger branches on state — e.g. two `player↔enemy` collision rules, one `when: "player.shield <= 0"` (gameover) and one `when: "player.shield > 0"` (block the hit). Same expression grammar as win/lose, plus `self`/`other`.
 - **Win/lose** is a tiny safe expression: `"score >= 20"`, `"food.count == 0"`, `"player.size > 60"` — no `eval`.
 
 `validateGameSpec` is the guard at the untrusted-AI-output seam. The full contract lives in [`src/dsl/reference.ts`](src/dsl/reference.ts) and is the single source of truth shared by the prompt, the MCP `get_dsl_reference` tool, and (soon) the skill.

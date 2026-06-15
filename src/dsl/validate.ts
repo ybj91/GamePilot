@@ -29,6 +29,31 @@ const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "score", "win", "ga
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isStr = (v: unknown): v is string => typeof v === "string" && v.length > 0;
 
+const COND_OPS = [">=", "<=", "==", "!=", ">", "<"];
+
+/**
+ * Light syntax check for a condition expression (rule `when`, win/lose `when`).
+ * Mirrors conditions.ts: `<left> <op> <number>`. We don't evaluate it here, just
+ * make sure the AI gets a precise error instead of a silently-false condition.
+ */
+function validateCondition(expr: unknown, where: string, errs: string[]): void {
+  if (!isStr(expr)) {
+    errs.push(`${where}: condition must be a non-empty string`);
+    return;
+  }
+  const op = COND_OPS.find((o) => expr.includes(o));
+  if (!op) {
+    errs.push(`${where}: condition "${expr}" needs a comparison operator (>= <= > < == !=), e.g. "player.shield > 0"`);
+    return;
+  }
+  const cut = expr.indexOf(op);
+  if (!expr.slice(0, cut).trim()) errs.push(`${where}: condition "${expr}" is missing a left-hand side`);
+  const right = expr.slice(cut + op.length).trim();
+  if (right === "" || Number.isNaN(Number(right))) {
+    errs.push(`${where}: right side of "${expr}" must be a number`);
+  }
+}
+
 function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   const where = `entity "${e?.id ?? "?"}"`;
   if (!isStr(e.id)) errs.push(`${where}: missing id`);
@@ -77,6 +102,7 @@ function validateRule(r: Rule, ruleNo: number, errs: string[]): void {
   if (r.on === "interval" && !isNum(r.every)) {
     errs.push(`${where}: interval needs a numeric "every" (seconds)`);
   }
+  if (r.when !== undefined) validateCondition(r.when, `${where}.when`, errs);
   if (!Array.isArray(r.effects) || r.effects.length === 0) {
     errs.push(`${where}: needs at least one effect`);
     return;
@@ -109,6 +135,9 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
       }
     }
   });
+
+  if (spec.win) validateCondition(spec.win.when, "win.when", errors);
+  if (spec.lose) validateCondition(spec.lose.when, "lose.when", errors);
 
   return { ok: errors.length === 0, errors };
 }

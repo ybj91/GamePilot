@@ -16,6 +16,7 @@ import type { World } from "./world";
 import type { Entity } from "./entity";
 import { setEntityProp, getEntityProp } from "./entity";
 import { findContacts } from "./collision";
+import { evalCondition } from "./conditions";
 
 /** Resolution context for a single rule firing. */
 interface Ctx {
@@ -69,6 +70,8 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World): void {
 }
 
 function fire(rule: Rule, ctx: Ctx, world: World): void {
+  // Optional guard: skip the rule unless its condition holds (self/other bound).
+  if (rule.when && !evalCondition(rule.when, world, ctx)) return;
   for (const fx of rule.effects) {
     if (world.status !== "playing") return; // stop applying once the game ends
     applyEffect(fx, ctx, world);

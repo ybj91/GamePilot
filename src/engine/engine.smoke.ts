@@ -12,6 +12,7 @@ import { RuleTimers, evaluateRules } from "./rules";
 import { evalCondition } from "./conditions";
 import { growAndSlow } from "../dsl/samples/growAndSlow";
 import { validateGameSpec } from "../dsl/validate";
+import type { GameSpec } from "../dsl/types";
 
 let failures = 0;
 function check(name: string, cond: boolean): void {
@@ -61,6 +62,40 @@ check("gameover on enemy contact", world.status === "lost");
 world.status = "playing";
 world.score = 25;
 check("win condition triggers at score>=20", evalCondition(growAndSlow.win!.when, world));
+
+// 6. rule conditions (`when`): a shield gates whether an enemy hit ends the game.
+//    Two collision rules on the same pair branch on player.shield.
+const shieldSpec: GameSpec = {
+  meta: { title: "Shield test" },
+  world: { width: 400, height: 300, background: "#000" },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 12,
+      control: "none", spawn: { x: 200, y: 150 }, props: { speed: 0, shield: 0 } },
+    { id: "enemy", kind: "enemy", shape: "square", color: "#ff4d4d", size: 12,
+      spawn: { x: 200, y: 150 }, props: { speed: 0 } },
+  ],
+  rules: [
+    { on: "collision", between: ["player", "enemy"], when: "player.shield <= 0",
+      effects: [{ op: "gameover" }] },
+    { on: "collision", between: ["player", "enemy"], when: "player.shield > 0",
+      effects: [{ op: "destroy", target: "other" }, { op: "set", target: "player.shield", value: 0 }] },
+  ],
+};
+check("shield spec validates", validateGameSpec(shieldSpec).ok);
+
+// shield down -> the overlapping enemy ends the game
+const downWorld = new World(shieldSpec, 1);
+evaluateRules(downWorld, new RuleTimers(), 1 / 60);
+check("when player.shield<=0: enemy contact = gameover", downWorld.status === "lost");
+
+// shield up -> the enemy is destroyed instead, game continues, shield consumed
+const upWorld = new World(shieldSpec, 1);
+upWorld.firstOf("player")!.props.shield = 1;
+evaluateRules(upWorld, new RuleTimers(), 1 / 60);
+check(
+  "when player.shield>0: enemy destroyed, not gameover",
+  upWorld.status === "playing" && upWorld.countOf("enemy") === 0 && upWorld.firstOf("player")!.props.shield === 0,
+);
 
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);

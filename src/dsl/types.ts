@@ -119,6 +119,14 @@ export interface Rule {
   between?: [string, string];
   /** For `interval`: seconds between firings. */
   every?: number;
+  /**
+   * Optional guard: the rule only fires when this condition holds. Same grammar
+   * as win/lose (`score`, `<id>.count`, `<id>.<prop>`) plus `self`/`other`.<prop>
+   * in collisions. Lets the same trigger branch on state — e.g. two
+   * player↔enemy collision rules, one `when: "player.shield <= 0"` (gameover)
+   * and one `when: "player.shield > 0"` (block the hit).
+   */
+  when?: string;
   effects: Effect[];
 }
 
