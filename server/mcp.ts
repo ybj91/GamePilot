@@ -15,7 +15,14 @@ import { z } from "zod";
 import type { GameSpec } from "../src/dsl/types";
 import { validateGameSpec } from "../src/dsl/validate";
 import { dslReferenceWithExample } from "../src/dsl/reference";
-import { saveGame, getGame, listGames, deleteGame, InvalidSpecError } from "./store";
+import { saveGame, updateGame, getGame, listGames, deleteGame, InvalidSpecError } from "./store";
+
+/** How to drive game design as a conversation, surfaced via get_dsl_reference. */
+const WORKFLOW = `Designing a game is ITERATIVE — don't try to nail it in one spec. Work in a loop:
+1. Start small: create_game with a minimal but PLAYABLE skeleton (a player, one goal, a win/lose). Give the user the play_url.
+2. The user plays and gives feedback ("too hard", "add a dash", "enemies should flee").
+3. Refine: get_game(id) to read the current spec, change ONE thing, then update_game(id, newSpec). The id and play_url stay the same and the open browser tab hot-reloads automatically — so the user sees each change live.
+4. Repeat. Tune specific numbers (speed, count, size, win threshold) rather than rewriting the whole game.`;
 
 /** Where the HTTP backend serves playable games (for building play URLs). */
 const BASE_URL = (process.env.GAMEPILOT_BASE_URL ?? "http://localhost:4321").replace(/\/$/, "");
@@ -39,10 +46,10 @@ export function buildMcpServer(): McpServer {
     {
       title: "GamePilot DSL reference",
       description:
-        "Returns the GameSpec DSL contract plus a complete worked example. Read this first, then construct a GameSpec and pass it to validate_game / create_game.",
+        "Returns the GameSpec DSL contract, a worked example, AND the iterative design workflow. Read this first, before authoring or editing any game.",
       inputSchema: {},
     },
-    async () => text(dslReferenceWithExample()),
+    async () => text(`${dslReferenceWithExample()}\n\n--- WORKFLOW ---\n${WORKFLOW}`),
   );
 
   server.registerTool(
@@ -59,9 +66,9 @@ export function buildMcpServer(): McpServer {
   server.registerTool(
     "create_game",
     {
-      title: "Create a playable game",
+      title: "Create a NEW playable game",
       description:
-        "Validate and save a GameSpec, returning its id and a play_url you can give the user to play it in a browser. Fails (isError) with the validation errors if the spec is invalid.",
+        "Validate and save a NEW GameSpec, returning its id and play_url. Use this once to start a game (a minimal, playable skeleton), then refine it with update_game — do NOT call create_game again for tweaks, or you'll make duplicates. Fails (isError) with validation errors if the spec is invalid.",
       inputSchema: {
         spec: specSchema,
         idea: z.string().optional().describe("the natural-language idea this game came from"),
@@ -71,6 +78,30 @@ export function buildMcpServer(): McpServer {
       try {
         const game = await saveGame(spec as unknown as GameSpec, { idea });
         return text({ id: game.id, title: game.title, play_url: `${BASE_URL}/play/${game.id}` });
+      } catch (err) {
+        if (err instanceof InvalidSpecError) return errorText(err.message);
+        throw err;
+      }
+    },
+  );
+
+  server.registerTool(
+    "update_game",
+    {
+      title: "Refine an existing game",
+      description:
+        "Overwrite an existing game's spec in place to refine it (this is how you iterate). Typically: get_game(id) to read the current spec, change what the user asked for, then update_game(id, newSpec). The id and play_url stay the same and any open browser tab hot-reloads, so the user sees the change live. Fails (isError) if the id is unknown or the new spec is invalid.",
+      inputSchema: {
+        id: z.string(),
+        spec: specSchema,
+        idea: z.string().optional(),
+      },
+    },
+    async ({ id, spec, idea }) => {
+      try {
+        const game = await updateGame(id, spec as unknown as GameSpec, { idea });
+        if (!game) return errorText(`No game with id "${id}". Use create_game for a new game.`);
+        return text({ id: game.id, title: game.title, play_url: `${BASE_URL}/play/${game.id}`, updated: true });
       } catch (err) {
         if (err instanceof InvalidSpecError) return errorText(err.message);
         throw err;

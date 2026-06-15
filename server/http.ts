@@ -23,6 +23,7 @@ import { validateGameSpec } from "../src/dsl/validate";
 import { buildMcpServer } from "./mcp";
 import {
   saveGame,
+  updateGame,
   getGame,
   listGames,
   deleteGame,
@@ -52,6 +53,25 @@ export function buildServer(): FastifyInstance {
       try {
         const game = await saveGame(spec, { idea: req.body?.idea });
         return reply.code(201).send({ ...game, url: `/play/${game.id}` });
+      } catch (err) {
+        if (err instanceof InvalidSpecError) {
+          return reply.code(422).send({ error: err.message, errors: err.errors });
+        }
+        throw err;
+      }
+    },
+  );
+
+  // Update (validate + overwrite) an existing game in place. Same id/url.
+  app.put<{ Params: { id: string }; Body: { spec?: GameSpec; idea?: string } }>(
+    "/api/games/:id",
+    async (req, reply) => {
+      const spec = req.body?.spec;
+      if (!spec) return reply.code(400).send({ error: "body.spec is required" });
+      try {
+        const game = await updateGame(req.params.id, spec, { idea: req.body?.idea });
+        if (!game) return reply.code(404).send({ error: "not found" });
+        return { ...game, url: `/play/${game.id}` };
       } catch (err) {
         if (err instanceof InvalidSpecError) {
           return reply.code(422).send({ error: err.message, errors: err.errors });

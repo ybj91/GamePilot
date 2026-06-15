@@ -27,6 +27,8 @@ export interface StoredGame {
   title: string;
   idea?: string;
   createdAt: string;
+  /** Bumped on every save; the play page polls this to hot-reload. */
+  updatedAt: string;
   spec: GameSpec;
 }
 
@@ -72,11 +74,42 @@ export async function saveGame(
   await ensureDir();
   const title = spec.meta?.title ?? "Untitled";
   const id = `${slugify(title)}-${randomUUID().slice(0, 6)}`;
+  const now = new Date().toISOString();
   const game: StoredGame = {
     id,
     title,
     idea: opts.idea ?? spec.meta?.idea,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
+    spec,
+  };
+  await fs.writeFile(fileFor(id), JSON.stringify(game, null, 2), "utf8");
+  return game;
+}
+
+/**
+ * Overwrite an existing game's spec in place — the heart of iterative editing.
+ * Keeps the id (so the play_url and any open tab stay valid) and createdAt,
+ * re-validates, and bumps updatedAt so the play page hot-reloads. Returns null
+ * if no game has that id; throws InvalidSpecError if the new spec is invalid.
+ */
+export async function updateGame(
+  id: string,
+  spec: GameSpec,
+  opts: { idea?: string } = {},
+): Promise<StoredGame | null> {
+  const existing = await getGame(id);
+  if (!existing) return null;
+
+  const result = validateGameSpec(spec);
+  if (!result.ok) throw new InvalidSpecError(result.errors);
+
+  const game: StoredGame = {
+    id: existing.id,
+    title: spec.meta?.title ?? existing.title,
+    idea: opts.idea ?? spec.meta?.idea ?? existing.idea,
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString(),
     spec,
   };
   await fs.writeFile(fileFor(id), JSON.stringify(game, null, 2), "utf8");

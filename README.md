@@ -37,6 +37,7 @@ Because the AI only produces data, the intelligence can come from **whatever age
 | **Library** (`src/index.ts`) | ✅ | One import surface for "create a game". |
 | **Management backend** (`server/`) | ✅ Stage 1 | Validates, stores (`data/games/*.json`), and serves playable games. |
 | **MCP server** (`server/mcp.ts`) | ✅ Stage 2 | Game authoring as MCP tools over **stdio + HTTP** — the agent-driven seam. |
+| **Iterative editing** (`update_game` + live reload) | ✅ | Refine a game across a conversation; the open `/play/:id` tab hot-reloads on each change. |
 | **AI compilers** (`src/ai/`) | ✅ | `GameplayCompiler` interface + a keyword **mock** and an optional **direct-Claude** fallback. |
 | **Skill** | ⏳ Stage 3 | Teaches an agent to author *good* games. |
 | **Agent** | ⏳ Stage 4 | Orchestrates idea → game end-to-end. |
@@ -54,7 +55,7 @@ flowchart TB
     end
 
     subgraph mcp["MCP server &nbsp;(server/mcp.ts)"]
-        T["tools:<br/>get_dsl_reference · validate_game ·<br/>create_game · list / get / delete"]
+        T["tools:<br/>get_dsl_reference · validate_game ·<br/>create_game · update_game ·<br/>list / get / delete"]
     end
 
     subgraph backend["Management backend &nbsp;(server/)"]
@@ -149,9 +150,21 @@ Respawn happens *after* reaping so destroyed pickups reappear. Time is seconds, 
 
 ## Workflows
 
-### 1. Agent-driven (the primary path — no API key)
+### 1. Agent-driven, iterative (the primary path — no API key)
 
-Your agent supplies the intelligence and drives GamePilot through MCP tools.
+Game design is a **conversation**, not a one-shot prompt. The agent starts a minimal playable game, then refines it turn by turn — and because the play page **hot-reloads**, you watch each change land in the same browser tab without navigating.
+
+```mermaid
+flowchart LR
+    I["rough idea"] --> Sk["create_game:<br/>minimal playable skeleton"]
+    Sk --> P["play it<br/>(open tab)"]
+    P --> F["feedback:<br/>'faster' · 'add a dash' · 'too easy'"]
+    F --> Ed["get_game → edit one thing<br/>→ update_game (same id)"]
+    Ed --> HR["tab hot-reloads"]
+    HR --> P
+```
+
+A single round of that loop, in detail:
 
 ```mermaid
 sequenceDiagram
@@ -175,6 +188,13 @@ sequenceDiagram
     U->>Web: open play_url
     Web->>St: GET /api/games/:id
     Web-->>U: playable game (engine + renderer)
+
+    Note over U,Web: ── refine (repeat) ──
+    U->>Ag: "make enemies faster"
+    Ag->>MCP: get_game(id) → edit → update_game(id, spec)
+    MCP->>St: validate + overwrite (same id)
+    Web->>St: poll updatedAt → changed
+    Web-->>U: same tab hot-reloads with the change
 ```
 
 ### 2. In-app / fallback (optional)

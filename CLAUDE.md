@@ -87,14 +87,14 @@ Public API for "create a game": `GameSpec` types, `validateGameSpec`, `Engine`, 
 
 ### `server/` — management backend + MCP server (stages 1–2)
 Standalone, runs independently of Vite so the MCP server / agent can drive it as a separate process.
-- `store.ts` — file-based GameSpec store (`data/games/<id>.json`, gitignored; dir overridable via `GAMEPILOT_DATA_DIR`). `saveGame` validates before writing — the write-side guard at the seam. Shared by the HTTP server AND the MCP server. Uses `node:crypto`/`Date` for ids/timestamps (fine — server code, not the deterministic engine).
-- `http.ts` — Fastify app: REST API (`POST /api/validate`, `POST /api/games`, `GET /api/games`, `GET /api/games/:id`, `DELETE /api/games/:id`), MCP-over-HTTP (`POST /mcp`, stateless Streamable HTTP — fresh server+transport per request via `reply.hijack()`), and the built client with `/play/:id` for deep links.
+- `store.ts` — file-based GameSpec store (`data/games/<id>.json`, gitignored; dir overridable via `GAMEPILOT_DATA_DIR`). `saveGame` (new) and `updateGame` (edit in place — keeps id/createdAt, bumps `updatedAt`) both validate before writing — the write-side guard at the seam. Shared by the HTTP server AND the MCP server. Uses `node:crypto`/`Date` for ids/timestamps (fine — server code, not the deterministic engine).
+- `http.ts` — Fastify app: REST API (`POST /api/validate`, `POST /api/games`, `PUT /api/games/:id` [update], `GET /api/games`, `GET /api/games/:id`, `DELETE /api/games/:id`), MCP-over-HTTP (`POST /mcp`, stateless Streamable HTTP — fresh server+transport per request via `reply.hijack()`), and the built client with `/play/:id` for deep links.
 - `index.ts` — HTTP entry; `PORT`/`HOST` env (default `127.0.0.1:4321`).
-- `mcp.ts` — `buildMcpServer()`: the `@modelcontextprotocol/sdk` `McpServer` with tools `get_dsl_reference`, `validate_game`, `create_game`, `list_games`, `get_game`, `delete_game`. The single place tools are defined; both transports use it. Tools go through the same `validateGameSpec` + store. `create_game` returns a `play_url` built from `GAMEPILOT_BASE_URL` (default `http://localhost:4321`).
+- `mcp.ts` — `buildMcpServer()`: the `@modelcontextprotocol/sdk` `McpServer` with tools `get_dsl_reference`, `validate_game`, `create_game`, `update_game`, `list_games`, `get_game`, `delete_game`. The single place tools are defined; both transports use it. Tools go through the same `validateGameSpec` + store. **Iterative design is the intended flow**: `create_game` once (new id), then `get_game` → edit → `update_game` (same id) to refine — `get_dsl_reference` includes this workflow. `create_game`/`update_game` return a `play_url` built from `GAMEPILOT_BASE_URL` (default `http://localhost:4321`).
 - `mcp-stdio.ts` — stdio transport entry (`npm run mcp`).
 
 ### `src/main.ts`
-Wires DOM → compiler → `Engine` + `Renderer`. On `/play/:id` it fetches the saved spec from the backend and loads it; otherwise loads the sample. The idea-bar still tries the Claude `HttpCompiler` and falls back to the `MockCompiler` (showing why in the `#status` line). `R` restarts.
+Wires DOM → compiler → `Engine` + `Renderer`. On `/play/:id` it fetches the saved spec and loads it, then **polls `updatedAt` (every 1.5s + on tab focus) and hot-reloads** the running game when it changes — so an agent's `update_game` edits appear live in the open tab (`startLiveReload`). Otherwise it loads the sample. The idea-bar tries the Claude `HttpCompiler`, falls back to the `MockCompiler` (and cancels live-reload, since it's an explicit override). `R` restarts.
 
 ## Conventions / gotchas
 

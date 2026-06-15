@@ -58,6 +58,11 @@ async function compile(idea: string): Promise<{ spec: GameSpec; via: string }> {
 }
 
 async function generate(): Promise<void> {
+  // Explicit user action overrides any live-reload polling on a /play/:id tab.
+  if (liveReloadTimer) {
+    clearInterval(liveReloadTimer);
+    liveReloadTimer = undefined;
+  }
   const idea = ideaInput.value.trim();
   goButton.disabled = true;
   goButton.textContent = "Compiling…";
@@ -90,21 +95,64 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+interface StoredGameResponse {
+  spec: GameSpec;
+  title?: string;
+  updatedAt?: string;
+}
+
+let liveReloadTimer: number | undefined;
+let lastUpdatedAt = "";
+
+async function fetchGame(id: string): Promise<StoredGameResponse> {
+  const res = await fetch(`/api/games/${id}`);
+  if (!res.ok) throw new Error(`game "${id}" not found`);
+  return (await res.json()) as StoredGameResponse;
+}
+
 /** Load a saved game by id from the backend (used on /play/:id routes). */
 async function loadById(id: string): Promise<void> {
   setStatus(`Loading game ${id}…`);
   try {
-    const res = await fetch(`/api/games/${id}`);
-    if (!res.ok) throw new Error(`game "${id}" not found`);
-    const game = (await res.json()) as { spec: GameSpec; title?: string };
+    const game = await fetchGame(id);
+    lastUpdatedAt = game.updatedAt ?? "";
     load(game.spec);
     setStatus(`Playing "${game.title ?? game.spec.meta?.title ?? id}"`);
     ideaInput.value = game.spec.meta?.idea ?? "";
+    startLiveReload(id);
   } catch (err) {
     console.error(err);
     load(growAndSlow);
     setStatus(`Could not load ${id} — playing the sample instead.`, true);
   }
+}
+
+/**
+ * Poll the backend for changes to this game and hot-reload it into the same
+ * tab — this is what makes iterative editing feel live: an agent calls
+ * update_game, and a few seconds later the running game reflects the change
+ * without the user navigating or losing their place.
+ */
+function startLiveReload(id: string): void {
+  if (liveReloadTimer) clearInterval(liveReloadTimer);
+  const check = async () => {
+    try {
+      const game = await fetchGame(id);
+      const stamp = game.updatedAt ?? "";
+      if (stamp && stamp !== lastUpdatedAt) {
+        lastUpdatedAt = stamp;
+        load(game.spec);
+        ideaInput.value = game.spec.meta?.idea ?? "";
+        setStatus(`Updated "${game.title ?? id}" ✓ — reloaded live`);
+      }
+    } catch {
+      // Backend hiccup — keep playing what we have and try again next tick.
+    }
+  };
+  liveReloadTimer = window.setInterval(check, 1500);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) check();
+  });
 }
 
 // /play/:id (served by the backend) loads a saved game; otherwise the sample.
