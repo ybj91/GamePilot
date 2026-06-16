@@ -133,7 +133,9 @@ const clickEnv: InputEnv = { pressed: new Set(["pointer"]), pointerX: 500, point
 evaluateRules(sWorld, sTimers, clickEnv, 1 / 60);
 const bullet = sWorld.firstOf("bullet");
 check("input click spawns a bullet", sWorld.countOf("bullet") === 1);
-check("bullet spawns at the player", !!bullet && Math.abs(bullet.x - 100) < 1 && Math.abs(bullet.y - 300) < 1);
+// muzzle offset: spawns just in front of the player (along the aim), same row
+check("bullet spawns at the muzzle (in front of the player)",
+  !!bullet && bullet.x > 105 && bullet.x < 130 && Math.abs(bullet.y - 300) < 1);
 check("bullet aimed +x toward cursor", !!bullet && bullet.vx > 100 && Math.abs(bullet.vy) < 1);
 
 // Advance the sim with NO further input — the bullet should reach and kill the enemy.
@@ -312,6 +314,34 @@ check("wander spec validates", validateGameSpec(wanderSpec).ok);
   // moved along a cardinal axis, and changed direction at least once over ~5s
   check("wander moves on a cardinal axis", [...dirs].every((d) => d.split(",").filter((n) => n !== "0").length === 1));
   check("wander changes direction over time", dirs.size >= 2);
+}
+
+// 13. solid bodies don't overlap: two movable solid tanks placed on top of each
+//     other separate; a movable solid vs a static solid wall only moves the tank.
+const bodySpec: GameSpec = {
+  meta: { title: "Body test" },
+  world: { width: 600, height: 400, background: "#000" },
+  entities: [
+    { id: "tankA", kind: "enemy", shape: "square", color: "#f55", size: 14, control: "arrows", solid: true, spawn: { x: 300, y: 200, count: 1 }, props: { speed: 50 } },
+    { id: "tankB", kind: "enemy", shape: "square", color: "#5f5", size: 14, control: "arrows", solid: true, spawn: { x: 306, y: 200, count: 1 }, props: { speed: 50 } },
+    { id: "wall", kind: "obstacle", shape: "square", color: "#888", size: 20, control: "none", solid: true, spawn: { x: 450, y: 200, count: 1 }, props: { speed: 0 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("solid-bodies spec validates", validateGameSpec(bodySpec).ok);
+{
+  const w = new World(bodySpec, 1);
+  const a = w.firstOf("tankA")!;
+  const b = w.firstOf("tankB")!;
+  const wall = w.firstOf("wall")!;
+  const wx = wall.x;
+  // overlapping tanks (centres 6 apart, sizes 14) -> separate to ~>= 2*size
+  for (let i = 0; i < 30; i++) resolveSolids(w);
+  check("two solid tanks separate (don't overlap)", Math.abs(a.x - b.x) >= a.size + b.size - 1);
+  // drive tankA into the static wall -> tank stops, wall doesn't move
+  a.x = wall.x - 10; a.vx = 0;
+  for (let i = 0; i < 30; i++) resolveSolids(w);
+  check("static wall stays put while the tank is pushed out", wall.x === wx && a.x <= wall.x - wall.size - a.size + 1);
 }
 
 if (failures > 0) {

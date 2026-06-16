@@ -102,43 +102,84 @@ export function stepMovement(world: World, input: Input, dt: number): void {
   }
 }
 
+/** Whether an entity can be pushed (a tank/unit) vs. a static placement (a wall). */
+function movable(e: Entity): boolean {
+  return e.control !== "none" || !!e.behavior;
+}
+
 /**
- * Push non-solid entities out of any solid entity they overlap, so solids block
- * movement (walls/obstacles). Treats the mover as a circle (radius = size) and
- * the solid as an axis-aligned box (half = size) — circle-vs-AABB resolution,
- * which gives natural wall-stopping and sliding. Runs after rules so a
- * collision rule (e.g. bullet destroys a brick) still sees the overlap first.
+ * Displacement to move `m` (circle, r = size) out of `s` (axis-aligned box,
+ * half = size). null if they don't overlap. Circle-vs-AABB gives natural
+ * wall-stopping/sliding.
+ */
+function pushVector(m: Entity, s: Entity): { x: number; y: number } | null {
+  const half = s.size;
+  const r = m.size;
+  const cx = Math.max(s.x - half, Math.min(m.x, s.x + half));
+  const cy = Math.max(s.y - half, Math.min(m.y, s.y + half));
+  const dx = m.x - cx;
+  const dy = m.y - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist >= r) return null;
+  if (dist > 1e-6) {
+    const push = r - dist;
+    return { x: (dx / dist) * push, y: (dy / dist) * push };
+  }
+  // Centre inside the box — eject along the shallowest axis.
+  const left = m.x - (s.x - half);
+  const right = s.x + half - m.x;
+  const top = m.y - (s.y - half);
+  const bottom = s.y + half - m.y;
+  const min = Math.min(left, right, top, bottom);
+  if (min === left) return { x: s.x - half - r - m.x, y: 0 };
+  if (min === right) return { x: s.x + half + r - m.x, y: 0 };
+  if (min === top) return { x: 0, y: s.y - half - r - m.y };
+  return { x: 0, y: s.y + half + r - m.y };
+}
+
+/**
+ * Keep entities from overlapping solids:
+ *  1. non-solid movers (bullets, etc.) are pushed fully out of any solid.
+ *  2. two solids that overlap are separated — both move if both are movable
+ *     (tanks bumping tanks), only the movable one moves against a static wall.
+ * Runs after rules so a collision rule (e.g. bullet destroys a brick) still
+ * sees the overlap first.
  */
 export function resolveSolids(world: World): void {
   const solids = world.entities.filter((e) => e.alive && e.solid);
   if (!solids.length) return;
+
   for (const m of world.entities) {
-    if (!m.alive || m.solid) continue; // solids themselves aren't pushed
-    const r = m.size;
+    if (!m.alive || m.solid) continue;
     for (const s of solids) {
-      const half = s.size;
-      const cx = Math.max(s.x - half, Math.min(m.x, s.x + half));
-      const cy = Math.max(s.y - half, Math.min(m.y, s.y + half));
-      const dx = m.x - cx;
-      const dy = m.y - cy;
-      const dist = Math.hypot(dx, dy);
-      if (dist >= r) continue; // not overlapping
-      if (dist > 1e-6) {
-        const push = r - dist;
-        m.x += (dx / dist) * push;
-        m.y += (dy / dist) * push;
+      const p = pushVector(m, s);
+      if (p) {
+        m.x += p.x;
+        m.y += p.y;
+      }
+    }
+  }
+
+  for (let i = 0; i < solids.length; i++) {
+    for (let j = i + 1; j < solids.length; j++) {
+      const a = solids[i]!;
+      const b = solids[j]!;
+      const am = movable(a);
+      const bm = movable(b);
+      if (!am && !bm) continue; // two static walls — leave them
+      const p = pushVector(a, b);
+      if (!p) continue;
+      if (am && bm) {
+        a.x += p.x / 2;
+        a.y += p.y / 2;
+        b.x -= p.x / 2;
+        b.y -= p.y / 2;
+      } else if (am) {
+        a.x += p.x;
+        a.y += p.y;
       } else {
-        // Centre inside the box — eject along the shallowest axis.
-        const pen = [
-          { axis: "L", d: m.x - (s.x - half) },
-          { axis: "R", d: s.x + half - m.x },
-          { axis: "T", d: m.y - (s.y - half) },
-          { axis: "B", d: s.y + half - m.y },
-        ].sort((a, b) => a.d - b.d)[0]!;
-        if (pen.axis === "L") m.x = s.x - half - r;
-        else if (pen.axis === "R") m.x = s.x + half + r;
-        else if (pen.axis === "T") m.y = s.y - half - r;
-        else m.y = s.y + half + r;
+        b.x -= p.x;
+        b.y -= p.y;
       }
     }
   }

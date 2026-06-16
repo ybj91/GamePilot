@@ -133,9 +133,11 @@ Recipe — base defense (enemies pour in from the top and advance on a base at t
     id: "obstacles",
     title: "Walls & cover",
     summary: "solid entities that block movement (walls, mazes, cover)",
-    doc: `Obstacles — walls and cover that block movement.
-- "solid": true on an entity (usually a "square" with "control":"none") blocks other entities from passing through it.
-- Enemies do NOT pathfind around solids (they "chase" in a straight line and just stop at walls), so leave open lanes.
+    doc: `Obstacles & physical bodies — solid entities block movement.
+- "solid": true blocks other entities from passing through. Two common uses:
+  (a) static walls/cover — a "square" with "control":"none" (bricks, steel);
+  (b) physical bodies — mark MOVING entities solid too (e.g. tanks/units) so they don't overlap or stack on each other (they push apart; a moving solid is still pushed out of static walls).
+- Enemies do NOT pathfind around solids (they roam/chase in straight lines and just stop at walls), so leave open lanes.
 Recipe — walls/cover: place a few solid squares at fixed positions:
   { "id":"w1","kind":"obstacle","shape":"square","color":"#6b7280","size":42,"control":"none","solid":true,"spawn":{"x":300,"y":300,"count":1} }
   (repeat with different ids and x/y for more walls / a maze)`,

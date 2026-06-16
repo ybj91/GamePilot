@@ -12,7 +12,7 @@ const spec = {
   world: { width: 800, height: 600, background: "#0e1108", edges: "wall" },
   vars: { lives: 3 },
   entities: [
-    { id: "player", kind: "player", shape: "square", color: "#8cb33a", size: 13, control: "arrows", spawn: { x: 400, y: 520 }, props: { speed: 155 } },
+    { id: "player", kind: "player", shape: "square", color: "#8cb33a", size: 13, control: "arrows", solid: true, spawn: { x: 400, y: 520 }, props: { speed: 155 } },
     { id: "bullet", kind: "obstacle", shape: "dot", color: "#dff0ff", size: 4, control: "none", spawn: { count: 0 }, props: { speed: 470, ttl: 1.6 } },
     { id: "shell", kind: "obstacle", shape: "dot", color: "#ff8a3a", size: 4, control: "none", spawn: { count: 0 }, props: { speed: 300, ttl: 2.4 } },
     // obstacles: destructible brick + indestructible steel
@@ -20,9 +20,9 @@ const spec = {
     brick("b4", 300, 440), brick("b5", 520, 440), brick("b6", 540, 300),
     steel("s1", 170, 200), steel("s2", 630, 210), steel("s3", 410, 400),
     // three enemy tank types
-    { id: "basic", kind: "enemy", shape: "square", color: "#e2554e", size: 13, behavior: "wander", spawn: { area: "top", count: 2, maintain: 2 }, props: { speed: 55 } },
-    { id: "fast", kind: "enemy", shape: "square", color: "#46c7d0", size: 12, behavior: "wander", spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 110 } },
-    { id: "armor", kind: "enemy", shape: "square", color: "#a86bd6", size: 15, behavior: "wander", spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 42, hp: 2 } },
+    { id: "basic", kind: "enemy", shape: "square", color: "#e2554e", size: 13, behavior: "wander", solid: true, spawn: { area: "top", count: 2, maintain: 2 }, props: { speed: 55 } },
+    { id: "fast", kind: "enemy", shape: "square", color: "#46c7d0", size: 12, behavior: "wander", solid: true, spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 110 } },
+    { id: "armor", kind: "enemy", shape: "square", color: "#a86bd6", size: 15, behavior: "wander", solid: true, spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 42, hp: 2 } },
   ],
   rules: [
     { on: "input", key: "space", effects: [{ op: "spawn", target: "bullet", from: "player", aim: "forward" }] },

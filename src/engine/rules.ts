@@ -108,8 +108,17 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
         else dir = aimVector(fx.aim, e.x, e.y, world, ctx, env);
         e.vx = dir.x * e.speed;
         e.vy = dir.y * e.speed;
-        // Face the projectile the way it's travelling too.
-        if (dir.x || dir.y) (e.hx = Math.sign(dir.x)), (e.hy = Math.sign(dir.y));
+        if (dir.x || dir.y) {
+          e.hx = Math.sign(dir.x);
+          e.hy = Math.sign(dir.y);
+          // Spawn at the muzzle (just in front of the firer) so a projectile
+          // from a solid tank isn't immediately ejected by the solid resolver.
+          if (src) {
+            const off = src.size + e.size + 2;
+            e.x += dir.x * off;
+            e.y += dir.y * off;
+          }
+        }
       }
       break;
     }
