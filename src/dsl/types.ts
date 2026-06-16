@@ -87,6 +87,15 @@ export interface EntitySpec {
    */
   solid?: boolean;
   /**
+   * Optional pixel-grid glyph (rows of a small bitmap), drawn scaled to the
+   * entity's box in its color instead of the bare `shape`. A cell is "on" for
+   * any char except space/"." /"0". Authored facing up. No assets — just data.
+   * e.g. a tank: ["..X..", ".XXX.", "XXXXX", "XXXXX", "X.X.X"].
+   */
+  glyph?: string[];
+  /** Rotate the glyph to the entity's facing (heading), so it shows direction. */
+  rotate?: boolean;
+  /**
    * Free-form numeric properties readable/writable by rule effects via
    * `<id>.<prop>` targets. `speed` is special-cased by the engine as movement
    * units/second; everything else is just state (e.g. `length`, `hp`).

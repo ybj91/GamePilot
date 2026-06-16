@@ -56,6 +56,10 @@ export class Renderer {
   }
 
   private drawEntity(e: Entity): void {
+    if (e.glyph?.length) {
+      this.drawGlyph(e);
+      return;
+    }
     const ctx = this.ctx;
     ctx.save();
     ctx.shadowColor = e.color;
@@ -68,6 +72,36 @@ export class Renderer {
       ctx.beginPath();
       ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
       ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /** Draw a pixel-grid glyph scaled to the entity's box, rotated to face its heading. */
+  private drawGlyph(e: Entity): void {
+    const ctx = this.ctx;
+    const rows = e.glyph!;
+    const nrows = rows.length;
+    const ncols = Math.max(...rows.map((r) => r.length));
+    if (!nrows || !ncols) return;
+    const span = e.size * 2;
+    const cw = span / ncols;
+    const ch = span / nrows;
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    // Glyph is authored facing "up" (0,-1); rotate to the entity's heading.
+    if (e.rotate) ctx.rotate(Math.atan2(e.hy, e.hx) + Math.PI / 2);
+    ctx.shadowColor = e.color;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = e.color;
+    for (let r = 0; r < nrows; r++) {
+      const row = rows[r]!;
+      for (let c = 0; c < row.length; c++) {
+        const ch2 = row[c]!;
+        if (ch2 !== " " && ch2 !== "." && ch2 !== "0") {
+          // +0.5 overlap avoids hairline seams between cells.
+          ctx.fillRect(-span / 2 + c * cw, -span / 2 + r * ch, cw + 0.5, ch + 0.5);
+        }
+      }
     }
     ctx.restore();
   }

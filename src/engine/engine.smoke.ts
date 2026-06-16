@@ -344,6 +344,21 @@ check("solid-bodies spec validates", validateGameSpec(bodySpec).ok);
   check("static wall stays put while the tank is pushed out", wall.x === wx && a.x <= wall.x - wall.size - a.size + 1);
 }
 
+// 14. glyph field validates (rendering itself needs a canvas — verified in a browser).
+const glyphSpec: GameSpec = {
+  meta: { title: "Glyph test" },
+  world: { width: 400, height: 300, background: "#000" },
+  entities: [
+    { id: "player", kind: "player", shape: "square", color: "#8cb33a", size: 14, control: "arrows",
+      glyph: ["..X..", ".XXX.", "XXXXX", "XXXXX", "X.X.X"], rotate: true, spawn: { x: 200, y: 150 }, props: { speed: 100 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("glyph spec validates", validateGameSpec(glyphSpec).ok);
+check("bad glyph rejected",
+  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "tank" as never }] }).ok);
+check("glyph copied onto the runtime entity", new World(glyphSpec, 1).firstOf("player")!.glyph?.length === 5);
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

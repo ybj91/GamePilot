@@ -36,6 +36,10 @@ export interface Entity {
   control: string;
   /** Blocks other entities' movement (walls/obstacles). */
   solid: boolean;
+  /** Optional pixel-grid glyph drawn instead of the bare shape. */
+  glyph?: string[];
+  /** Rotate the glyph to face the heading. */
+  rotate: boolean;
   alive: boolean;
   /** Per-entity scratch state for behaviours (e.g. wander heading). */
   scratch: Record<string, number>;
@@ -62,6 +66,8 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     behavior: verb ? { verb, target: target || undefined } : undefined,
     control: spec.control ?? "none",
     solid: spec.solid ?? false,
+    glyph: spec.glyph,
+    rotate: spec.rotate ?? false,
     alive: true,
     scratch: {},
   };

@@ -88,6 +88,10 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   }
   if (e.props && typeof e.props !== "object") errs.push(`${where}: props must be an object`);
   if (e.solid !== undefined && typeof e.solid !== "boolean") errs.push(`${where}: solid must be a boolean`);
+  if (e.glyph !== undefined && (!Array.isArray(e.glyph) || !e.glyph.length || !e.glyph.every((r) => typeof r === "string"))) {
+    errs.push(`${where}: glyph must be a non-empty array of strings (grid rows)`);
+  }
+  if (e.rotate !== undefined && typeof e.rotate !== "boolean") errs.push(`${where}: rotate must be a boolean`);
   ids.add(e.id);
 }
 

@@ -130,6 +130,18 @@ Recipe — base defense (enemies pour in from the top and advance on a base at t
   { "on":"collision","between":["enemy","base"],"effects":[{"op":"gameover"}] }`,
   },
   {
+    id: "glyphs",
+    title: "Glyphs (pixel-grid shapes)",
+    summary: "draw entities as a small bitmap that can rotate to show direction (e.g. a tank)",
+    doc: `Glyphs — represent an entity as a tiny pixel grid instead of a bare shape (still no assets, just data).
+- "glyph": [ "<row>", ... ]  — rows of a small bitmap (3x3, 5x5, any size). A cell is "on" for any char except space, "." or "0". It's drawn scaled to the entity's box in the entity's color. Author it FACING UP.
+- "rotate": true  — turn the glyph to the entity's facing (the way it last moved), so it visibly points its direction. Great for tanks/ships so you can see where they face.
+Recipe — a tank that points the way it drives:
+  { "id":"player","kind":"player","shape":"square","color":"#8cb33a","size":15,"control":"arrows",
+    "glyph":["..X..",".XXX.","XXXXX","XXXXX","X.X.X"], "rotate":true, "spawn":{"x":400,"y":520} }
+  (3x3 version: ["·X·","XXX","X·X"]. The glyph is visual only — collisions still use size.)`,
+  },
+  {
     id: "obstacles",
     title: "Walls & cover",
     summary: "solid entities that block movement (walls, mazes, cover)",
