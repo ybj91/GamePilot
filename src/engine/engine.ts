@@ -12,7 +12,7 @@
 import type { GameSpec } from "../dsl/types";
 import { World } from "./world";
 import { Input } from "./input";
-import { stepMovement } from "./movement";
+import { stepMovement, resolveSolids } from "./movement";
 import { evaluateRules, RuleTimers } from "./rules";
 import { evalCondition } from "./conditions";
 
@@ -81,6 +81,7 @@ export class Engine {
     this.input.endFrame(); // consume this step's input edges
     w.stepLifetimes(dt); // expire ttl'd entities (projectiles)
     w.reap();
+    resolveSolids(w); // push movers out of walls (after rules saw the overlap)
     w.maintainPopulations();
 
     if (w.status === "playing" && w.spec.win && evalCondition(w.spec.win.when, w)) {

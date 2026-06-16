@@ -74,3 +74,45 @@ export function stepMovement(world: World, input: Input, dt: number): void {
     integrate(e, world, dt);
   }
 }
+
+/**
+ * Push non-solid entities out of any solid entity they overlap, so solids block
+ * movement (walls/obstacles). Treats the mover as a circle (radius = size) and
+ * the solid as an axis-aligned box (half = size) — circle-vs-AABB resolution,
+ * which gives natural wall-stopping and sliding. Runs after rules so a
+ * collision rule (e.g. bullet destroys a brick) still sees the overlap first.
+ */
+export function resolveSolids(world: World): void {
+  const solids = world.entities.filter((e) => e.alive && e.solid);
+  if (!solids.length) return;
+  for (const m of world.entities) {
+    if (!m.alive || m.solid) continue; // solids themselves aren't pushed
+    const r = m.size;
+    for (const s of solids) {
+      const half = s.size;
+      const cx = Math.max(s.x - half, Math.min(m.x, s.x + half));
+      const cy = Math.max(s.y - half, Math.min(m.y, s.y + half));
+      const dx = m.x - cx;
+      const dy = m.y - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist >= r) continue; // not overlapping
+      if (dist > 1e-6) {
+        const push = r - dist;
+        m.x += (dx / dist) * push;
+        m.y += (dy / dist) * push;
+      } else {
+        // Centre inside the box — eject along the shallowest axis.
+        const pen = [
+          { axis: "L", d: m.x - (s.x - half) },
+          { axis: "R", d: s.x + half - m.x },
+          { axis: "T", d: m.y - (s.y - half) },
+          { axis: "B", d: s.y + half - m.y },
+        ].sort((a, b) => a.d - b.d)[0]!;
+        if (pen.axis === "L") m.x = s.x - half - r;
+        else if (pen.axis === "R") m.x = s.x + half + r;
+        else if (pen.axis === "T") m.y = s.y - half - r;
+        else m.y = s.y + half + r;
+      }
+    }
+  }
+}

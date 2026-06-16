@@ -31,6 +31,8 @@ export interface Entity {
   /** Behaviour verb + optional target type, parsed from the spec. */
   behavior?: { verb: string; target?: string };
   control: string;
+  /** Blocks other entities' movement (walls/obstacles). */
+  solid: boolean;
   alive: boolean;
   /** Per-entity scratch state for behaviours (e.g. wander heading). */
   scratch: Record<string, number>;
@@ -54,6 +56,7 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     props: { size: spec.size, speed, ...(spec.props ?? {}) },
     behavior: verb ? { verb, target: target || undefined } : undefined,
     control: spec.control ?? "none",
+    solid: spec.solid ?? false,
     alive: true,
     scratch: {},
   };

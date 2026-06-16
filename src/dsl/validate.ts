@@ -87,6 +87,7 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
     }
   }
   if (e.props && typeof e.props !== "object") errs.push(`${where}: props must be an object`);
+  if (e.solid !== undefined && typeof e.solid !== "boolean") errs.push(`${where}: solid must be a boolean`);
   ids.add(e.id);
 }
 

@@ -81,6 +81,12 @@ export interface EntitySpec {
   control?: Control;
   behavior?: BehaviorSpec;
   /**
+   * If true, other entities cannot move through this one — it physically blocks
+   * them (walls, obstacles, cover). One orthogonal flag that composes into
+   * mazes/arenas. (Enemies don't pathfind around solids.)
+   */
+  solid?: boolean;
+  /**
    * Free-form numeric properties readable/writable by rule effects via
    * `<id>.<prop>` targets. `speed` is special-cased by the engine as movement
    * units/second; everything else is just state (e.g. `length`, `hp`).

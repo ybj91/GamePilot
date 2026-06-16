@@ -10,7 +10,7 @@
 import { World } from "./world";
 import { RuleTimers, evaluateRules } from "./rules";
 import { evalCondition } from "./conditions";
-import { stepMovement } from "./movement";
+import { stepMovement, resolveSolids } from "./movement";
 import { Input, type InputEnv } from "./input";
 import { growAndSlow } from "../dsl/samples/growAndSlow";
 import { validateGameSpec } from "../dsl/validate";
@@ -221,6 +221,44 @@ const aWorld = new World(areaSpec, 7);
 const tops = aWorld.entities.filter((e) => e.type === "enemy");
 check("area:top keeps all 20 enemies in the top 18% of the world",
   tops.length === 20 && tops.every((e) => e.y <= 600 * 0.18 + 0.001));
+
+// 10. solid obstacles block movement — a mover can't pass through a solid wall.
+const wallSpec: GameSpec = {
+  meta: { title: "Wall test" },
+  world: { width: 400, height: 300, background: "#000" },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 10,
+      control: "none", spawn: { x: 150, y: 150 }, props: { speed: 300 } },
+    { id: "wall", kind: "obstacle", shape: "square", color: "#888", size: 20,
+      control: "none", solid: true, spawn: { x: 200, y: 150 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("wall spec validates", validateGameSpec(wallSpec).ok);
+check("non-boolean solid rejected",
+  !validateGameSpec({ ...wallSpec, entities: [{ ...wallSpec.entities[0]!, solid: "yes" as never }, wallSpec.entities[1]!] }).ok);
+
+// drive the player right (toward the wall at x=200) for ~1s; it must stop at the wall's left face
+const wWorld = new World(wallSpec, 1);
+const wp = wWorld.firstOf("player")!;
+wp.vx = 300; // moving right; control "none" keeps the velocity
+for (let i = 0; i < 60; i++) {
+  stepMovement(wWorld, new Input(), 1 / 60);
+  resolveSolids(wWorld);
+}
+// wall left face is at 200-20=180; player radius 10 -> player.x must be <= ~170, never past the wall
+check("solid wall stops the mover at its left face", wp.x <= 171 && wp.x >= 168);
+
+// a non-solid version lets the mover pass straight through
+const openSpec: GameSpec = { ...wallSpec, entities: [wallSpec.entities[0]!, { ...wallSpec.entities[1]!, solid: false }] };
+const oWorld = new World(openSpec, 1);
+const op = oWorld.firstOf("player")!;
+op.vx = 300;
+for (let i = 0; i < 60; i++) {
+  stepMovement(oWorld, new Input(), 1 / 60);
+  resolveSolids(oWorld);
+}
+check("non-solid lets the mover pass through", op.x > 250);
 
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
