@@ -15,6 +15,8 @@ interface GameSummary {
 const grid = document.getElementById("library") as HTMLDivElement;
 const countEl = document.getElementById("count") as HTMLSpanElement;
 const refreshBtn = document.getElementById("refresh") as HTMLButtonElement;
+const importBtn = document.getElementById("import") as HTMLButtonElement;
+const importFile = document.getElementById("import-file") as HTMLInputElement;
 
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) =>
@@ -52,10 +54,14 @@ function renderCard(g: GameSummary): HTMLDivElement {
     </div>
     <div class="card-actions">
       <a class="btn primary play" href="/play/${encodeURIComponent(g.id)}">▶ Play / Edit</a>
+      <a class="btn dl" href="/api/games/${encodeURIComponent(g.id)}/download" title="Download GameSpec (DSL) as JSON" download>⬇</a>
       <button class="btn danger" title="Delete">🗑</button>
     </div>`;
   (card.querySelector(".card-body") as HTMLElement).addEventListener("click", () => {
     location.href = `/play/${encodeURIComponent(g.id)}`;
+  });
+  (card.querySelector("a.dl") as HTMLAnchorElement).addEventListener("click", (e) => {
+    e.stopPropagation(); // don't navigate the card; let the link download
   });
   (card.querySelector("button.danger") as HTMLButtonElement).addEventListener("click", async (e) => {
     e.stopPropagation();
@@ -83,4 +89,32 @@ async function load(): Promise<void> {
 }
 
 refreshBtn.addEventListener("click", load);
+
+// Import an (edited) GameSpec .json -> validate + create -> open it. This is the
+// other half of download: hand-edit the DSL, then load it back, no AI needed.
+importBtn.addEventListener("click", () => importFile.click());
+importFile.addEventListener("change", async () => {
+  const file = importFile.files?.[0];
+  importFile.value = "";
+  if (!file) return;
+  let spec: { meta?: { idea?: string } };
+  try {
+    spec = JSON.parse(await file.text());
+  } catch (e) {
+    alert(`That's not valid JSON:\n${(e as Error).message}`);
+    return;
+  }
+  const res = await fetch("/api/games", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ spec, idea: spec?.meta?.idea }),
+  });
+  const data = (await res.json()) as { id?: string; error?: string; errors?: string[] };
+  if (!res.ok) {
+    alert(`Couldn't import that GameSpec:\n- ${data.errors?.join("\n- ") ?? data.error ?? res.statusText}`);
+    return;
+  }
+  location.href = `/play/${data.id}`;
+});
+
 load();

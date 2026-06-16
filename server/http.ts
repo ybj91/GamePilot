@@ -125,6 +125,18 @@ export function buildServer(): FastifyInstance {
     return game;
   });
 
+  // Download a game's GameSpec (the DSL) as a JSON file attachment.
+  app.get<{ Params: { id: string } }>("/api/games/:id/download", async (req, reply) => {
+    const game = await getGame(req.params.id);
+    if (!game) return reply.code(404).send({ error: "not found" });
+    const name =
+      game.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || game.id;
+    return reply
+      .header("content-type", "application/json")
+      .header("content-disposition", `attachment; filename="${name}.gamespec.json"`)
+      .send(JSON.stringify(game.spec, null, 2));
+  });
+
   app.delete<{ Params: { id: string } }>("/api/games/:id", async (req, reply) => {
     const ok = await deleteGame(req.params.id);
     return reply.code(ok ? 200 : 404).send({ ok });
