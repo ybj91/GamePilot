@@ -42,12 +42,26 @@ function applyBehavior(e: Entity, world: World): void {
     const t = target ? world.firstOf(target) : undefined;
     if (t) aimToward(e, t.x, t.y, verb === "chase" ? 1 : -1);
   } else if (verb === "wander") {
-    // Slowly rotate a persistent heading for smooth drift.
-    const h = (e.scratch.heading ?? (e.scratch.heading = world.rng.range(0, Math.PI * 2)));
-    const nh = h + world.rng.range(-0.25, 0.25);
-    e.scratch.heading = nh;
-    e.vx = Math.cos(nh) * e.speed;
-    e.vy = Math.sin(nh) * e.speed;
+    // Roam deliberately: hold a random cardinal direction for a beat, then pick
+    // a new one (and re-pick early when stuck against a wall). Tank-like, not
+    // jittery, and never targets anything.
+    const blocked = Math.hypot(e.x - (e.scratch.wlx ?? e.x), e.y - (e.scratch.wly ?? e.y)) < 0.5;
+    if (world.time >= (e.scratch.wnext ?? 0) || (blocked && world.time > 0.2)) {
+      const dirs = [
+        [0, -1],
+        [0, 1],
+        [-1, 0],
+        [1, 0],
+      ] as const;
+      const d = dirs[Math.floor(world.rng.range(0, 4))]!;
+      e.scratch.wdx = d[0];
+      e.scratch.wdy = d[1];
+      e.scratch.wnext = world.time + world.rng.range(0.7, 1.8);
+    }
+    e.scratch.wlx = e.x;
+    e.scratch.wly = e.y;
+    e.vx = (e.scratch.wdx ?? 0) * e.speed;
+    e.vy = (e.scratch.wdy ?? -1) * e.speed;
   }
 }
 

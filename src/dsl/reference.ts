@@ -36,7 +36,7 @@ EntitySpec:
   "size": number,               // radius (circle/dot) or half-width (square), world units (pixels)
   "spawn": { "x"?: number, "y"?: number, "random"?: boolean, "count"?: number, "maintain"?: number },
   "control": "none" | "follow-pointer" | "arrows",   // optional; the player usually has one
-  "behavior": "chase:<id>" | "flee:<id>" | "wander", // optional autonomous movement (target is an entity id)
+  "behavior": "chase:<id>" | "flee:<id>" | "wander", // optional autonomous movement; "wander" = roam in random directions (doesn't target)
   "props": { "speed": number, ... }                  // speed = units/second; other keys are free numeric state
 }
 Reserved props: "speed" (units/second), "size" (mirrors the shape size), "ttl" (seconds — entity auto-despawns at 0).

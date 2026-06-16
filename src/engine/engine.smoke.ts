@@ -287,6 +287,33 @@ evaluateRules(hWorld, new RuleTimers(),
 const hb = hWorld.firstOf("bullet")!;
 check("aim 'forward' fires along heading (+x)", hb.vx > 100 && Math.abs(hb.vy) < 1);
 
+// 12. wander roams (random cardinal direction, not toward a target) and changes
+//     direction over time.
+const wanderSpec: GameSpec = {
+  meta: { title: "Wander test" },
+  world: { width: 600, height: 400, background: "#000" },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 8, control: "none", spawn: { x: 300, y: 200 }, props: { speed: 0 } },
+    { id: "roamer", kind: "enemy", shape: "square", color: "#f55", size: 10, behavior: "wander", spawn: { x: 300, y: 200, count: 1 }, props: { speed: 60 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("wander spec validates", validateGameSpec(wanderSpec).ok);
+{
+  const w = new World(wanderSpec, 3);
+  const r = w.firstOf("roamer")!;
+  const input = new Input();
+  const dirs = new Set<string>();
+  for (let i = 0; i < 300; i++) {
+    w.time += 1 / 60; // wander re-picks against sim time
+    stepMovement(w, input, 1 / 60);
+    if (Math.hypot(r.vx, r.vy) > 1) dirs.add(`${Math.sign(r.vx)},${Math.sign(r.vy)}`);
+  }
+  // moved along a cardinal axis, and changed direction at least once over ~5s
+  check("wander moves on a cardinal axis", [...dirs].every((d) => d.split(",").filter((n) => n !== "0").length === 1));
+  check("wander changes direction over time", dirs.size >= 2);
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

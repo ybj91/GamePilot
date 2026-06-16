@@ -20,9 +20,9 @@ const spec = {
     brick("b4", 300, 440), brick("b5", 520, 440), brick("b6", 540, 300),
     steel("s1", 170, 200), steel("s2", 630, 210), steel("s3", 410, 400),
     // three enemy tank types
-    { id: "basic", kind: "enemy", shape: "square", color: "#e2554e", size: 13, behavior: "chase:player", spawn: { area: "top", count: 2, maintain: 2 }, props: { speed: 55 } },
-    { id: "fast", kind: "enemy", shape: "square", color: "#46c7d0", size: 12, behavior: "chase:player", spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 110 } },
-    { id: "armor", kind: "enemy", shape: "square", color: "#a86bd6", size: 15, behavior: "chase:player", spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 42, hp: 2 } },
+    { id: "basic", kind: "enemy", shape: "square", color: "#e2554e", size: 13, behavior: "wander", spawn: { area: "top", count: 2, maintain: 2 }, props: { speed: 55 } },
+    { id: "fast", kind: "enemy", shape: "square", color: "#46c7d0", size: 12, behavior: "wander", spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 110 } },
+    { id: "armor", kind: "enemy", shape: "square", color: "#a86bd6", size: 15, behavior: "wander", spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 42, hp: 2 } },
   ],
   rules: [
     { on: "input", key: "space", effects: [{ op: "spawn", target: "bullet", from: "player", aim: "forward" }] },
