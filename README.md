@@ -39,6 +39,7 @@ Because the AI only produces data, the intelligence can come from **whatever age
 | **MCP server** (`server/mcp.ts`) | ✅ Stage 2 | Game authoring as MCP tools over **stdio + HTTP** — the agent-driven seam. |
 | **Iterative editing** (`update_game` + live reload) | ✅ | Refine a game across a conversation; the open `/play/:id` tab hot-reloads on each change. |
 | **Management UI** (chat + Pause/Replay/New) | ✅ | Two-pane workspace: conversational create/adjust (`/api/chat`) beside the playable stage. |
+| **Games library** (`/games`) | ✅ | Browse every saved game as cards; open any to play/edit; delete. |
 | **AI compilers** (`src/ai/`) | ✅ | `GameplayCompiler` interface + a keyword **mock** and an optional **direct-Claude** fallback. |
 | **Skill** | ⏳ Stage 3 | Teaches an agent to author *good* games. |
 | **Agent** | ⏳ Stage 4 | Orchestrates idea → game end-to-end. |
@@ -258,8 +259,9 @@ npm run dev            # http://localhost:5173
 **Run the full backend** (REST API + MCP-over-HTTP + playable host):
 ```bash
 npm start              # builds the client, then serves on http://localhost:4321
-#  →  http://localhost:4321/            the sample
-#  →  http://localhost:4321/play/<id>   a saved game
+#  →  http://localhost:4321/            the management UI (stage + chat)
+#  →  http://localhost:4321/games       your games library
+#  →  http://localhost:4321/play/<id>   play / edit a saved game
 #  →  http://localhost:4321/mcp         MCP over Streamable HTTP
 ```
 

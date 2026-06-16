@@ -94,6 +94,9 @@ Standalone, runs independently of Vite so the MCP server / agent can drive it as
 - `mcp.ts` — `buildMcpServer()`: the `@modelcontextprotocol/sdk` `McpServer` with tools `get_dsl_reference`, `validate_game`, `create_game`, `update_game`, `list_games`, `get_game`, `delete_game`. The single place tools are defined; both transports use it. Tools go through the same `validateGameSpec` + store. **Iterative design is the intended flow**: `create_game` once (new id), then `get_game` → edit → `update_game` (same id) to refine — `get_dsl_reference` includes this workflow. `create_game`/`update_game` return a `play_url` built from `GAMEPILOT_BASE_URL` (default `http://localhost:4321`).
 - `mcp-stdio.ts` — stdio transport entry (`npm run mcp`).
 
+### `games.html` + `src/library.ts` — the games library
+A second client page (Vite multi-page: `rollupOptions.input` = `index.html` + `games.html`) listing all saved games as cards from `GET /api/games`; each links to `/play/:id`, with delete. The backend serves it at the extensionless `/games` route. The main UI links to it via the fixed `.topnav`.
+
 ### `src/main.ts` + `index.html` — the management UI
 A two-pane workspace: a game **stage** (canvas + **Pause/Replay/New** buttons + status) beside a **conversation panel**. Chat messages POST to `/api/chat` and the stage reloads with the created/adjusted game (`currentGameId` tracks the working game; **New** clears it to start fresh). On `/play/:id` it loads that saved game and **polls `updatedAt` (every 1.5s) to hot-reload** external agent edits (`startLiveReload`). Pause/Replay drive the engine; `R` also restarts. The live `Engine` is exposed as `window.gamepilot` for debugging/automated verification. The full UI needs the Fastify backend (`npm start`); `npm run dev` proxies `/api` to it.
 

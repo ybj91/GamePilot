@@ -18,5 +18,12 @@ export default defineConfig({
   build: {
     target: "es2022",
     outDir: "dist",
+    rollupOptions: {
+      // Multi-page: the management UI (index) and the games library (games).
+      input: {
+        main: "index.html",
+        games: "games.html",
+      },
+    },
   },
 });
