@@ -20,9 +20,9 @@ const spec = {
     // obstacles (single types now): brick = destructible, steel = needs a star-powered shot
     { id: "brick", kind: "obstacle", shape: "square", color: "#b06a3a", size: 22, control: "none", solid: true, spawn: { area: "center", count: 6 }, props: { speed: 0 } },
     { id: "steel", kind: "obstacle", shape: "square", color: "#9aa3b0", size: 24, control: "none", solid: true, spawn: { area: "edges", count: 3 }, props: { speed: 0 } },
-    // power-ups — eat to enhance
-    { id: "bolt", kind: "food", shape: "dot", color: "#46e6d0", size: 8, spawn: { random: true, count: 1, maintain: 1 }, props: { speed: 0 } },
-    { id: "star", kind: "food", shape: "square", color: "#ffd23f", size: 9, glyph: STAR, spawn: { random: true, count: 1, maintain: 1 }, props: { speed: 0 } },
+    // power-ups — rare: none at start, spawned occasionally by the timers below
+    { id: "bolt", kind: "food", shape: "dot", color: "#46e6d0", size: 8, spawn: { random: true, count: 0 }, props: { speed: 0 } },
+    { id: "star", kind: "food", shape: "square", color: "#ffd23f", size: 9, glyph: STAR, spawn: { random: true, count: 0 }, props: { speed: 0 } },
     // three enemy tank types
     { id: "basic", kind: "enemy", shape: "square", color: "#e2554e", size: 13, behavior: "wander", solid: true, glyph: TANK, rotate: true, spawn: { area: "top", count: 2, maintain: 2 }, props: { speed: 55 } },
     { id: "fast", kind: "enemy", shape: "square", color: "#46c7d0", size: 12, behavior: "wander", solid: true, glyph: TANK, rotate: true, spawn: { area: "top", count: 1, maintain: 1 }, props: { speed: 110 } },
@@ -41,7 +41,10 @@ const spec = {
     { on: "collision", between: ["bullet", "steel"], when: "power >= 1", effects: [{ op: "destroy", target: "self" }, { op: "destroy", target: "other" }] },
     { on: "collision", between: ["bullet", "steel"], when: "power < 1", effects: [{ op: "destroy", target: "self" }] },
     { on: "collision", between: ["shell", "steel"], effects: [{ op: "destroy", target: "self" }] },
-    // POWER-UPS: eat to enhance your tank
+    // POWER-UPS: rare — a timer spawns one only when none is on the map
+    { on: "interval", every: 20, when: "bolt.count == 0", effects: [{ op: "spawn", target: "bolt" }] },
+    { on: "interval", every: 35, when: "star.count == 0", effects: [{ op: "spawn", target: "star" }] },
+    // eat to enhance your tank
     { on: "collision", between: ["player", "bolt"], effects: [{ op: "add", target: "player.speed", value: 40 }, { op: "destroy", target: "other" }] },
     { on: "collision", between: ["player", "star"], effects: [{ op: "set", target: "power", value: 1 }, { op: "destroy", target: "other" }] },
     // enemy fire
