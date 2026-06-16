@@ -99,10 +99,12 @@ export class World {
   spawn(typeId: string): Entity | undefined {
     const spec = this.specsById.get(typeId);
     if (!spec) return undefined;
+    const m = spec.size + 4;
     let x: number;
     let y: number;
-    if (spec.spawn.random) {
-      const m = spec.size + 4;
+    if (spec.spawn.area) {
+      ({ x, y } = this.areaPoint(spec.spawn.area, m));
+    } else if (spec.spawn.random) {
       x = this.rng.range(m, this.width - m);
       y = this.rng.range(m, this.height - m);
     } else {
@@ -112,6 +114,21 @@ export class World {
     const e = createEntity(spec, x, y);
     this.entities.push(e);
     return e;
+  }
+
+  /** A random point within a named spawn region (margin `m` from the walls). */
+  private areaPoint(area: string, m: number): { x: number; y: number } {
+    const W = this.width;
+    const H = this.height;
+    const rx = (lo: number, hi: number) => this.rng.range(lo, hi);
+    switch (area === "edges" ? (["top", "bottom", "left", "right"] as const)[Math.floor(this.rng.range(0, 4))]! : area) {
+      case "top": return { x: rx(m, W - m), y: rx(m, H * 0.18) };
+      case "bottom": return { x: rx(m, W - m), y: rx(H * 0.82, H - m) };
+      case "left": return { x: rx(m, W * 0.18), y: rx(m, H - m) };
+      case "right": return { x: rx(W * 0.82, W - m), y: rx(m, H - m) };
+      case "center": return { x: rx(W * 0.3, W * 0.7), y: rx(H * 0.3, H * 0.7) };
+      default: return { x: rx(m, W - m), y: rx(m, H - m) };
+    }
   }
 
   /**

@@ -201,6 +201,27 @@ e2.x = 200; e2.y = 150;
 evaluateRules(lWorld, new RuleTimers(), noInput(), 1 / 60);
 check("hit with lives<=1: gameover", lWorld.status === "lost");
 
+// 9. spawn.area constrains placement — "top" enemies stay in the top band
+//    (so they never spawn on a base at the bottom).
+const areaSpec: GameSpec = {
+  meta: { title: "Area test" },
+  world: { width: 800, height: 600, background: "#000" },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 12,
+      control: "none", spawn: { x: 400, y: 560 }, props: { speed: 0 } },
+    { id: "enemy", kind: "enemy", shape: "square", color: "#ff4d4d", size: 14,
+      spawn: { area: "top", count: 20 }, props: { speed: 0 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("area spec validates", validateGameSpec(areaSpec).ok);
+check("invalid area is rejected",
+  !validateGameSpec({ ...areaSpec, entities: [areaSpec.entities[0]!, { ...areaSpec.entities[1]!, spawn: { area: "middle" as never, count: 1 } }] }).ok);
+const aWorld = new World(areaSpec, 7);
+const tops = aWorld.entities.filter((e) => e.type === "enemy");
+check("area:top keeps all 20 enemies in the top 18% of the world",
+  tops.length === 20 && tops.every((e) => e.y <= 600 * 0.18 + 0.001));
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

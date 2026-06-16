@@ -38,12 +38,20 @@ export interface World {
   edges?: "wall" | "wrap";
 }
 
+/** Region to scatter spawns within (takes precedence over random/x/y). */
+export type SpawnArea = "top" | "bottom" | "left" | "right" | "edges" | "center";
+
 export interface Spawn {
   /** Fixed spawn point (ignored when `random` is true). */
   x?: number;
   y?: number;
   /** Scatter `count` instances at random positions instead of (x,y). */
   random?: boolean;
+  /**
+   * Constrain scattering to a region of the world — e.g. enemies that spawn at
+   * the "top" and advance, or pickups in the "center". Overrides random/x/y.
+   */
+  area?: SpawnArea;
   /** How many instances of this entity type to create. Default 1. */
   count?: number;
   /**

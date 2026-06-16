@@ -121,7 +121,7 @@ A game is `world` + `entities` + `rules` (+ optional `win`/`lose`). Entities are
 }
 ```
 
-- **Shapes:** `circle` · `square` · `dot`. **Control:** `follow-pointer` · `arrows`. **Behavior:** `chase:<id>` · `flee:<id>` · `wander`.
+- **Shapes:** `circle` · `square` · `dot`. **Control:** `follow-pointer` · `arrows`. **Behavior:** `chase:<id>` · `flee:<id>` · `wander`. **Spawn placement:** `spawn.area` = `top`/`bottom`/`left`/`right`/`edges`/`center` (e.g. enemies that spawn at the top and advance).
 - **Effect ops:** `add` · `set` · `mul` · `destroy` · `spawn` · `score` · `win` · `gameover`. In a collision, `self` = first id, `other` = second.
 - **Conditions:** any rule can carry an optional **`when`** guard, so the same trigger branches on state — e.g. two `player↔enemy` collision rules, one `when: "player.shield <= 0"` (gameover) and one `when: "player.shield > 0"` (block the hit). Same expression grammar as win/lose, plus `self`/`other`.
 - **Input & projectiles:** rules can trigger on **`input`** (a key or `pointer` press), and the `spawn` effect can fire a projectile **`from`** an entity, **`aim`**ed at the cursor / a direction / the nearest target — pair it with a short `ttl` prop so it despawns. That's enough for shooters (move with keys, click to fire toward the mouse).

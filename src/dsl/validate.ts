@@ -72,7 +72,14 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   if (!isStr(e.color)) errs.push(`${where}: missing color`);
   if (!isNum(e.size) || e.size <= 0) errs.push(`${where}: size must be a positive number`);
   if (e.control && !CONTROLS.includes(e.control)) errs.push(`${where}: invalid control "${e.control}"`);
-  if (!e.spawn || typeof e.spawn !== "object") errs.push(`${where}: missing spawn`);
+  if (!e.spawn || typeof e.spawn !== "object") {
+    errs.push(`${where}: missing spawn`);
+  } else if (
+    e.spawn.area !== undefined &&
+    !["top", "bottom", "left", "right", "edges", "center"].includes(e.spawn.area)
+  ) {
+    errs.push(`${where}: invalid spawn.area "${e.spawn.area}" (top|bottom|left|right|edges|center)`);
+  }
   if (e.behavior) {
     const verb = String(e.behavior).split(":")[0] ?? "";
     if (!["chase", "flee", "wander"].includes(verb)) {

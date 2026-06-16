@@ -29,7 +29,7 @@ EntitySpec:
   "shape": "circle" | "square" | "dot",
   "color": "#rrggbb",
   "size": number,               // radius (circle/dot) or half-width (square), world units (pixels)
-  "spawn": { "x"?: number, "y"?: number, "random"?: boolean, "count"?: number, "maintain"?: number },
+  "spawn": { "x"?: number, "y"?: number, "random"?: boolean, "area"?: "top"|"bottom"|"left"|"right"|"edges"|"center", "count"?: number, "maintain"?: number },
   "control": "none" | "follow-pointer" | "arrows",   // optional; the player usually has one
   "behavior": "chase:<id>" | "flee:<id>" | "wander", // optional autonomous movement
   "props": { "speed": number, ... }                  // speed is units/second; other keys are free numeric state
@@ -86,6 +86,7 @@ Rules of thumb:
 - Player speed ~200-320, enemy speed ~80-160 (slower than player so it's playable), world 800x600.
 - Make it winnable and losable: usually a score-based win and a collision-based gameover.
 - Use "maintain" on food/pickups so they respawn. Pick colors that read well on a dark (#0b0b12) background.
+- Use spawn "area" to keep things off important spots — e.g. enemies that "spawn": { "area": "top", "maintain": 4 } and advance toward a base at the bottom, so a respawn never lands on the base.
 - Only use the shapes, controls, behaviors, triggers, ops, and target tokens listed above. Nothing else.`;
 
 /** A complete, valid GameSpec, pretty-printed — the canonical worked example. */
