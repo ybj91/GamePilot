@@ -1,19 +1,21 @@
 /**
  * Rule evaluation -- the heart of the DSL runtime.
  *
- * Each frame we fire rules whose trigger matches the current event:
+ * Each step we fire rules whose trigger matches the current event:
+ *  - input:     once per key/pointer press this step (`key`).
  *  - collision: for every contact pair matching `between`, with self/other
  *    bound so effects can mutate either participant.
  *  - tick:      once per step.
  *  - interval:  every `every` seconds (tracked per-rule via accumulator).
  *
- * Effects are applied immediately and can read/write entity props, spawn,
- * destroy, change score, or end the game.
+ * Effects are applied immediately and can read/write entity props, spawn
+ * (optionally aimed, for projectiles), destroy, change score, or end the game.
  */
 
 import type { Rule, Effect } from "../dsl/types";
 import type { World } from "./world";
 import type { Entity } from "./entity";
+import type { InputEnv } from "./input";
 import { setEntityProp, getEntityProp } from "./entity";
 import { findContacts } from "./collision";
 import { evalCondition } from "./conditions";
@@ -30,7 +32,41 @@ function resolveEntity(token: string, ctx: Ctx, world: World): Entity | undefine
   return world.firstOf(token);
 }
 
-function applyEffect(fx: Effect, ctx: Ctx, world: World): void {
+/** Unit direction for an aimed spawn (defaults to "up" when undefined). */
+function aimVector(
+  aim: string,
+  x: number,
+  y: number,
+  world: World,
+  ctx: Ctx,
+  env: InputEnv,
+): { x: number; y: number } {
+  const toward = (tx: number, ty: number) => {
+    const dx = tx - x;
+    const dy = ty - y;
+    const len = Math.hypot(dx, dy) || 1;
+    return { x: dx / len, y: dy / len };
+  };
+  switch (aim) {
+    case "up": return { x: 0, y: -1 };
+    case "down": return { x: 0, y: 1 };
+    case "left": return { x: -1, y: 0 };
+    case "right": return { x: 1, y: 0 };
+    case "pointer":
+      return env.pointerActive ? toward(env.pointerX, env.pointerY) : { x: 0, y: -1 };
+    case "self":
+    case "other": {
+      const t = resolveEntity(aim, ctx, world);
+      return t ? toward(t.x, t.y) : { x: 0, y: -1 };
+    }
+    default: {
+      const t = world.nearestOf(aim, x, y);
+      return t ? toward(t.x, t.y) : { x: 0, y: -1 };
+    }
+  }
+}
+
+function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
   switch (fx.op) {
     case "add":
     case "set":
@@ -51,7 +87,23 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World): void {
       break;
     }
     case "spawn": {
-      if (fx.target) world.spawn(fx.target);
+      if (!fx.target) break;
+      const e = world.spawn(fx.target);
+      if (!e) break;
+      // Optionally spawn at another entity's position (e.g. bullets from player).
+      if (fx.from) {
+        const src = resolveEntity(fx.from, ctx, world);
+        if (src) {
+          e.x = src.x;
+          e.y = src.y;
+        }
+      }
+      // Optionally give it an initial velocity (= its speed) in a direction.
+      if (fx.aim) {
+        const dir = aimVector(fx.aim, e.x, e.y, world, ctx, env);
+        e.vx = dir.x * e.speed;
+        e.vy = dir.y * e.speed;
+      }
       break;
     }
     case "score": {
@@ -69,12 +121,12 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World): void {
   }
 }
 
-function fire(rule: Rule, ctx: Ctx, world: World): void {
+function fire(rule: Rule, ctx: Ctx, world: World, env: InputEnv): void {
   // Optional guard: skip the rule unless its condition holds (self/other bound).
   if (rule.when && !evalCondition(rule.when, world, ctx)) return;
   for (const fx of rule.effects) {
     if (world.status !== "playing") return; // stop applying once the game ends
-    applyEffect(fx, ctx, world);
+    applyEffect(fx, ctx, world, env);
   }
 }
 
@@ -98,30 +150,40 @@ export class RuleTimers {
 export function evaluateRules(
   world: World,
   timers: RuleTimers,
+  env: InputEnv,
   dt: number,
 ): void {
   const rules = world.spec.rules;
 
-  // 1. collisions
+  // 1. input — edge-triggered presses this step
+  if (env.pressed.size) {
+    for (const rule of rules) {
+      if (rule.on !== "input") continue;
+      if (rule.key && env.pressed.has(rule.key)) fire(rule, {}, world, env);
+      if (world.status !== "playing") return;
+    }
+  }
+
+  // 2. collisions
   const collisionRules = rules.filter((r) => r.on === "collision");
   if (collisionRules.length) {
     const contacts = findContacts(world.entities);
     for (const { a, b } of contacts) {
       for (const rule of collisionRules) {
         const [ra, rb] = rule.between!;
-        if (a.type === ra && b.type === rb) fire(rule, { self: a, other: b }, world);
-        else if (a.type === rb && b.type === ra) fire(rule, { self: b, other: a }, world);
+        if (a.type === ra && b.type === rb) fire(rule, { self: a, other: b }, world, env);
+        else if (a.type === rb && b.type === ra) fire(rule, { self: b, other: a }, world, env);
         if (world.status !== "playing") return;
       }
     }
   }
 
-  // 2. per-tick
+  // 3. per-tick
   for (const rule of rules) {
-    if (rule.on === "tick") fire(rule, {}, world);
+    if (rule.on === "tick") fire(rule, {}, world, env);
     if (world.status !== "playing") return;
   }
 
-  // 3. intervals
-  timers.step(rules, dt, (i) => fire(rules[i]!, {}, world));
+  // 4. intervals
+  timers.step(rules, dt, (i) => fire(rules[i]!, {}, world, env));
 }

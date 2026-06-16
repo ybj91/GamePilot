@@ -62,12 +62,13 @@ Three layers, strictly separated so the AI layer is swappable and the engine sta
 ### `src/engine/` — deterministic runtime (no DOM except `input.ts`)
 Per fixed 60Hz step, the update order is **movement → rules → reap dead → maintain populations → check win/lose** (see `engine.ts`). Respect this order — e.g. respawn happens after reaping so destroyed pickups reappear.
 - `engine.ts` — fixed-timestep loop (accumulator, clamps tab-stalls), owns `World` + `Input`, drives a render callback.
-- `world.ts` — mutable game state: live entity instances, score, status, spawn/respawn/`maintain` logic.
+- `world.ts` — mutable game state: live entity instances, score, status, spawn/respawn/`maintain` logic, `nearestOf` (aim targeting), and `stepLifetimes` (decrements the reserved `ttl` prop and reaps projectiles). **Entity types created only via rules (bullets) must set `spawn.count: 0`** or they pre-spawn at start.
 - `entity.ts` — runtime instance (`Entity`) vs. spec type. **Props are accessed via `getEntityProp`/`setEntityProp`** — `size`/`speed` are mirrored onto first-class fields, so always go through the setter to keep them in sync.
-- `movement.ts` — control (`follow-pointer`/`arrows`) + behaviours (`chase`/`flee`/`wander`) → velocity → integrate + edge handling.
+- `input.ts` — pointer + held keys (for `arrows`) + **edge-detected presses** (`justPressed`, for `on:"input"` rules); exposes a plain `InputEnv` so rules stay headlessly testable. `frameEnv()`/`endFrame()` are driven by the loop.
+- `movement.ts` — control (`follow-pointer`/`arrows`) + behaviours (`chase`/`flee`/`wander`) → velocity → integrate + edge handling. Entities with `control:"none"` keep whatever velocity a spawn set (how projectiles travel straight).
 - `collision.ts` — O(n²) circle-overlap pairs (fine for prototype entity counts).
-- `rules.ts` — the heart: matches contacts/ticks/intervals to rules, binds `self`/`other`, applies `effects` (`add`/`set`/`mul`/`destroy`/`spawn`/`score`/`win`/`gameover`).
-- `conditions.ts` — tiny safe expression evaluator for win/lose (`"score >= 20"`, `"food.count == 0"`). **No `eval`** — intentionally limited so AI output stays predictable.
+- `rules.ts` — the heart: matches input/contacts/ticks/intervals to rules, gates on `when`, binds `self`/`other`, applies `effects` (`add`/`set`/`mul`/`destroy`/`spawn`/`score`/`win`/`gameover`). `spawn` supports `from` (spawn at an entity) + `aim` (initial velocity toward pointer/direction/nearest target) for projectiles.
+- `conditions.ts` — tiny safe expression evaluator for `when` + win/lose (`"score >= 20"`, `"self.shield > 0"`), with an optional self/other context. **No `eval`** — intentionally limited so AI output stays predictable.
 - `rng.ts` — seeded deterministic PRNG. The engine never calls `Math.random` directly, so seed + idea reproduces a playthrough.
 
 ### `src/render/` — no-asset renderer
@@ -94,7 +95,7 @@ Standalone, runs independently of Vite so the MCP server / agent can drive it as
 - `mcp-stdio.ts` — stdio transport entry (`npm run mcp`).
 
 ### `src/main.ts`
-Wires DOM → compiler → `Engine` + `Renderer`. On `/play/:id` it fetches the saved spec and loads it, then **polls `updatedAt` (every 1.5s + on tab focus) and hot-reloads** the running game when it changes — so an agent's `update_game` edits appear live in the open tab (`startLiveReload`). Otherwise it loads the sample. The idea-bar tries the Claude `HttpCompiler`, falls back to the `MockCompiler` (and cancels live-reload, since it's an explicit override). `R` restarts.
+Wires DOM → compiler → `Engine` + `Renderer`. On `/play/:id` it fetches the saved spec and loads it, then **polls `updatedAt` (every 1.5s + on tab focus) and hot-reloads** the running game when it changes — so an agent's `update_game` edits appear live in the open tab (`startLiveReload`). Otherwise it loads the sample. The idea-bar tries the Claude `HttpCompiler`, falls back to the `MockCompiler` (and cancels live-reload, since it's an explicit override). `R` restarts. The live `Engine` is exposed as `window.gamepilot` for debugging/automated verification.
 
 ## Conventions / gotchas
 

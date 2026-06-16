@@ -73,7 +73,9 @@ export class Engine {
     w.time += dt;
 
     stepMovement(w, this.input, dt);
-    evaluateRules(w, this.timers, dt);
+    evaluateRules(w, this.timers, this.input.frameEnv(), dt);
+    this.input.endFrame(); // consume this step's input edges
+    w.stepLifetimes(dt); // expire ttl'd entities (projectiles)
     w.reap();
     w.maintainPopulations();
 

@@ -84,7 +84,8 @@ export interface EntitySpec {
 export type Trigger =
   | "collision" // requires `between: [aId, bId]`
   | "tick" // every simulation step
-  | "interval"; // every `every` seconds (requires `every`)
+  | "interval" // every `every` seconds (requires `every`)
+  | "input"; // on a key/pointer press (requires `key`)
 
 export type EffectOp =
   | "add" // target += value
@@ -111,6 +112,17 @@ export interface Effect {
   op: EffectOp;
   target?: string;
   value?: number;
+  /**
+   * For `spawn` only — directional spawning (projectiles).
+   * `from`: spawn at this entity's position ("self"/"other"/an id) instead of
+   *   the spawned type's own spawn config.
+   * `aim`: give the new instance an initial velocity (= its `speed`) in a
+   *   direction: "pointer" (toward the cursor), "up"/"down"/"left"/"right", or
+   *   an entity id (toward the nearest of that type). Pair with a short `ttl`
+   *   prop so the projectile despawns.
+   */
+  from?: string;
+  aim?: string;
 }
 
 export interface Rule {
@@ -119,6 +131,8 @@ export interface Rule {
   between?: [string, string];
   /** For `interval`: seconds between firings. */
   every?: number;
+  /** For `input`: the key/button that fires the rule — e.g. "space", "up", "w", "pointer". */
+  key?: string;
   /**
    * Optional guard: the rule only fires when this condition holds. Same grammar
    * as win/lose (`score`, `<id>.count`, `<id>.<prop>`) plus `self`/`other`.<prop>

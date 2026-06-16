@@ -10,6 +10,8 @@
 import { World } from "./world";
 import { RuleTimers, evaluateRules } from "./rules";
 import { evalCondition } from "./conditions";
+import { stepMovement } from "./movement";
+import { Input, type InputEnv } from "./input";
 import { growAndSlow } from "../dsl/samples/growAndSlow";
 import { validateGameSpec } from "../dsl/validate";
 import type { GameSpec } from "../dsl/types";
@@ -23,6 +25,9 @@ function check(name: string, cond: boolean): void {
     failures++;
   }
 }
+
+/** Empty input env for rules that don't depend on input. */
+const noInput = (): InputEnv => ({ pressed: new Set(), pointerX: 0, pointerY: 0, pointerActive: false });
 
 // 1. sample spec is valid
 const v = validateGameSpec(growAndSlow);
@@ -43,7 +48,7 @@ player.y = food.y;
 const sizeBefore = player.size;
 const speedBefore = player.speed;
 const timers = new RuleTimers();
-evaluateRules(world, timers, 1 / 60);
+evaluateRules(world, timers, noInput(), 1 / 60);
 world.reap();
 world.maintainPopulations();
 check("score incremented after eating", world.score === 1);
@@ -55,7 +60,7 @@ check("food respawned to maintain 18", world.countOf("food") === 18);
 const enemy = world.firstOf("enemy")!;
 player.x = enemy.x;
 player.y = enemy.y;
-evaluateRules(world, timers, 1 / 60);
+evaluateRules(world, timers, noInput(), 1 / 60);
 check("gameover on enemy contact", world.status === "lost");
 
 // 5. win condition expression
@@ -85,17 +90,74 @@ check("shield spec validates", validateGameSpec(shieldSpec).ok);
 
 // shield down -> the overlapping enemy ends the game
 const downWorld = new World(shieldSpec, 1);
-evaluateRules(downWorld, new RuleTimers(), 1 / 60);
+evaluateRules(downWorld, new RuleTimers(), noInput(), 1 / 60);
 check("when player.shield<=0: enemy contact = gameover", downWorld.status === "lost");
 
 // shield up -> the enemy is destroyed instead, game continues, shield consumed
 const upWorld = new World(shieldSpec, 1);
 upWorld.firstOf("player")!.props.shield = 1;
-evaluateRules(upWorld, new RuleTimers(), 1 / 60);
+evaluateRules(upWorld, new RuleTimers(), noInput(), 1 / 60);
 check(
   "when player.shield>0: enemy destroyed, not gameover",
   upWorld.status === "playing" && upWorld.countOf("enemy") === 0 && upWorld.firstOf("player")!.props.shield === 0,
 );
+
+// 7. input triggers + directional spawning + ttl: a click spawns a bullet at
+//    the player aimed at the cursor; it travels and destroys the enemy; and a
+//    stray bullet despawns via ttl.
+const shooterSpec: GameSpec = {
+  meta: { title: "Shooter test" },
+  world: { width: 800, height: 600, background: "#000", edges: "wall" },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 12,
+      control: "none", spawn: { x: 100, y: 300 }, props: { speed: 0 } },
+    { id: "bullet", kind: "obstacle", shape: "dot", color: "#ffffff", size: 4,
+      control: "none", spawn: { count: 0 }, props: { speed: 600, ttl: 1 } },
+    { id: "enemy", kind: "enemy", shape: "square", color: "#ff4d4d", size: 14,
+      control: "none", spawn: { x: 500, y: 300 }, props: { speed: 0 } },
+  ],
+  rules: [
+    { on: "input", key: "pointer",
+      effects: [{ op: "spawn", target: "bullet", from: "player", aim: "pointer" }] },
+    { on: "collision", between: ["bullet", "enemy"],
+      effects: [{ op: "destroy", target: "self" }, { op: "destroy", target: "other" }, { op: "score", value: 1 }] },
+  ],
+};
+check("shooter spec validates", validateGameSpec(shooterSpec).ok);
+
+const sWorld = new World(shooterSpec, 1);
+const sTimers = new RuleTimers();
+const idle = new Input();
+// Click while aiming at the enemy (to the right at 500,300).
+const clickEnv: InputEnv = { pressed: new Set(["pointer"]), pointerX: 500, pointerY: 300, pointerActive: true };
+evaluateRules(sWorld, sTimers, clickEnv, 1 / 60);
+const bullet = sWorld.firstOf("bullet");
+check("input click spawns a bullet", sWorld.countOf("bullet") === 1);
+check("bullet spawns at the player", !!bullet && Math.abs(bullet.x - 100) < 1 && Math.abs(bullet.y - 300) < 1);
+check("bullet aimed +x toward cursor", !!bullet && bullet.vx > 100 && Math.abs(bullet.vy) < 1);
+
+// Advance the sim with NO further input — the bullet should reach and kill the enemy.
+let killed = false;
+for (let i = 0; i < 90 && sWorld.status === "playing"; i++) {
+  stepMovement(sWorld, idle, 1 / 60);
+  evaluateRules(sWorld, sTimers, noInput(), 1 / 60);
+  sWorld.stepLifetimes(1 / 60);
+  sWorld.reap();
+  if (sWorld.countOf("enemy") === 0) { killed = true; break; }
+}
+check("bullet travels and destroys the enemy", killed && sWorld.score === 1);
+
+// ttl: a bullet fired up (away from the enemy) despawns within its 1s lifetime.
+const tWorld = new World(shooterSpec, 1);
+const upEnv: InputEnv = { pressed: new Set(["pointer"]), pointerX: 100, pointerY: 0, pointerActive: true };
+evaluateRules(tWorld, new RuleTimers(), upEnv, 1 / 60);
+check("ttl: bullet exists right after firing", tWorld.countOf("bullet") === 1);
+for (let i = 0; i < 70; i++) {
+  stepMovement(tWorld, idle, 1 / 60);
+  tWorld.stepLifetimes(1 / 60);
+  tWorld.reap();
+}
+check("ttl: stray bullet despawned after ~1s", tWorld.countOf("bullet") === 0);
 
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);

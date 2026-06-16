@@ -23,7 +23,7 @@ export interface ValidationResult {
 
 const SHAPES: Shape[] = ["circle", "square", "dot"];
 const CONTROLS: Control[] = ["none", "follow-pointer", "arrows"];
-const TRIGGERS = ["collision", "tick", "interval"];
+const TRIGGERS = ["collision", "tick", "interval", "input"];
 const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "score", "win", "gameover"];
 
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
@@ -86,8 +86,14 @@ function validateEffect(fx: Effect, idx: number, ruleNo: number, errs: string[])
   if (fx.op === "destroy" && !isStr(fx.target)) {
     errs.push(`${where}: destroy needs a target ("self" | "other" | entity id)`);
   }
-  if (fx.op === "spawn" && !isStr(fx.target)) {
-    errs.push(`${where}: spawn needs a target entity id`);
+  if (fx.op === "spawn") {
+    if (!isStr(fx.target)) errs.push(`${where}: spawn needs a target entity id`);
+    if (fx.from !== undefined && !isStr(fx.from)) {
+      errs.push(`${where}: spawn "from" must be a string ("self"/"other"/entity id)`);
+    }
+    if (fx.aim !== undefined && !isStr(fx.aim)) {
+      errs.push(`${where}: spawn "aim" must be a string ("pointer"/"up"/"down"/"left"/"right"/entity id)`);
+    }
   }
 }
 
@@ -101,6 +107,9 @@ function validateRule(r: Rule, ruleNo: number, errs: string[]): void {
   }
   if (r.on === "interval" && !isNum(r.every)) {
     errs.push(`${where}: interval needs a numeric "every" (seconds)`);
+  }
+  if (r.on === "input" && !isStr(r.key)) {
+    errs.push(`${where}: input needs a "key" (e.g. "space", "up", "w", "pointer")`);
   }
   if (r.when !== undefined) validateCondition(r.when, `${where}.when`, errs);
   if (!Array.isArray(r.effects) || r.effects.length === 0) {

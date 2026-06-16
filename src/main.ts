@@ -39,6 +39,8 @@ function load(spec: GameSpec): void {
   const renderer = new Renderer(gameCanvas, hudCanvas, engine.world);
   engine.attachInput(gameCanvas);
   engine.start((world) => renderer.draw(world));
+  // Dev hook: expose the live engine for debugging/automated verification.
+  (window as unknown as { gamepilot?: Engine }).gamepilot = engine;
 }
 
 /** Try Claude; fall back to the mock so the loop never dead-ends. */

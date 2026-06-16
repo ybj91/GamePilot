@@ -54,6 +54,34 @@ export class World {
     return this.entities.find((e) => e.alive && e.type === typeId);
   }
 
+  /** Nearest living instance of a type to a point (used for aimed spawns). */
+  nearestOf(typeId: string, x: number, y: number): Entity | undefined {
+    let best: Entity | undefined;
+    let bestD = Infinity;
+    for (const e of this.entities) {
+      if (!e.alive || e.type !== typeId) continue;
+      const d = (e.x - x) ** 2 + (e.y - y) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = e;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Decrement the reserved `ttl` prop (seconds) on any entity that has one and
+   * kill it at zero. Lets projectiles and temporary effects clean themselves up
+   * without per-rule bookkeeping. Called each step before reaping.
+   */
+  stepLifetimes(dt: number): void {
+    for (const e of this.entities) {
+      if (!e.alive || e.props.ttl === undefined) continue;
+      e.props.ttl -= dt;
+      if (e.props.ttl <= 0) e.alive = false;
+    }
+  }
+
   spawn(typeId: string): Entity | undefined {
     const spec = this.specsById.get(typeId);
     if (!spec) return undefined;
