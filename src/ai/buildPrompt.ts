@@ -19,8 +19,12 @@ Here is a complete, valid example for the idea "${growAndSlow.meta?.idea}":
 
 ${exampleSpecJson()}`;
 
-export function buildUserPrompt(idea: string): string {
+export function buildUserPrompt(idea: string, base?: unknown): string {
   const trimmed = idea.trim();
+  // Adjustment turn: edit an existing game rather than creating from scratch.
+  if (base) {
+    return `Here is the current game as a GameSpec. Apply the requested change and return the FULL updated GameSpec JSON only — keep everything else the same.\n\nCurrent game:\n${JSON.stringify(base, null, 2)}\n\nChange: ${trimmed || "make it more fun"}`;
+  }
   if (!trimmed) {
     return "Compile a fun, simple game of your choice. Return only the GameSpec JSON.";
   }

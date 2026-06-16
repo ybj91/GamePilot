@@ -36,30 +36,52 @@ export class MockCompiler implements GameplayCompiler {
     const food = spec.entities.find((e) => e.kind === "food");
 
     // --- crude "understanding" of the idea, mapped onto DSL knobs ---
+    const colorOf = (i: string) =>
+      ({ green: "#5ad17a", purple: "#b07cff", red: "#ff5a5a", blue: "#4aa3ff",
+         yellow: "#ffd23f", cyan: "#46e6d0", orange: "#ff9f43", pink: "#ff7ab8",
+         white: "#f0f0f0" } as Record<string, string>)[
+        ["green", "purple", "red", "blue", "yellow", "cyan", "orange", "pink", "white"].find((c) =>
+          i.includes(c),
+        ) ?? ""
+      ];
+    const bump = (n: number, dir: number, lo: number, hi: number) =>
+      Math.max(lo, Math.min(hi, n + dir));
+
     if (player) {
-      if (has(idea, "fast", "speedy", "quick")) player.props!.speed = 360;
-      if (has(idea, "slow", "heavy")) player.props!.speed = 180;
+      player.props ??= { speed: 240 };
+      if (has(idea, "faster", "fast", "speedy", "quick")) player.props.speed = bump(player.props.speed ?? 240, 80, 60, 600);
+      if (has(idea, "slower", "slow", "heavy")) player.props.speed = bump(player.props.speed ?? 240, -60, 60, 600);
+      if (has(idea, "bigger", "larger", "huge")) player.size = bump(player.size, 6, 4, 60);
+      if (has(idea, "smaller", "tiny")) player.size = bump(player.size, -4, 4, 60);
       if (has(idea, "arrow", "keyboard", "wasd")) player.control = "arrows";
-      if (has(idea, "green")) player.color = "#5ad17a";
-      if (has(idea, "purple")) player.color = "#b07cff";
+      if (has(idea, "mouse", "pointer", "cursor")) player.control = "follow-pointer";
+      const pc = colorOf(idea);
+      if (pc && has(idea, "player", "me", "hero", "blob")) player.color = pc;
+      else if (pc && !enemy) player.color = pc;
     }
 
     if (enemy) {
+      enemy.props ??= { speed: 90 };
       if (has(idea, "no enemy", "no enemies", "peaceful", "relaxing")) {
         spec.entities = spec.entities.filter((e) => e.kind !== "enemy");
         spec.rules = spec.rules.filter(
           (r) => !(r.between?.includes("enemy") || r.effects.some((f) => f.target === "enemy")),
         );
       } else {
-        if (has(idea, "many enemies", "swarm", "horde")) enemy.spawn.count = 8;
-        if (has(idea, "fast enemy", "fast enemies", "aggressive")) enemy.props!.speed = 150;
+        if (has(idea, "many enemies", "more enemies", "swarm", "horde")) enemy.spawn.count = bump(enemy.spawn.count ?? 3, 3, 1, 20);
+        if (has(idea, "fewer enemies", "less enemies")) enemy.spawn.count = bump(enemy.spawn.count ?? 3, -2, 0, 20);
+        if (has(idea, "faster enem", "fast enem", "aggressive")) enemy.props.speed = bump(enemy.props.speed ?? 90, 40, 20, 260);
+        if (has(idea, "slower enem", "slow enem")) enemy.props.speed = bump(enemy.props.speed ?? 90, -40, 0, 260);
+        if (has(idea, "harder", "difficult")) { enemy.props.speed = bump(enemy.props.speed ?? 90, 30, 20, 260); enemy.spawn.count = bump(enemy.spawn.count ?? 3, 2, 1, 20); }
+        if (has(idea, "easier", "chill")) { enemy.props.speed = bump(enemy.props.speed ?? 90, -30, 20, 260); enemy.spawn.count = bump(enemy.spawn.count ?? 3, -1, 1, 20); }
         if (has(idea, "flee", "run away", "scared")) enemy.behavior = "flee:player";
+        if (has(idea, "chase", "hunt")) enemy.behavior = "chase:player";
       }
     }
 
-    if (food && has(idea, "lots of food", "abundant")) {
-      food.spawn.count = 30;
-      food.spawn.maintain = 30;
+    if (food) {
+      if (has(idea, "lots of food", "more food", "abundant")) { food.spawn.count = 30; food.spawn.maintain = 30; }
+      if (has(idea, "less food", "fewer food")) { food.spawn.count = bump(food.spawn.count ?? 12, -6, 1, 60); food.spawn.maintain = food.spawn.count; }
     }
 
     // Simulate model latency so the UI's loading state is exercised.

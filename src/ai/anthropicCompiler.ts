@@ -52,7 +52,7 @@ class AnthropicCompiler implements GameplayCompiler {
 
   async compile(req: CompileRequest): Promise<GameSpec> {
     const messages: Anthropic.MessageParam[] = [
-      { role: "user", content: buildUserPrompt(req.idea) },
+      { role: "user", content: buildUserPrompt(req.idea, req.base) },
     ];
 
     // One initial attempt + one repair attempt.

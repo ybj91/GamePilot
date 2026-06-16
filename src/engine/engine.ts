@@ -29,6 +29,7 @@ export class Engine {
   private last = 0;
   private acc = 0;
   private running = false;
+  private paused = false;
   private render: RenderFn = () => {};
   private detachInput?: () => void;
 
@@ -52,14 +53,17 @@ export class Engine {
       if (this.last === 0) this.last = now;
       let elapsed = (now - this.last) / 1000;
       this.last = now;
-      if (elapsed > 0.25) elapsed = 0.25; // clamp huge gaps
-      this.acc += elapsed;
-
-      let steps = 0;
-      while (this.acc >= DT && steps < MAX_STEPS_PER_FRAME) {
-        this.step(DT);
-        this.acc -= DT;
-        steps++;
+      // When paused, keep rendering (so the canvas + overlay stay live) but
+      // don't advance the simulation or accrue time.
+      if (!this.paused) {
+        if (elapsed > 0.25) elapsed = 0.25; // clamp huge gaps
+        this.acc += elapsed;
+        let steps = 0;
+        while (this.acc >= DT && steps < MAX_STEPS_PER_FRAME) {
+          this.step(DT);
+          this.acc -= DT;
+          steps++;
+        }
       }
       this.render(this.world);
       this.raf = requestAnimationFrame(frame);
@@ -85,6 +89,25 @@ export class Engine {
     if (w.status === "playing" && w.spec.lose && evalCondition(w.spec.lose.when, w)) {
       w.status = "lost";
     }
+  }
+
+  get isPaused(): boolean {
+    return this.paused;
+  }
+
+  pause(): void {
+    this.paused = true;
+  }
+
+  resume(): void {
+    this.paused = false;
+    this.last = 0; // avoid a big time jump on the next frame
+  }
+
+  togglePause(): boolean {
+    if (this.paused) this.resume();
+    else this.pause();
+    return this.paused;
   }
 
   stop(): void {

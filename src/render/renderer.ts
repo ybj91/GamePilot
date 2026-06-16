@@ -28,7 +28,7 @@ export class Renderer {
     this.hud = hud;
   }
 
-  draw(world: World): void {
+  draw(world: World, paused = false): void {
     const ctx = this.ctx;
     ctx.fillStyle = world.spec.world.background ?? "#0b0b12";
     ctx.fillRect(0, 0, world.width, world.height);
@@ -38,6 +38,21 @@ export class Renderer {
     }
 
     this.drawHud(world);
+    if (paused && world.status === "playing") this.drawPaused(world);
+  }
+
+  private drawPaused(world: World): void {
+    const hud = this.hud;
+    hud.fillStyle = "rgba(7,7,13,0.5)";
+    hud.fillRect(0, 0, world.width, world.height);
+    hud.textAlign = "center";
+    hud.fillStyle = "rgba(232,232,240,0.92)";
+    hud.font = "700 36px ui-sans-serif, system-ui, sans-serif";
+    hud.fillText("PAUSED", world.width / 2, world.height / 2 - 6);
+    hud.font = "400 14px ui-sans-serif, system-ui, sans-serif";
+    hud.fillStyle = "rgba(232,232,240,0.5)";
+    hud.fillText("press Resume to continue", world.width / 2, world.height / 2 + 26);
+    hud.textAlign = "left";
   }
 
   private drawEntity(e: Entity): void {

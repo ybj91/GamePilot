@@ -38,6 +38,7 @@ Because the AI only produces data, the intelligence can come from **whatever age
 | **Management backend** (`server/`) | ✅ Stage 1 | Validates, stores (`data/games/*.json`), and serves playable games. |
 | **MCP server** (`server/mcp.ts`) | ✅ Stage 2 | Game authoring as MCP tools over **stdio + HTTP** — the agent-driven seam. |
 | **Iterative editing** (`update_game` + live reload) | ✅ | Refine a game across a conversation; the open `/play/:id` tab hot-reloads on each change. |
+| **Management UI** (chat + Pause/Replay/New) | ✅ | Two-pane workspace: conversational create/adjust (`/api/chat`) beside the playable stage. |
 | **AI compilers** (`src/ai/`) | ✅ | `GameplayCompiler` interface + a keyword **mock** and an optional **direct-Claude** fallback. |
 | **Skill** | ⏳ Stage 3 | Teaches an agent to author *good* games. |
 | **Agent** | ⏳ Stage 4 | Orchestrates idea → game end-to-end. |
@@ -199,13 +200,15 @@ sequenceDiagram
     Web-->>U: same tab hot-reloads with the change
 ```
 
-### 2. In-app / fallback (optional)
+### 2. In-app management UI (chat + controls)
 
-The browser app has an idea bar. It calls a `GameplayCompiler`: the **direct-Claude** compiler if an `ANTHROPIC_API_KEY` is set on the dev server, otherwise the offline **keyword mock**. Same `GameSpec` contract, same engine. This path exists for quick demos and offline use; the agent path above is the real one.
+The web app is a two-pane workspace: a **game stage** with **Pause / Replay / New** controls beside a **conversation panel**. Each chat message hits `POST /api/chat`, which turns it into a new game (or an edit of the current one) via a `GameplayCompiler` — the **direct-Claude** compiler when the backend has an `ANTHROPIC_API_KEY`, otherwise the offline **keyword mock** (limited, but handles "faster / more enemies / bigger / no enemies"). The stage reloads with the result.
 
 ```
-idea bar ─▶ HttpCompiler ─▶ /api/compile ─▶ anthropicCompiler (if key) | mock ─▶ GameSpec ─▶ engine
+chat message ─▶ /api/chat ─▶ compiler (Claude if key | mock) ─▶ create / adjust ─▶ store ─▶ stage reloads
 ```
+
+Same iterative loop as the agent path, driven from the browser. Without model access the chat is approximate; the agent-via-MCP path is the most capable.
 
 ### 3. Hand-authored
 

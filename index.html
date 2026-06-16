@@ -9,72 +9,85 @@
       * { box-sizing: border-box; }
       html, body {
         margin: 0;
-        height: 100%;
+        min-height: 100%;
         background: #07070d;
         color: #e8e8f0;
         font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
       }
-      #app {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        padding: 16px;
-      }
+      #app { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
       header { text-align: center; }
       header h1 { margin: 0; font-size: 20px; letter-spacing: 0.5px; }
       header p { margin: 4px 0 0; font-size: 13px; opacity: 0.6; }
-      .idea-bar {
+
+      .workspace {
         display: flex;
-        gap: 8px;
-        width: min(800px, 100%);
+        gap: 16px;
+        align-items: stretch;
+        justify-content: center;
+        width: min(1180px, 100%);
+        margin: 0 auto;
       }
-      .idea-bar input {
-        flex: 1;
-        padding: 10px 12px;
-        border-radius: 8px;
-        border: 1px solid #2a2a3a;
-        background: #12121c;
-        color: inherit;
-        font-size: 14px;
-      }
-      .idea-bar button {
-        padding: 10px 16px;
-        border-radius: 8px;
-        border: 1px solid #2a2a3a;
-        background: #1c2a44;
-        color: #cfe0ff;
-        font-size: 14px;
-        cursor: pointer;
-      }
-      .idea-bar button:hover { background: #243657; }
-      .idea-bar button:disabled { opacity: 0.5; cursor: default; }
-      .status {
-        width: min(800px, 100%);
-        min-height: 16px;
-        font-size: 12px;
-        opacity: 0.55;
-      }
-      .status.warn { color: #ffcf6b; opacity: 0.85; }
-      .stage { position: relative; }
-      canvas {
-        display: block;
+      .stage-pane { display: flex; flex-direction: column; gap: 10px; flex: 1 1 720px; min-width: 0; }
+
+      .stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4 / 3;
         border-radius: 12px;
+        overflow: hidden;
         border: 1px solid #1c1c2a;
-        touch-action: none;
-      }
-      /* Only the game layer gets a backdrop. The HUD canvas sits on top and
-         must stay transparent, or its CSS background would hide the game. */
-      #game {
         background: #0b0b12;
       }
-      #hud {
-        position: absolute;
-        inset: 0;
-        background: transparent;
-        border-color: transparent;
-        pointer-events: none;
-        font-variant-numeric: tabular-nums;
+      .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+      #game { background: #0b0b12; }
+      #hud { background: transparent; pointer-events: none; font-variant-numeric: tabular-nums; }
+
+      .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .controls button {
+        padding: 8px 14px; border-radius: 8px; border: 1px solid #2a2a3a;
+        background: #14141f; color: #dfe4f2; font-size: 13px; cursor: pointer;
+      }
+      .controls button:hover { background: #1d1d2c; }
+      .controls .status { margin-left: auto; font-size: 12px; opacity: 0.6; }
+      .controls .status.warn { color: #ffcf6b; opacity: 0.9; }
+
+      .chat-pane {
+        display: flex; flex-direction: column;
+        flex: 0 0 340px; max-width: 340px;
+        border: 1px solid #1c1c2a; border-radius: 12px;
+        background: #0c0c14; overflow: hidden;
+      }
+      .chat-header {
+        padding: 10px 14px; font-size: 13px; font-weight: 600;
+        border-bottom: 1px solid #1c1c2a; opacity: 0.85;
+      }
+      .chat-log {
+        flex: 1 1 auto; min-height: 360px; overflow-y: auto;
+        padding: 12px; display: flex; flex-direction: column; gap: 8px;
+      }
+      .msg { max-width: 88%; padding: 8px 11px; border-radius: 10px; font-size: 13px; line-height: 1.4; white-space: pre-wrap; }
+      .msg.user { align-self: flex-end; background: #1c2a44; color: #cfe0ff; border-bottom-right-radius: 3px; }
+      .msg.assistant { align-self: flex-start; background: #16161f; color: #e2e2ea; border-bottom-left-radius: 3px; }
+      .msg.assistant.err { background: #2a1414; color: #ffb4b4; }
+      .msg.system { align-self: center; background: transparent; color: #8a8a99; font-size: 12px; text-align: center; }
+      .msg .typing { opacity: 0.6; }
+
+      .chat-input { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #1c1c2a; }
+      .chat-input input {
+        flex: 1; padding: 9px 11px; border-radius: 8px; border: 1px solid #2a2a3a;
+        background: #12121c; color: inherit; font-size: 13px;
+      }
+      .chat-input button {
+        padding: 9px 14px; border-radius: 8px; border: 1px solid #2a2a3a;
+        background: #1c2a44; color: #cfe0ff; font-size: 13px; cursor: pointer;
+      }
+      .chat-input button:hover { background: #243657; }
+      .chat-input button:disabled { opacity: 0.5; cursor: default; }
+
+      @media (max-width: 900px) {
+        .workspace { flex-direction: column; }
+        .chat-pane { flex-basis: auto; max-width: none; }
+        .chat-log { min-height: 220px; max-height: 320px; }
       }
     </style>
   </head>
@@ -82,16 +95,32 @@
     <div id="app">
       <header>
         <h1>🎮 GamePilot</h1>
-        <p>Describe a game. Play it instantly.</p>
+        <p>Describe a game. Play it. Refine it in conversation.</p>
       </header>
-      <div class="idea-bar">
-        <input id="idea-input" type="text" placeholder="e.g. a blob that grows by eating food but moves slower as it grows" />
-        <button id="idea-go">Generate</button>
-      </div>
-      <div id="status" class="status"></div>
-      <div class="stage">
-        <canvas id="game"></canvas>
-        <canvas id="hud"></canvas>
+
+      <div class="workspace">
+        <section class="stage-pane">
+          <div class="stage">
+            <canvas id="game"></canvas>
+            <canvas id="hud"></canvas>
+          </div>
+          <div class="controls">
+            <button id="btn-pause" title="Pause / resume the simulation">⏸ Pause</button>
+            <button id="btn-replay" title="Restart this game (R)">↻ Replay</button>
+            <button id="btn-new" title="Start a fresh game and clear the chat">＋ New</button>
+            <div id="status" class="status"></div>
+          </div>
+        </section>
+
+        <aside class="chat-pane">
+          <div class="chat-header">💬 Conversation</div>
+          <div id="chat-log" class="chat-log"></div>
+          <form id="chat-form" class="chat-input">
+            <input id="chat-text" type="text" autocomplete="off"
+              placeholder="e.g. a game where you dodge bouncing squares" />
+            <button type="submit" id="chat-send">Send</button>
+          </form>
+        </aside>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

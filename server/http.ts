@@ -20,6 +20,9 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import type { GameSpec } from "../src/dsl/types";
 import { validateGameSpec } from "../src/dsl/validate";
+import type { GameplayCompiler } from "../src/ai/compiler";
+import { MockCompiler } from "../src/ai/mockCompiler";
+import { createAnthropicCompiler } from "../src/ai/anthropicCompiler";
 import { buildMcpServer } from "./mcp";
 import {
   saveGame,
@@ -29,6 +32,11 @@ import {
   deleteGame,
   InvalidSpecError,
 } from "./store";
+
+// The chat compiler: the real Claude compiler when a key is configured,
+// otherwise the offline keyword mock. Same GameplayCompiler seam either way.
+const apiKey = process.env.ANTHROPIC_API_KEY ?? "";
+const compiler: GameplayCompiler = apiKey ? createAnthropicCompiler(apiKey) : new MockCompiler();
 
 const DIST = path.resolve(process.cwd(), "dist");
 
@@ -80,6 +88,34 @@ export function buildServer(): FastifyInstance {
       }
     },
   );
+
+  // Conversational create/adjust: one chat turn -> a new or updated game.
+  // No gameId -> create from the message; with a gameId -> adjust that game
+  // (the current spec is passed as `base` so the compiler edits in place).
+  app.post<{ Body: { message?: string; gameId?: string } }>("/api/chat", async (req, reply) => {
+    const message = (req.body?.message ?? "").trim();
+    if (!message) return reply.code(400).send({ error: "body.message is required" });
+    const existing = req.body?.gameId ? await getGame(req.body.gameId) : null;
+    try {
+      const spec = await compiler.compile({ idea: message, base: existing?.spec });
+      // On adjust, keep the original title stable across turns.
+      if (existing) spec.meta = { ...spec.meta, title: existing.title };
+      const game = existing
+        ? await updateGame(existing.id, spec, { idea: message })
+        : await saveGame(spec, { idea: message });
+      if (!game) return reply.code(404).send({ reply: "That game no longer exists.", error: true });
+      const verb = existing ? "Updated" : "Created";
+      const offline = compiler.name === "mock" ? "  ·  offline assistant" : "";
+      return {
+        reply: `${verb} "${game.title}".${offline}`,
+        game: { ...game, url: `/play/${game.id}` },
+        offline: compiler.name === "mock",
+      };
+    } catch (err) {
+      const msg = err instanceof InvalidSpecError ? err.message : (err as Error).message;
+      return reply.code(200).send({ reply: `I couldn't do that — ${msg}`, error: true });
+    }
+  });
 
   app.get("/api/games", async () => ({ games: await listGames() }));
 

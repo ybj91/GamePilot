@@ -61,7 +61,7 @@ Three layers, strictly separated so the AI layer is swappable and the engine sta
 
 ### `src/engine/` — deterministic runtime (no DOM except `input.ts`)
 Per fixed 60Hz step, the update order is **movement → rules → reap dead → maintain populations → check win/lose** (see `engine.ts`). Respect this order — e.g. respawn happens after reaping so destroyed pickups reappear.
-- `engine.ts` — fixed-timestep loop (accumulator, clamps tab-stalls), owns `World` + `Input`, drives a render callback.
+- `engine.ts` — fixed-timestep loop (accumulator, clamps tab-stalls), owns `World` + `Input`, drives a render callback. `pause()`/`resume()`/`togglePause()` freeze the sim while still rendering (renderer draws a PAUSED overlay).
 - `world.ts` — mutable game state: live entity instances, score, status, spawn/respawn/`maintain` logic, `nearestOf` (aim targeting), and `stepLifetimes` (decrements the reserved `ttl` prop and reaps projectiles). **Entity types created only via rules (bullets) must set `spawn.count: 0`** or they pre-spawn at start.
 - `entity.ts` — runtime instance (`Entity`) vs. spec type. **Props are accessed via `getEntityProp`/`setEntityProp`** — `size`/`speed` are mirrored onto first-class fields, so always go through the setter to keep them in sync.
 - `input.ts` — pointer + held keys (for `arrows`) + **edge-detected presses** (`justPressed`, for `on:"input"` rules); exposes a plain `InputEnv` so rules stay headlessly testable. `frameEnv()`/`endFrame()` are driven by the loop.
@@ -89,13 +89,13 @@ Public API for "create a game": `GameSpec` types, `validateGameSpec`, `Engine`, 
 ### `server/` — management backend + MCP server (stages 1–2)
 Standalone, runs independently of Vite so the MCP server / agent can drive it as a separate process.
 - `store.ts` — file-based GameSpec store (`data/games/<id>.json`, gitignored; dir overridable via `GAMEPILOT_DATA_DIR`). `saveGame` (new) and `updateGame` (edit in place — keeps id/createdAt, bumps `updatedAt`) both validate before writing — the write-side guard at the seam. Shared by the HTTP server AND the MCP server. Uses `node:crypto`/`Date` for ids/timestamps (fine — server code, not the deterministic engine).
-- `http.ts` — Fastify app: REST API (`POST /api/validate`, `POST /api/games`, `PUT /api/games/:id` [update], `GET /api/games`, `GET /api/games/:id`, `DELETE /api/games/:id`), MCP-over-HTTP (`POST /mcp`, stateless Streamable HTTP — fresh server+transport per request via `reply.hijack()`), and the built client with `/play/:id` for deep links.
+- `http.ts` — Fastify app: REST API (`POST /api/validate`, `POST /api/games`, `PUT /api/games/:id` [update], `GET /api/games`, `GET /api/games/:id`, `DELETE /api/games/:id`), **`POST /api/chat`** (one conversational turn → create-from-message or adjust-current-game via a `GameplayCompiler`: real Claude if `ANTHROPIC_API_KEY` is set, else the mock), MCP-over-HTTP (`POST /mcp`, stateless Streamable HTTP — fresh server+transport per request via `reply.hijack()`), and the built client with `/play/:id` for deep links.
 - `index.ts` — HTTP entry; `PORT`/`HOST` env (default `127.0.0.1:4321`).
 - `mcp.ts` — `buildMcpServer()`: the `@modelcontextprotocol/sdk` `McpServer` with tools `get_dsl_reference`, `validate_game`, `create_game`, `update_game`, `list_games`, `get_game`, `delete_game`. The single place tools are defined; both transports use it. Tools go through the same `validateGameSpec` + store. **Iterative design is the intended flow**: `create_game` once (new id), then `get_game` → edit → `update_game` (same id) to refine — `get_dsl_reference` includes this workflow. `create_game`/`update_game` return a `play_url` built from `GAMEPILOT_BASE_URL` (default `http://localhost:4321`).
 - `mcp-stdio.ts` — stdio transport entry (`npm run mcp`).
 
-### `src/main.ts`
-Wires DOM → compiler → `Engine` + `Renderer`. On `/play/:id` it fetches the saved spec and loads it, then **polls `updatedAt` (every 1.5s + on tab focus) and hot-reloads** the running game when it changes — so an agent's `update_game` edits appear live in the open tab (`startLiveReload`). Otherwise it loads the sample. The idea-bar tries the Claude `HttpCompiler`, falls back to the `MockCompiler` (and cancels live-reload, since it's an explicit override). `R` restarts. The live `Engine` is exposed as `window.gamepilot` for debugging/automated verification.
+### `src/main.ts` + `index.html` — the management UI
+A two-pane workspace: a game **stage** (canvas + **Pause/Replay/New** buttons + status) beside a **conversation panel**. Chat messages POST to `/api/chat` and the stage reloads with the created/adjusted game (`currentGameId` tracks the working game; **New** clears it to start fresh). On `/play/:id` it loads that saved game and **polls `updatedAt` (every 1.5s) to hot-reload** external agent edits (`startLiveReload`). Pause/Replay drive the engine; `R` also restarts. The live `Engine` is exposed as `window.gamepilot` for debugging/automated verification. The full UI needs the Fastify backend (`npm start`); `npm run dev` proxies `/api` to it.
 
 ## Conventions / gotchas
 
