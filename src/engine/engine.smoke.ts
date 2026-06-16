@@ -260,6 +260,33 @@ for (let i = 0; i < 60; i++) {
 }
 check("non-solid lets the mover pass through", op.x > 250);
 
+// 11. heading + aim "forward": a tank fires in the direction it last moved.
+const tankSpec: GameSpec = {
+  meta: { title: "Heading test" },
+  world: { width: 600, height: 400, background: "#000" },
+  entities: [
+    { id: "player", kind: "player", shape: "square", color: "#8cb33a", size: 12,
+      control: "none", spawn: { x: 300, y: 200 }, props: { speed: 0 } },
+    { id: "bullet", kind: "obstacle", shape: "dot", color: "#fff", size: 3,
+      control: "none", spawn: { count: 0 }, props: { speed: 400, ttl: 2 } },
+  ],
+  rules: [{ on: "input", key: "space", effects: [{ op: "spawn", target: "bullet", from: "player", aim: "forward" }] }],
+};
+check("heading spec validates", validateGameSpec(tankSpec).ok);
+const hWorld = new World(tankSpec, 1);
+const hpl = hWorld.firstOf("player")!;
+check("entity faces up by default", hpl.hx === 0 && hpl.hy === -1);
+// drive right a few steps -> heading snaps to (1,0)
+hpl.vx = 200; // control "none" keeps the velocity; updateHeading reads it
+for (let i = 0; i < 5; i++) stepMovement(hWorld, new Input(), 1 / 60);
+check("heading snaps to last movement (right)", hpl.hx === 1 && hpl.hy === 0);
+// stop and press space -> bullet flies forward (+x)
+hpl.vx = 0;
+evaluateRules(hWorld, new RuleTimers(),
+  { pressed: new Set(["space"]), pointerX: 0, pointerY: 0, pointerActive: false }, 1 / 60);
+const hb = hWorld.firstOf("bullet")!;
+check("aim 'forward' fires along heading (+x)", hb.vx > 100 && Math.abs(hb.vy) < 1);
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

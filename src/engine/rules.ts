@@ -95,18 +95,21 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
       const e = world.spawn(fx.target);
       if (!e) break;
       // Optionally spawn at another entity's position (e.g. bullets from player).
-      if (fx.from) {
-        const src = resolveEntity(fx.from, ctx, world);
-        if (src) {
-          e.x = src.x;
-          e.y = src.y;
-        }
+      const src = fx.from ? resolveEntity(fx.from, ctx, world) : undefined;
+      if (src) {
+        e.x = src.x;
+        e.y = src.y;
       }
       // Optionally give it an initial velocity (= its speed) in a direction.
       if (fx.aim) {
-        const dir = aimVector(fx.aim, e.x, e.y, world, ctx, env);
+        let dir: { x: number; y: number };
+        if (fx.aim === "forward" && src) dir = { x: src.hx, y: src.hy };
+        else if (fx.aim === "backward" && src) dir = { x: -src.hx, y: -src.hy };
+        else dir = aimVector(fx.aim, e.x, e.y, world, ctx, env);
         e.vx = dir.x * e.speed;
         e.vy = dir.y * e.speed;
+        // Face the projectile the way it's travelling too.
+        if (dir.x || dir.y) (e.hx = Math.sign(dir.x)), (e.hy = Math.sign(dir.y));
       }
       break;
     }

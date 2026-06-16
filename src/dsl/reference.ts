@@ -89,13 +89,20 @@ export const CAPABILITIES: Capability[] = [
 - Rule trigger "input": { "on":"input", "key":"<key>", "effects":[...] } fires ONCE per press (down-edge). key: "space"|"up"|"down"|"left"|"right"|"w"|"a"|"s"|"d"|"pointer" (mouse button).
 - The "spawn" effect can fire a projectile:
     "from": "self"|"other"|"<id>"  — spawn at that entity's position (instead of the type's spawn config)
-    "aim":  "pointer"|"up"|"down"|"left"|"right"|"<id>"  — initial velocity (= its speed) in that direction ("<id>" = toward the nearest of that type)
+    "aim":  "pointer"|"up"|"down"|"left"|"right"|"forward"|"backward"|"<id>"  — initial velocity (= its speed):
+            "pointer" toward the cursor; "up/down/left/right" fixed; "forward"/"backward" the way the spawner (its "from" entity) is FACING (the direction it last moved, snapped to a cardinal); "<id>" toward the nearest of that type.
   Give the projectile "control":"none" + a short "ttl" so it flies straight and despawns, and "spawn":{"count":0} so it doesn't pre-spawn.
 Recipe — twin-stick shooter (drive with keys, aim+fire with the mouse):
   player: "control":"arrows"   // NOT "follow-pointer" — it'd sit on the cursor and bullets would have no direction
   bullet: { "id":"bullet","kind":"obstacle","shape":"dot","color":"#dff0ff","size":4,"control":"none","spawn":{"count":0},"props":{"speed":520,"ttl":1.4} }
   { "on":"input","key":"pointer","effects":[{"op":"spawn","target":"bullet","from":"player","aim":"pointer"}] },
-  { "on":"collision","between":["bullet","enemy"],"effects":[{"op":"destroy","target":"self"},{"op":"destroy","target":"other"},{"op":"score","value":1}] }`,
+  { "on":"collision","between":["bullet","enemy"],"effects":[{"op":"destroy","target":"self"},{"op":"destroy","target":"other"},{"op":"score","value":1}] }
+Recipe — Tank 1990 (drive with arrows, SPACE fires the way you're facing; enemies fire forward too):
+  player: "control":"arrows"   // faces the way it moves; "forward" fires that way
+  bullet: { ..., "control":"none","spawn":{"count":0},"props":{"speed":480,"ttl":1.6} }
+  { "on":"input","key":"space","effects":[{"op":"spawn","target":"bullet","from":"player","aim":"forward"}] },
+  { "on":"interval","every":1.3,"effects":[{"op":"spawn","target":"shell","from":"enemy","aim":"forward"}] }
+  (destructible brick walls: solid squares + { "on":"collision","between":["bullet","brick"],"effects":[{"op":"destroy","target":"self"},{"op":"destroy","target":"other"}] })`,
   },
   {
     id: "variables",

@@ -66,11 +66,24 @@ function integrate(e: Entity, world: World, dt: number): void {
   }
 }
 
+/** Snap facing to the dominant cardinal of the current velocity (keeps last when stopped). */
+function updateHeading(e: Entity): void {
+  if (Math.hypot(e.vx, e.vy) < 1) return;
+  if (Math.abs(e.vx) >= Math.abs(e.vy)) {
+    e.hx = Math.sign(e.vx);
+    e.hy = 0;
+  } else {
+    e.hx = 0;
+    e.hy = Math.sign(e.vy);
+  }
+}
+
 export function stepMovement(world: World, input: Input, dt: number): void {
   for (const e of world.entities) {
     if (!e.alive) continue;
     applyControl(e, input);
     applyBehavior(e, world);
+    updateHeading(e);
     integrate(e, world, dt);
   }
 }

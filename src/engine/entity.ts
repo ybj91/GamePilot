@@ -24,6 +24,9 @@ export interface Entity {
   /** Velocity in world units / second (set by control + behaviours). */
   vx: number;
   vy: number;
+  /** Facing direction (cardinal unit vector) — the way it last moved. */
+  hx: number;
+  hy: number;
   /** Movement speed in units/second; mirrored into props.speed. */
   speed: number;
   /** Open numeric state bag (size, speed, and any spec-defined props). */
@@ -52,6 +55,8 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     y,
     vx: 0,
     vy: 0,
+    hx: 0,
+    hy: -1, // faces "up" until it moves
     speed,
     props: { size: spec.size, speed, ...(spec.props ?? {}) },
     behavior: verb ? { verb, target: target || undefined } : undefined,
