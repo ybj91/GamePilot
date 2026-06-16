@@ -36,7 +36,12 @@ const COND_OPS = [">=", "<=", "==", "!=", ">", "<"];
  * Mirrors conditions.ts: `<left> <op> <number>`. We don't evaluate it here, just
  * make sure the AI gets a precise error instead of a silently-false condition.
  */
-function validateCondition(expr: unknown, where: string, errs: string[]): void {
+function validateCondition(
+  expr: unknown,
+  where: string,
+  errs: string[],
+  declaredVars?: Set<string>,
+): void {
   if (!isStr(expr)) {
     errs.push(`${where}: condition must be a non-empty string`);
     return;
@@ -47,7 +52,12 @@ function validateCondition(expr: unknown, where: string, errs: string[]): void {
     return;
   }
   const cut = expr.indexOf(op);
-  if (!expr.slice(0, cut).trim()) errs.push(`${where}: condition "${expr}" is missing a left-hand side`);
+  const left = expr.slice(0, cut).trim();
+  if (!left) errs.push(`${where}: condition "${expr}" is missing a left-hand side`);
+  // A dot-less left side is a global variable — it must be declared in vars.
+  if (declaredVars && left && !left.includes(".") && !declaredVars.has(left)) {
+    errs.push(`${where}: unknown variable "${left}" — declare it in the top-level "vars"`);
+  }
   const right = expr.slice(cut + op.length).trim();
   if (right === "" || Number.isNaN(Number(right))) {
     errs.push(`${where}: right side of "${expr}" must be a number`);
@@ -73,15 +83,25 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   ids.add(e.id);
 }
 
-function validateEffect(fx: Effect, idx: number, ruleNo: number, errs: string[]): void {
+function validateEffect(
+  fx: Effect,
+  idx: number,
+  ruleNo: number,
+  errs: string[],
+  declaredVars: Set<string>,
+): void {
   const where = `rule[${ruleNo}].effects[${idx}]`;
   if (!EFFECT_OPS.includes(fx.op)) {
     errs.push(`${where}: invalid op "${fx.op}"`);
     return;
   }
   if (["add", "set", "mul"].includes(fx.op)) {
-    if (!isStr(fx.target)) errs.push(`${where}: ${fx.op} needs a target like "player.size"`);
+    if (!isStr(fx.target)) errs.push(`${where}: ${fx.op} needs a target like "player.size" or a var name`);
     if (!isNum(fx.value)) errs.push(`${where}: ${fx.op} needs a numeric value`);
+    // A dot-less target is a global variable — it must be declared in vars.
+    if (isStr(fx.target) && !fx.target.includes(".") && !declaredVars.has(fx.target)) {
+      errs.push(`${where}: unknown variable "${fx.target}" — declare it in the top-level "vars"`);
+    }
   }
   if (fx.op === "destroy" && !isStr(fx.target)) {
     errs.push(`${where}: destroy needs a target ("self" | "other" | entity id)`);
@@ -97,7 +117,7 @@ function validateEffect(fx: Effect, idx: number, ruleNo: number, errs: string[])
   }
 }
 
-function validateRule(r: Rule, ruleNo: number, errs: string[]): void {
+function validateRule(r: Rule, ruleNo: number, errs: string[], declaredVars: Set<string>): void {
   const where = `rule[${ruleNo}]`;
   if (!TRIGGERS.includes(r.on)) errs.push(`${where}: invalid trigger "${r.on}"`);
   if (r.on === "collision") {
@@ -111,12 +131,12 @@ function validateRule(r: Rule, ruleNo: number, errs: string[]): void {
   if (r.on === "input" && !isStr(r.key)) {
     errs.push(`${where}: input needs a "key" (e.g. "space", "up", "w", "pointer")`);
   }
-  if (r.when !== undefined) validateCondition(r.when, `${where}.when`, errs);
+  if (r.when !== undefined) validateCondition(r.when, `${where}.when`, errs, declaredVars);
   if (!Array.isArray(r.effects) || r.effects.length === 0) {
     errs.push(`${where}: needs at least one effect`);
     return;
   }
-  r.effects.forEach((fx, i) => validateEffect(fx, i, ruleNo, errs));
+  r.effects.forEach((fx, i) => validateEffect(fx, i, ruleNo, errs, declaredVars));
 }
 
 export function validateGameSpec(spec: GameSpec): ValidationResult {
@@ -132,12 +152,25 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
     errors.push("entities: needs at least one entity");
   }
 
+  // Global variables: { name: number }. `score` is always available.
+  const declaredVars = new Set<string>(["score"]);
+  if (spec.vars !== undefined) {
+    if (typeof spec.vars !== "object" || spec.vars === null || Array.isArray(spec.vars)) {
+      errors.push("vars: must be an object of { name: number }");
+    } else {
+      for (const [name, value] of Object.entries(spec.vars)) {
+        if (!isNum(value)) errors.push(`vars."${name}": must be a number`);
+        declaredVars.add(name);
+      }
+    }
+  }
+
   const ids = new Set<string>();
   (spec.entities ?? []).forEach((e) => validateEntity(e, ids, errors));
 
   // Cross-references: rules must point at declared entity ids.
   (spec.rules ?? []).forEach((r, i) => {
-    validateRule(r, i, errors);
+    validateRule(r, i, errors, declaredVars);
     if (r.between) {
       for (const ref of r.between) {
         if (!ids.has(ref)) errors.push(`rule[${i}]: unknown entity "${ref}" in between`);
@@ -145,8 +178,8 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
     }
   });
 
-  if (spec.win) validateCondition(spec.win.when, "win.when", errors);
-  if (spec.lose) validateCondition(spec.lose.when, "lose.when", errors);
+  if (spec.win) validateCondition(spec.win.when, "win.when", errors, declaredVars);
+  if (spec.lose) validateCondition(spec.lose.when, "lose.when", errors, declaredVars);
 
   return { ok: errors.length === 0, errors };
 }

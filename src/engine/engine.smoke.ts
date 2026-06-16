@@ -159,6 +159,48 @@ for (let i = 0; i < 70; i++) {
 }
 check("ttl: stray bullet despawned after ~1s", tWorld.countOf("bullet") === 0);
 
+// 8. global variables: a `lives` counter, decremented on enemy hits, gates
+//    game over. Two collision rules branch on the var.
+const livesSpec: GameSpec = {
+  meta: { title: "Lives test" },
+  world: { width: 400, height: 300, background: "#000" },
+  vars: { lives: 2 },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 12,
+      control: "none", spawn: { x: 200, y: 150 }, props: { speed: 0 } },
+    { id: "enemy", kind: "enemy", shape: "square", color: "#ff4d4d", size: 12,
+      control: "none", spawn: { x: 200, y: 150 }, props: { speed: 0 } },
+  ],
+  rules: [
+    { on: "collision", between: ["player", "enemy"], when: "lives > 1",
+      effects: [{ op: "add", target: "lives", value: -1 }, { op: "destroy", target: "other" }] },
+    { on: "collision", between: ["player", "enemy"], when: "lives <= 1",
+      effects: [{ op: "gameover" }] },
+  ],
+  lose: { when: "lives <= 0" },
+};
+check("lives spec validates", validateGameSpec(livesSpec).ok);
+// undeclared var is rejected
+check(
+  "undeclared var is a validation error",
+  !validateGameSpec({ ...livesSpec, vars: {} }).ok,
+);
+
+const lWorld = new World(livesSpec, 1);
+check("vars initialised from spec", lWorld.getVar("lives") === 2);
+
+// first hit: lives 2 -> 1, enemy destroyed, still playing
+evaluateRules(lWorld, new RuleTimers(), noInput(), 1 / 60);
+lWorld.reap();
+check("hit with lives>1: lose a life, enemy gone, still playing",
+  lWorld.getVar("lives") === 1 && lWorld.countOf("enemy") === 0 && lWorld.status === "playing");
+
+// second hit: spawn a fresh enemy on the player; lives<=1 -> gameover
+const e2 = lWorld.spawn("enemy")!;
+e2.x = 200; e2.y = 150;
+evaluateRules(lWorld, new RuleTimers(), noInput(), 1 / 60);
+check("hit with lives<=1: gameover", lWorld.status === "lost");
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

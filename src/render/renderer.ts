@@ -79,7 +79,13 @@ export class Renderer {
     hud.fillStyle = "rgba(232,232,240,0.9)";
     hud.font = "600 16px ui-sans-serif, system-ui, sans-serif";
     hud.textBaseline = "top";
-    hud.fillText(`Score ${world.score}`, 14, 12);
+    // Score plus any global vars (lives/level/ammo/...).
+    const fmt = (v: number) => (Number.isInteger(v) ? `${v}` : `${Math.round(v * 100) / 100}`);
+    const stats = [
+      `Score ${world.score}`,
+      ...Object.entries(world.vars).map(([k, v]) => `${k[0]!.toUpperCase()}${k.slice(1)} ${fmt(v)}`),
+    ].join("    ");
+    hud.fillText(stats, 14, 12);
 
     const title = world.spec.meta?.title;
     if (title) {

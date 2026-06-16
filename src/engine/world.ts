@@ -19,6 +19,8 @@ export class World {
 
   entities: Entity[] = [];
   score = 0;
+  /** Named global variables (lives/level/ammo/...), initialised from spec.vars. */
+  vars: Record<string, number> = {};
   status: GameStatus = "playing";
   /** Seconds since the game started (sim time, not wall-clock). */
   time = 0;
@@ -31,8 +33,20 @@ export class World {
     this.height = spec.world.height;
     this.edges = spec.world.edges ?? "wall";
     this.rng = new Rng(seed);
+    this.vars = { ...(spec.vars ?? {}) };
     for (const e of spec.entities) this.specsById.set(e.id, e);
     this.populate();
+  }
+
+  /** Read a global by name. `score` is built-in; others default to 0. */
+  getVar(name: string): number {
+    return name === "score" ? this.score : (this.vars[name] ?? 0);
+  }
+
+  /** Write a global by name. `score` is mirrored onto the first-class field. */
+  setVar(name: string, value: number): void {
+    if (name === "score") this.score = value;
+    else this.vars[name] = value;
   }
 
   private populate(): void {

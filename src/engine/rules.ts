@@ -72,13 +72,17 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
     case "set":
     case "mul": {
       if (!fx.target) return;
+      const v = fx.value ?? 0;
+      const apply = (cur: number) => (fx.op === "add" ? cur + v : fx.op === "mul" ? cur * v : v);
+      // Bare target (no dot) -> a global variable (score/lives/level/...).
+      if (!fx.target.includes(".")) {
+        world.setVar(fx.target, apply(world.getVar(fx.target)));
+        return;
+      }
       const [who, prop] = fx.target.split(".");
       const ent = resolveEntity(who!, ctx, world);
       if (!ent || !prop) return;
-      const cur = getEntityProp(ent, prop);
-      const v = fx.value ?? 0;
-      const next = fx.op === "add" ? cur + v : fx.op === "mul" ? cur * v : v;
-      setEntityProp(ent, prop, next);
+      setEntityProp(ent, prop, apply(getEntityProp(ent, prop)));
       break;
     }
     case "destroy": {
@@ -121,13 +125,15 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
   }
 }
 
-function fire(rule: Rule, ctx: Ctx, world: World, env: InputEnv): void {
+/** Returns true if the rule fired (its guard passed), false if it was skipped. */
+function fire(rule: Rule, ctx: Ctx, world: World, env: InputEnv): boolean {
   // Optional guard: skip the rule unless its condition holds (self/other bound).
-  if (rule.when && !evalCondition(rule.when, world, ctx)) return;
+  if (rule.when && !evalCondition(rule.when, world, ctx)) return false;
   for (const fx of rule.effects) {
-    if (world.status !== "playing") return; // stop applying once the game ends
+    if (world.status !== "playing") return true; // stop applying once the game ends
     applyEffect(fx, ctx, world, env);
   }
+  return true;
 }
 
 /** Per-rule interval accumulators, keyed by rule index. */
@@ -169,11 +175,17 @@ export function evaluateRules(
   if (collisionRules.length) {
     const contacts = findContacts(world.entities);
     for (const { a, b } of contacts) {
+      // The first matching rule (by spec order) whose guard passes handles this
+      // contact; later rules for the same pair are skipped. This is what makes
+      // branching patterns (shield up/down, lives>1 / lives<=1) work — a state
+      // change from one rule can't immediately trigger another on the same hit.
       for (const rule of collisionRules) {
         const [ra, rb] = rule.between!;
-        if (a.type === ra && b.type === rb) fire(rule, { self: a, other: b }, world, env);
-        else if (a.type === rb && b.type === ra) fire(rule, { self: b, other: a }, world, env);
+        let fired = false;
+        if (a.type === ra && b.type === rb) fired = fire(rule, { self: a, other: b }, world, env);
+        else if (a.type === rb && b.type === ra) fired = fire(rule, { self: b, other: a }, world, env);
         if (world.status !== "playing") return;
+        if (fired) break;
       }
     }
   }

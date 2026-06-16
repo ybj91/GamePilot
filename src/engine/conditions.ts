@@ -28,7 +28,8 @@ type Op = (typeof OPS)[number];
 
 function readLeft(token: string, world: World, ctx?: CondContext): number {
   token = token.trim();
-  if (token === "score") return world.score;
+  // Bare name (no dot) -> a global: `score` or a declared var (lives/level/...).
+  if (!token.includes(".")) return world.getVar(token);
   const [who, prop] = token.split(".");
   if (!who || !prop) return NaN;
   if (prop === "count") return world.countOf(who);

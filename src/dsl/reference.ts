@@ -17,6 +17,7 @@ GameSpec:
   "world": { "width": number, "height": number, "background": "#rrggbb", "edges": "wall" | "wrap" },
   "entities": EntitySpec[],     // at least one; exactly one with kind "player"
   "rules": Rule[],
+  "vars": { "<name>": number }, // optional global variables (lives/level/ammo/...), with starting values
   "win":  { "when": string },   // optional
   "lose": { "when": string }    // optional
 }
@@ -68,8 +69,18 @@ Effect:
             ("<id>" aims at the nearest entity of that type). Give the projectile a short "ttl" so it despawns.
 - score: value added to global score (default 1). win/gameover: end the game.
 In a collision rule, "self" = between[0], "other" = between[1].
+For one contact, the FIRST collision rule (in spec order) whose "between" matches and whose "when" passes handles it; later rules for the same pair are skipped that hit. So put branching rules (e.g. shield-up vs shield-down, lives>1 vs lives<=1) as separate rules with mutually-exclusive "when"s and they each handle the cases cleanly.
 
-win/lose "when" is a tiny expression: left side is "score", "<id>.count", or "<id>.<prop>"; operators >= <= > < == != ; right side a number. Examples: "score >= 20", "food.count == 0", "player.size > 60".
+win/lose "when" is a tiny expression: left side is "score", a global var, "<id>.count", or "<id>.<prop>"; operators >= <= > < == != ; right side a number. Examples: "score >= 20", "lives <= 0", "food.count == 0", "player.size > 60".
+
+Global variables ("vars"): game-wide named counters (lives, level, ammo, wave, ...) declared with starting values in the top-level "vars". Read/write them by BARE NAME, no dot — the same places that take "score". Effect: { "op": "add"|"set", "target": "lives", "value": -1 }. They show on the HUD. You MUST declare a var in "vars" before using it (an undeclared var is a validation error); "score" is built-in.
+Lives example (3 lives; each enemy hit costs one and removes that enemy; game over at zero):
+  "vars": { "lives": 3 },
+  rules:
+    { "on": "collision", "between": ["player","enemy"], "when": "lives > 1",
+      "effects": [ { "op": "add", "target": "lives", "value": -1 }, { "op": "destroy", "target": "other" } ] },
+    { "on": "collision", "between": ["player","enemy"], "when": "lives <= 1", "effects": [ { "op": "gameover" } ] }
+Other uses: an "ammo" var spent per shot ("when": "ammo > 0", then add ammo -1) and refilled by a pickup; a "level"/"wave" var raised on an interval to gate harder spawns.
 
 Rules of thumb:
 - Player speed ~200-320, enemy speed ~80-160 (slower than player so it's playable), world 800x600.

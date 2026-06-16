@@ -158,6 +158,13 @@ export interface GameSpec {
   world: World;
   entities: EntitySpec[];
   rules: Rule[];
+  /**
+   * Named global variables (game-wide state) with their starting values, e.g.
+   * `{ "lives": 3, "level": 1, "ammo": 10 }`. Read/written by rules and
+   * conditions via the bare name (no dot), shown on the HUD, and usable in
+   * win/lose. `score` is a built-in global and need not be declared here.
+   */
+  vars?: Record<string, number>;
   win?: WinCondition;
   /** Optional explicit lose condition; collisions usually drive `gameover`. */
   lose?: WinCondition;
