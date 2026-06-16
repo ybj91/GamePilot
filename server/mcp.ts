@@ -14,7 +14,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { GameSpec } from "../src/dsl/types";
 import { validateGameSpec } from "../src/dsl/validate";
-import { dslReferenceWithExample } from "../src/dsl/reference";
+import { coreReference, capability, CAPABILITIES } from "../src/dsl/reference";
 import { saveGame, updateGame, getGame, listGames, deleteGame, InvalidSpecError } from "./store";
 
 /** How to drive game design as a conversation, surfaced via get_dsl_reference. */
@@ -46,10 +46,24 @@ export function buildMcpServer(): McpServer {
     {
       title: "GamePilot DSL reference",
       description:
-        "Returns the GameSpec DSL contract, a worked example, AND the iterative design workflow. Read this first, before authoring or editing any game.",
-      inputSchema: {},
+        "Returns the CORE GameSpec DSL + a worked example + the iterative design workflow, plus a menu of extension capabilities. Call again with a `capability` id to load just that slice (e.g. \"obstacles\", \"shooting\", \"variables\", \"spawn-areas\") when your game needs it. Read this before authoring or editing.",
+      inputSchema: {
+        capability: z
+          .string()
+          .optional()
+          .describe("load one capability slice instead of the core (e.g. 'obstacles', 'shooting')"),
+      },
     },
-    async () => text(`${dslReferenceWithExample()}\n\n--- WORKFLOW ---\n${WORKFLOW}`),
+    async ({ capability: capId }) => {
+      if (capId) {
+        const cap = capability(capId);
+        if (!cap) {
+          return errorText(`Unknown capability "${capId}". Available: ${CAPABILITIES.map((c) => c.id).join(", ")}.`);
+        }
+        return text(`--- ${cap.title} (${cap.id}) ---\n${cap.doc}`);
+      }
+      return text(`${coreReference()}\n\n--- WORKFLOW ---\n${WORKFLOW}`);
+    },
   );
 
   server.registerTool(

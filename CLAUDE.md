@@ -57,7 +57,7 @@ Three layers, strictly separated so the AI layer is swappable and the engine sta
 - `types.ts` — the `GameSpec` shape: `world` + `entities` (typed shapes with `kind`/`color`/`size`/`spawn`/`behavior`/`control`/`props`) + `rules` (`on` trigger → `effects`) + `win`/`lose`. **This file is the spec.** Read it first; extending the DSL starts here.
 - `validate.ts` — dependency-free runtime validator. This is the guard at the **untrusted-AI-output seam** — keep it in sync with `types.ts` whenever the DSL grows.
 - `samples/growAndSlow.ts` — the canonical hand-written game ("eat food → grow + slow; enemies chase"). Exercises every runtime feature; use it as the reference when adding DSL capabilities.
-- `reference.ts` — the DSL contract as prose (`DSL_REFERENCE`) + worked example. **Single source of truth for teaching an AI the DSL**, reused by the Claude system prompt (`src/ai/buildPrompt.ts`), the MCP `get_dsl_reference` tool, and the future skill. Keep in sync with `types.ts`/`validate.ts`.
+- `reference.ts` — the DSL contract as prose, **single source of truth for teaching an AI the DSL**. Organised as `CORE` (the ~80% every game needs) + a `CAPABILITIES` registry (advanced slices, each with a recipe: `shooting`/`variables`/`spawn-areas`/`obstacles`). Accessors: `coreReference()` (core + capability menu, for progressive disclosure), `capability(id)` (one slice), `fullReference()`/`DSL_REFERENCE` (everything, for one-shot compilers). The MCP `get_dsl_reference(capability?)` tool delivers it on demand; `buildPrompt.ts` uses the full blob. **Adding a feature = a new `CAPABILITIES` entry** — see `docs/extending-the-dsl.md` (the DSL constitution) for the decision ladder.
 
 ### `src/engine/` — deterministic runtime (no DOM except `input.ts`)
 Per fixed 60Hz step, the update order is **movement → rules → expire ttl → reap dead → resolve solids → maintain populations → check win/lose** (see `engine.ts`). Respect this order — e.g. respawn happens after reaping so destroyed pickups reappear, and solid push-out runs *after* rules so a collision rule (bullet destroys a brick) still sees the overlap first.
@@ -103,5 +103,5 @@ A two-pane workspace: a game **stage** (canvas + **Pause/Replay/New** buttons + 
 ## Conventions / gotchas
 
 - **Extensionless internal imports** (`./entity`, not `./entity.ts`) — required by `moduleResolution: bundler`. Vite and tsx resolve them; plain `node --strip-types` will not (that's why `smoke` runs via tsx).
-- Adding a DSL feature touches three places in lockstep: `types.ts` (shape) → `validate.ts` (guard) → the relevant engine system (execution). Add a check to `engine.smoke.ts`.
+- Adding a DSL feature is governed by `docs/extending-the-dsl.md` (the constitution): prefer a recipe → an enum token → an optional field behind a capability. It lands lockstep across `types.ts` (shape) → `validate.ts` (guard) → the relevant engine system (execution) → a `CAPABILITIES` slice + recipe in `reference.ts` → a check in `engine.smoke.ts`. Keep CORE small; new features go in the capability registry.
 - Time is seconds, distances are world-units (pixels). Entity `speed` is units/second.
