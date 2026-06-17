@@ -127,6 +127,13 @@ export interface EntitySpec {
   frames?: string[][];
   /** Animation speed for a multi-frame glyph/preset, in frames per second. Default 6. */
   fps?: number;
+  /**
+   * Whether a multi-frame glyph loops (default true). Set false for a ONE-SHOT
+   * animation: if the entity has a `ttl`, the frames play once spread across its
+   * lifetime (then it despawns) — perfect for an "explosion" spawned on a hit;
+   * without a ttl it plays once at `fps` and holds the last frame.
+   */
+  loop?: boolean;
   /** Rotate the glyph to the entity's facing (heading), so it shows direction. */
   rotate?: boolean;
   /**

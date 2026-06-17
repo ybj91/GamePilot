@@ -105,6 +105,7 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
     errs.push(`${where}: frames must be a non-empty array of frames (each a non-empty array of strings)`);
   }
   if (e.fps !== undefined && !isNum(e.fps)) errs.push(`${where}: fps must be a number`);
+  if (e.loop !== undefined && typeof e.loop !== "boolean") errs.push(`${where}: loop must be a boolean`);
   if (e.rotate !== undefined && typeof e.rotate !== "boolean") errs.push(`${where}: rotate must be a boolean`);
   ids.add(e.id);
 }

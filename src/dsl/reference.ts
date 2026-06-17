@@ -138,11 +138,16 @@ Recipe — base defense (enemies pour in from the top and advance on a base at t
 - "glyph": "<preset>"  — a built-in common shape. Presets: ${GLYPH_PRESET_NAMES.join(", ")}. Some (invader, blob, flame) are multi-frame and ANIMATE on their own, so the entity looks alive with zero extra work. Prefer a preset when one fits.
 - "glyph": [ "<row>", ... ]  — raw rows of a small bitmap (3x3, 5x5, any size) when no preset fits. A cell is "on" for any char except space, "." or "0". Drawn scaled to the entity's box in its color. Author it FACING UP.
 - "frames": [ [ "<row>", ... ], [ "<row>", ... ], ... ] + "fps": <number>  — explicit GIF-like animation: a list of bitmap frames cycled at fps (default 6). Overrides "glyph". Use it for a walk cycle / pulse / spin so the entity feels alive.
+- "loop": false  — play a multi-frame glyph ONCE instead of looping. If the entity also has a "ttl", the frames spread across its lifetime then it despawns — exactly what a one-shot effect (an "explosion") wants. Default true (loop forever).
 - "rotate": true  — turn the glyph to the entity's facing (the way it last moved), so it visibly points its direction. Composes with any of the above (the current frame is rotated). Great for tanks/ships.
 Recipes:
   • preset, animated for free:   { "id":"bug","kind":"enemy","shape":"square","color":"#9be15d","size":14,"behavior":"wander","glyph":"invader","spawn":{"count":5} }
   • a tank that points the way it drives:  { "id":"player","kind":"player","shape":"square","color":"#8cb33a","size":15,"control":"arrows","glyph":"tank","rotate":true,"spawn":{"x":400,"y":520} }
   • a custom 2-frame pulsing pickup:  { "id":"gem","kind":"food","shape":"dot","color":"#ffd23f","size":9,"frames":[["..X..",".XXX.","XXXXX",".XXX.","..X.."],[".....","..X..",".XXX.","..X..","....."]],"fps":4,"spawn":{"random":true,"maintain":6} }
+  • an explosion on a kill (juice): a one-shot effect entity spawned where the enemy died, that plays once and vanishes —
+      { "id":"boom","kind":"effect","shape":"dot","color":"#ff9a3c","size":18,"control":"none","glyph":"explosion","loop":false,"spawn":{"count":0},"props":{"ttl":0.4} }
+      { "on":"collision","between":["bullet","enemy"],"effects":[{"op":"spawn","target":"boom","from":"other"},{"op":"destroy","target":"self"},{"op":"destroy","target":"other"},{"op":"score","value":1}] }
+    (count:0 so it only appears via the rule; loop:false + ttl:0.4 = the 5 explosion frames play once over 0.4s, then it auto-despawns.)
   (Glyphs are visual only — collisions still use "size". A multi-frame glyph cycles on sim time, so it's deterministic and pauses when paused.)`,
   },
   {

@@ -85,14 +85,25 @@ export class Renderer {
     ctx.restore();
   }
 
+  /** Which animation frame to show now (deterministic, driven by sim time). */
+  private frameIndex(e: Entity, time: number): number {
+    const n = e.frames!.length;
+    if (n <= 1) return 0;
+    if (e.loop) {
+      // Loop on fps. A small per-entity phase keeps a crowd out of lockstep.
+      return Math.floor(time * e.fps + (e.iid % n)) % n;
+    }
+    // One-shot: spread the frames across the entity's ttl lifetime if it has
+    // one (an explosion fills its short life), else play once at fps and hold.
+    const t = e.ttl0 > 0 ? 1 - (e.props.ttl ?? 0) / e.ttl0 : time * e.fps / n;
+    return Math.min(n - 1, Math.max(0, Math.floor(t * n)));
+  }
+
   /** Draw a pixel-grid glyph scaled to the entity's box, rotated to face its heading. */
   private drawGlyph(e: Entity, time: number): void {
     const ctx = this.ctx;
     const fr = e.frames!;
-    // Multi-frame: advance by sim time (deterministic). A small per-entity phase
-    // (from the instance id) keeps a crowd from animating in lockstep.
-    const idx = fr.length > 1 ? Math.floor(time * e.fps + (e.iid % fr.length)) % fr.length : 0;
-    const rows = fr[idx]!;
+    const rows = fr[this.frameIndex(e, time)]!;
     const nrows = rows.length;
     const ncols = Math.max(...rows.map((r) => r.length));
     if (!nrows || !ncols) return;

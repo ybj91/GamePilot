@@ -44,6 +44,11 @@ export interface Entity {
   frames?: string[][];
   /** Animation speed in frames/second for a multi-frame glyph. */
   fps: number;
+  /** Whether a multi-frame glyph loops; false = one-shot (see ttl0). */
+  loop: boolean;
+  /** Initial ttl (seconds) captured at spawn, so a one-shot glyph can map its
+   *  frames across the entity's lifetime. 0 when the entity has no ttl. */
+  ttl0: number;
   /** Rotate the glyph to face the heading. */
   rotate: boolean;
   alive: boolean;
@@ -74,6 +79,8 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     solid: spec.solid ?? false,
     frames: resolveFrames(spec.glyph, spec.frames),
     fps: spec.fps ?? 6,
+    loop: spec.loop ?? true,
+    ttl0: spec.props?.ttl ?? 0,
     rotate: spec.rotate ?? false,
     alive: true,
     scratch: {},

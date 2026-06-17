@@ -41,6 +41,15 @@ export const GLYPH_PRESETS: Record<string, string[][]> = {
     ["..X..", ".XXX.", ".XXX.", "XXXXX", "XX.XX"],
     [".X.X.", ".XXX.", "XXXXX", "XXXXX", "X.X.X"],
   ],
+  // a one-shot burst: spark -> grow -> peak -> fragment -> embers. Pair with a
+  // short `ttl` and `loop: false` so it plays once over its life and despawns.
+  explosion: [
+    [".....", ".....", "..X..", ".....", "....."],
+    [".....", "..X..", ".XXX.", "..X..", "....."],
+    ["X.X.X", ".XXX.", "XXXXX", ".XXX.", "X.X.X"],
+    ["X...X", "..X..", "X.X.X", "..X..", "X...X"],
+    ["X...X", ".....", ".....", ".....", "X...X"],
+  ],
 };
 
 /** All preset names (for validation messages + the reference menu). */

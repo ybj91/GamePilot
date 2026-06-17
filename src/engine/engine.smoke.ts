@@ -391,6 +391,32 @@ check("bad frames rejected",
   check("explicit frames + fps land on the entity", ap.frames?.length === 2 && ap.fps === 4);
 }
 
+// 14d. one-shot explosion preset tied to ttl: it resolves to multiple frames,
+//      carries loop:false + the captured initial ttl, and despawns via ttl.
+const boomSpec: GameSpec = {
+  meta: { title: "Boom test" },
+  world: { width: 400, height: 300, background: "#000" },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 10,
+      control: "none", spawn: { x: 200, y: 150 }, props: { speed: 0 } },
+    { id: "boom", kind: "effect", shape: "dot", color: "#ff9a3c", size: 18,
+      control: "none", glyph: "explosion", loop: false, spawn: { count: 0 }, props: { ttl: 0.4 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("explosion spec validates", validateGameSpec(boomSpec).ok);
+check("non-boolean loop rejected",
+  !validateGameSpec({ ...boomSpec, entities: [boomSpec.entities[0]!, { ...boomSpec.entities[1]!, loop: "no" as never }] }).ok);
+{
+  const w = new World(boomSpec, 1);
+  const boom = w.spawn("boom")!;
+  check("explosion preset is multi-frame", (boom.frames?.length ?? 0) >= 4);
+  check("explosion is one-shot with its ttl captured", boom.loop === false && boom.ttl0 === 0.4);
+  // run past its 0.4s life -> ttl decrements and it gets reaped
+  for (let i = 0; i < 30; i++) { w.stepLifetimes(1 / 60); w.reap(); }
+  check("explosion despawns after its ttl", w.countOf("boom") === 0);
+}
+
 // 15. tilemap: a grid of chars expands into solid walls + a player at its cell.
 const mapSpec: GameSpec = {
   meta: { title: "Map test" },
