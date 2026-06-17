@@ -125,6 +125,11 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
       if (!fx.target) break;
       const e = world.spawn(fx.target);
       if (!e) break;
+      // Optionally set the new instance's lifetime from a var (a growing trail).
+      if (fx.ttlFrom) {
+        e.props.ttl = world.getVar(fx.ttlFrom);
+        e.ttl0 = e.props.ttl;
+      }
       // Optionally spawn at another entity's position (e.g. bullets from player).
       const src = fx.from ? resolveEntity(fx.from, ctx, world) : undefined;
       if (src) {

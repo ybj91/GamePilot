@@ -52,6 +52,7 @@ export function canCompile(spec: GameSpec): { ok: boolean; unsupported: string[]
     for (const fx of r.effects) {
       if (fx.op === "flash") bad.push(`rule[${i}]: flash effect`);
       if (fx.op === "bounce") bad.push(`rule[${i}]: bounce effect`);
+      if (fx.ttlFrom) bad.push(`rule[${i}]: spawn ttlFrom`);
     }
   }
   return { ok: bad.length === 0, unsupported: [...new Set(bad)] };

@@ -656,6 +656,43 @@ check("runner spec validates", validateGameSpec(runnerSpec).ok);
   check("runner turns perpendicular (down)", h.vy > 0 && h.hy === 1 && Math.abs(h.vx) < 1);
 }
 
+// 20. spawn ttlFrom: a spawned entity's lifetime comes from a var, so a snake
+//     body grows as the var rises (eating lengthens the trail).
+const trailSpec: GameSpec = {
+  meta: { title: "Trail growth test" },
+  world: { width: 400, height: 400, background: "#000", edges: "wrap" },
+  vars: { length: 0.5 },
+  entities: [
+    { id: "head", kind: "player", shape: "square", color: "#6fcf52", size: 10,
+      control: "runner", spawn: { x: 200, y: 200 }, props: { speed: 120 } },
+    { id: "seg", kind: "obstacle", shape: "square", color: "#3fa34d", size: 8,
+      control: "none", spawn: { count: 0 }, props: { speed: 0 } },
+    { id: "food", kind: "food", shape: "dot", color: "#ffd23f", size: 6,
+      spawn: { random: true, maintain: 1 }, props: { speed: 0 } },
+  ],
+  rules: [
+    { on: "interval", every: 0.08, effects: [{ op: "spawn", target: "seg", from: "head", aim: "backward", ttlFrom: "length" }] },
+    { on: "collision", between: ["head", "food"], effects: [{ op: "add", target: "length", value: 0.3 }, { op: "destroy", target: "other" }] },
+  ],
+};
+check("ttlFrom spec validates", validateGameSpec(trailSpec).ok);
+check("ttlFrom with an undeclared var is rejected",
+  !validateGameSpec({ ...trailSpec, vars: {} }).ok);
+{
+  const w = new World(trailSpec, 1);
+  const timers = new RuleTimers();
+  // fire the interval spawner once (dt >= every) -> a seg with ttl = length (0.5)
+  evaluateRules(w, timers, noInput(), 0.08);
+  const segs1 = w.entities.filter((e) => e.alive && e.type === "seg");
+  check("a seg's ttl is taken from the length var (0.5)",
+    segs1.length >= 1 && segs1.every((s) => Math.abs((s.props.ttl ?? -1) - 0.5) < 1e-6));
+  // grow length, fire again -> the newest seg lives longer (the body grows)
+  w.setVar("length", 1.2);
+  evaluateRules(w, timers, noInput(), 0.08);
+  const longest = w.entities.filter((e) => e.alive && e.type === "seg").reduce((a, b) => ((b.props.ttl ?? 0) > (a.props.ttl ?? 0) ? b : a));
+  check("growing the var lengthens new segments (body grows)", Math.abs((longest.props.ttl ?? 0) - 1.2) < 1e-6);
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

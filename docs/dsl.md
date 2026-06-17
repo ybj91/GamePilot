@@ -87,7 +87,8 @@ Advanced features, each a self-contained slice with a worked recipe. An agent lo
 
 ### `runner` — Snake / Tron constant-forward movement
 - **`control: "runner"`** — the entity always moves forward at `speed` in its heading; arrows/WASD steer it to a cardinal, but a direct 180° reversal is refused (it can't turn back into its own trail). Never stops; heading starts "up". Pair with `edges:"wrap"` + `glyph`+`rotate`.
-- *Trailing body:* drop short-lived segments behind the head on an `interval` (`spawn from:"head" aim:"backward"`, seg `control:"none" speed:0` + a `ttl`); a head↔seg collision ends the game. **Body length is fixed** (a seg's `ttl` can't grow on eating) — true Snake growth is a [known edge](extending-the-dsl.md#scope-the-hard-boundary); this gives Tron-light-cycle / fixed-length-snake play.
+- *Trailing body:* drop short-lived segments behind the head on an `interval` (`spawn from:"head" aim:"backward"`, seg `control:"none" speed:0`); a head↔seg collision ends the game.
+- *Growth:* spawn each seg with **`ttlFrom:"length"`** (a var) so its lifetime = the current `length`; eating adds to `length`, so new segments live longer and the body grows. `ttlFrom` sets a spawned entity's `ttl` from a var instead of its type's fixed `ttl` — the primitive that makes a body grow with game state.
 
 ### `camera` — world bigger than the screen
 - Add **`world.viewport`** (`{ "width": W, "height": H }`) to show only a `W×H` window. When the world is larger, the camera centres on the player and clamps at the world edges; the canvas is the viewport size and the HUD/overlays stay fixed on screen. Pointer aim/control is converted to world coordinates automatically. Defaults to the full world (no scrolling).

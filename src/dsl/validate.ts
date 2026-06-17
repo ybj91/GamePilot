@@ -148,6 +148,10 @@ function validateEffect(
     if (fx.aim !== undefined && !isStr(fx.aim)) {
       errs.push(`${where}: spawn "aim" must be a string ("pointer"/"up"/"down"/"left"/"right"/entity id)`);
     }
+    if (fx.ttlFrom !== undefined) {
+      if (!isStr(fx.ttlFrom)) errs.push(`${where}: spawn "ttlFrom" must be a var name (string)`);
+      else if (!declaredVars.has(fx.ttlFrom)) errs.push(`${where}: spawn "ttlFrom" references unknown variable "${fx.ttlFrom}" — declare it in "vars"`);
+    }
   }
 }
 

@@ -33,21 +33,24 @@ But it hits three real edges of the movement model:
    capability slice) gives constant forward motion with tap-to-turn steering and
    no 180° reversal. The head now moves on its own; you only steer. (This was the
    cleanest of the three; it makes the demo play as Tron / fixed-length Snake.)
-2. **No body growth tied to state.** A spawned entity's `ttl` is fixed by its
-   type; it can't be parametrized from a `length` var, so the body length is
-   constant. Eating can't lengthen the snake — the defining progression is gone.
+2. ~~**No body growth tied to state.**~~ **SOLVED** — a `spawn` effect can now set
+   the new entity's `ttl` from a var (`ttlFrom:"length"`). The snake drops
+   segments whose lifetime = the `length` var; eating raises `length`, so new
+   segments live longer and the body grows (smoothly, over ~1s). Verified: eating
+   6 dots grew the body 7 → 24 segments.
 3. **The body is a timed-ghost trail, not a true linked chain.** There's no
    "follow the leader's path" primitive (`chase` clumps onto the target, it
    doesn't trail); spacing is an artifact of `speed × tick`.
 
 **Diagnosis:** the engine computes *velocity from control/behaviour each frame*.
-The motion-state gap (edge 1) is now closed by `runner`; the remaining edges are
-about a body that *grows* and *replays the head's path*. **Recommendation:** the
-`runner` capability ships (Tron / fixed-length Snake play). True Snake growth (#2)
-+ a real linked body (#3) remain a deliberate scope edge — pick them up only if
-prioritized, as a parametrizable spawn lifetime + a `follow`/path-trail behaviour,
-via the ladder below. (Edges #2/#3 are still a useful signal for the
-[compiler experiment](compiler-eject.md): the movement model isn't fully settled.)
+Edges 1 (motion-state) and 2 (growth) are now closed by `runner` + `ttlFrom`, so
+Snake **plays as a full classic loop** (auto-forward, steer, eat, grow, die on
+self-collision). Only edge 3 remains: the body is a timed-ghost trail, not a
+literal path-following linked chain — a cosmetic/fidelity gap, not a gameplay one.
+**Recommendation:** leave edge 3 as a deliberate scope edge; a true path-trail
+would be a `follow`/path-history behaviour, worth it only if a game needs exact
+body-follows-head fidelity. (Still a minor signal for the
+[compiler experiment](compiler-eject.md).)
 
 ## The decision ladder (try these in order)
 

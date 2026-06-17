@@ -206,9 +206,14 @@ export interface Effect {
    *   direction: "pointer" (toward the cursor), "up"/"down"/"left"/"right", or
    *   an entity id (toward the nearest of that type). Pair with a short `ttl`
    *   prop so the projectile despawns.
+   * `ttlFrom`: set the new instance's `ttl` (seconds) to the current value of
+   *   this global var instead of its type's fixed `ttl`. Lets a spawned thing's
+   *   lifetime grow with game state — e.g. a Snake body that lengthens as a
+   *   `length` var rises each time you eat.
    */
   from?: string;
   aim?: string;
+  ttlFrom?: string;
 }
 
 export interface Rule {

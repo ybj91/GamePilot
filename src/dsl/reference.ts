@@ -203,15 +203,16 @@ Recipe — Breakout (mouse paddle; bricks via the tilemap; 3 lives):
     doc: `Runner — constant forward motion with turn-only steering, for Snake / Tron / endless-runner movement.
 - "control": "runner"  — the entity ALWAYS moves forward at its "speed" in its current heading; arrows/WASD steer it to a cardinal direction, but a direct 180° reversal is refused (it can't turn back the way it came — so it won't instantly reverse into its own trail). It never stops. Heading starts "up".
 - Pair with "edges": "wrap" so it loops around the screen, and "glyph"+"rotate":true so it visibly points where it's going.
-- A trailing BODY can be approximated: have the head drop short-lived segments behind itself on an interval — spawn a "seg" type with "from":"head","aim":"backward" (placed just behind), the seg having "control":"none","speed":0 (stays put) and a "ttl" (the tail fades). A head↔seg collision ends the game (you ran into your trail).
-- NOTE: the body length is FIXED (a seg's ttl is set by its type and can't grow when you eat) — true Snake growth is a known edge (see docs/extending-the-dsl.md). This gives Tron-light-cycle / fixed-length-snake play, which is genuinely fun.
-Recipe — Snake / light-cycle:
+- A trailing BODY: have the head drop short-lived segments behind itself on an interval — spawn a "seg" type with "from":"head","aim":"backward" (placed just behind), the seg having "control":"none","speed":0 (stays put). A head↔seg collision ends the game (you ran into your trail).
+- GROWTH: keep a "length" var (trail lifetime in seconds) and spawn each seg with "ttlFrom":"length" so its ttl = the current length. Eating adds to "length", so new segments live longer and the body grows. (Growth is smooth — the body reaches its new length over ~1s as fresh longer-lived segments replace expiring ones.)
+Recipe — Snake (grows as you eat):
   "world": { "width":600,"height":600,"background":"#0b0b12","edges":"wrap" },
+  "vars": { "length": 0.5 },
   head: { "id":"head","kind":"player","shape":"square","color":"#6fcf52","size":11,"control":"runner","glyph":"arrow","rotate":true,"spawn":{"x":300,"y":300},"props":{"speed":150} },
-  seg:  { "id":"seg","kind":"obstacle","shape":"square","color":"#3fa34d","size":9,"control":"none","spawn":{"count":0},"props":{"speed":0,"ttl":1.6} },
+  seg:  { "id":"seg","kind":"obstacle","shape":"square","color":"#3fa34d","size":9,"control":"none","spawn":{"count":0},"props":{"speed":0} },
   food: { "id":"food","kind":"food","shape":"dot","color":"#ffd23f","size":8,"spawn":{"random":true,"maintain":1} },
-  { "on":"interval","every":0.08,"effects":[{"op":"spawn","target":"seg","from":"head","aim":"backward"}] },
-  { "on":"collision","between":["head","food"],"effects":[{"op":"score","value":1},{"op":"destroy","target":"other"}] },
+  { "on":"interval","every":0.08,"effects":[{"op":"spawn","target":"seg","from":"head","aim":"backward","ttlFrom":"length"}] },
+  { "on":"collision","between":["head","food"],"effects":[{"op":"score","value":1},{"op":"add","target":"length","value":0.3},{"op":"destroy","target":"other"}] },
   { "on":"collision","between":["head","seg"],"effects":[{"op":"gameover"}] }`,
   },
   {
