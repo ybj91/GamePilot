@@ -7,6 +7,7 @@
  */
 
 import { GLYPH_PRESETS } from "./dsl/glyphs";
+import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
 const COLORS: Record<string, string> = {
@@ -55,7 +56,7 @@ const countEl = document.getElementById("count") as HTMLSpanElement;
 const animated: Animated[] = [];
 
 const names = Object.keys(GLYPH_PRESETS);
-countEl.textContent = `${names.length} presets`;
+countEl.textContent = `${names.length} presets · DSL v${DSL_VERSION}`;
 
 for (const name of names) {
   const frames = GLYPH_PRESETS[name]!;

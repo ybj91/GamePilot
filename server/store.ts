@@ -15,6 +15,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { GameSpec } from "../src/dsl/types";
 import { validateGameSpec } from "../src/dsl/validate";
+import { DSL_VERSION } from "../src/dsl/version";
 
 // Resolvable via env so the stdio MCP server and the HTTP backend can share a
 // games dir even when launched from different working directories.
@@ -68,6 +69,8 @@ export async function saveGame(
   spec: GameSpec,
   opts: { idea?: string } = {},
 ): Promise<StoredGame> {
+  // Record the DSL version this game was saved under (keep the author's if set).
+  spec = { ...spec, version: spec.version ?? DSL_VERSION };
   const result = validateGameSpec(spec);
   if (!result.ok) throw new InvalidSpecError(result.errors);
 
@@ -101,6 +104,7 @@ export async function updateGame(
   const existing = await getGame(id);
   if (!existing) return null;
 
+  spec = { ...spec, version: spec.version ?? DSL_VERSION };
   const result = validateGameSpec(spec);
   if (!result.ok) throw new InvalidSpecError(result.errors);
 

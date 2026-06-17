@@ -29,6 +29,9 @@ export type {
 export { validateGameSpec } from "./dsl/validate";
 export type { ValidationResult } from "./dsl/validate";
 
+export { DSL_VERSION, parseVersion, isVersionSupported } from "./dsl/version";
+export type { SemVer } from "./dsl/version";
+
 export { GLYPH_PRESETS, GLYPH_PRESET_NAMES, resolveFrames } from "./dsl/glyphs";
 
 export { growAndSlow } from "./dsl/samples/growAndSlow";

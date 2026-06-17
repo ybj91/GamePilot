@@ -14,12 +14,14 @@
 
 import { growAndSlow } from "./samples/growAndSlow";
 import { GLYPH_PRESET_NAMES } from "./glyphs";
+import { DSL_VERSION } from "./version";
 
 /** The essentials — entities, rules, effects, conditions, win/lose. */
 export const CORE = `A GameSpec is a declarative JSON document a deterministic 2D engine plays directly. Visuals are primitive shapes (no assets) — gameplay is what matters. Emit DATA ONLY: never code.
 
 GameSpec:
 {
+  "version": "${DSL_VERSION}",  // the DSL version you're authoring against (Major.Minor.Patch)
   "meta": { "title": string, "idea": string },
   "world": { "width": number, "height": number, "background": "#rrggbb", "edges": "wall" | "wrap" },
   "entities": EntitySpec[],     // at least one; exactly one with kind "player"
@@ -27,6 +29,7 @@ GameSpec:
   "win":  { "when": string },   // optional
   "lose": { "when": string }    // optional
 }
+The current DSL version is ${DSL_VERSION}; include it as "version". (If omitted, it's stamped on save.)
 
 EntitySpec:
 {

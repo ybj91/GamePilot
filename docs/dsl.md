@@ -4,6 +4,8 @@ A `GameSpec` is a declarative JSON document a deterministic 2D engine plays dire
 
 > The **canonical, always-current** source is [`src/dsl/reference.ts`](../src/dsl/reference.ts) — that's what an AI is taught (and what the MCP `get_dsl_reference` tool serves). This page is the human-readable companion; keep them in sync.
 
+**Versioning.** The DSL is semver'd (`Major.Minor.Patch`); the current version is in [`src/dsl/version.ts`](../src/dsl/version.ts) (`DSL_VERSION`). A spec records the version it targets in **`version`** (stamped on save if omitted); the validator rejects a spec whose *major* is newer than the engine's. New capabilities are **minor** bumps (old specs keep playing); breaking shape changes are **major**. See [CHANGELOG](../CHANGELOG.md).
+
 ## Core
 
 The ~80% every game needs.

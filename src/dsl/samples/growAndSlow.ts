@@ -1,4 +1,5 @@
 import type { GameSpec } from "../types";
+import { DSL_VERSION } from "../version";
 
 /**
  * The canonical GamePilot demo, hand-written to exercise every part of the v0
@@ -9,6 +10,7 @@ import type { GameSpec } from "../types";
  *        Red enemies chase it; touching one ends the game."
  */
 export const growAndSlow: GameSpec = {
+  version: DSL_VERSION,
   meta: {
     title: "Grow & Slow",
     idea: "A blob that grows by eating food but moves slower as it grows; red enemies chase it.",

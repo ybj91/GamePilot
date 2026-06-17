@@ -14,6 +14,7 @@ import { stepMovement, resolveSolids } from "./movement";
 import { Input, type InputEnv } from "./input";
 import { growAndSlow } from "../dsl/samples/growAndSlow";
 import { validateGameSpec } from "../dsl/validate";
+import { DSL_VERSION, parseVersion, isVersionSupported } from "../dsl/version";
 import type { GameSpec } from "../dsl/types";
 
 let failures = 0;
@@ -808,6 +809,19 @@ check("goomba spec validates (walker behavior + self.vy condition)", validateGam
   evaluateRules(w, new RuleTimers(), noInput(), 1 / 60);
   check("side hit (not falling) = game over", w.status === "lost");
 }
+
+// 23. DSL versioning: the version parses as semver, the sample carries it, a
+//     valid version validates, a future-major version is rejected, malformed too.
+check("DSL_VERSION is valid Major.Minor.Patch", parseVersion(DSL_VERSION) !== null);
+check("the sample spec records its DSL version", growAndSlow.version === DSL_VERSION);
+check("a spec with the current version validates", validateGameSpec({ ...growAndSlow, version: DSL_VERSION }).ok);
+check("a spec with no version still validates (back-compat)", validateGameSpec({ ...growAndSlow, version: undefined }).ok);
+{
+  const major = parseVersion(DSL_VERSION)!.major;
+  check("a future-MAJOR spec is rejected", !validateGameSpec({ ...growAndSlow, version: `${major + 1}.0.0` }).ok);
+  check("an older/equal-major spec is supported", isVersionSupported(`${major}.99.99`) && !isVersionSupported(`${major + 1}.0.0`));
+}
+check("a malformed version is rejected", !validateGameSpec({ ...growAndSlow, version: "1.2" as never }).ok);
 
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);

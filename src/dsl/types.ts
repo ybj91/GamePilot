@@ -252,6 +252,12 @@ export interface WinCondition {
 }
 
 export interface GameSpec {
+  /**
+   * The DSL version this spec targets, as "Major.Minor.Patch" (see DSL_VERSION).
+   * Optional — when omitted, the engine assumes the current version. Recorded on
+   * save; the validator rejects a spec whose MAJOR is newer than the engine's.
+   */
+  version?: string;
   meta?: {
     title?: string;
     /** The natural-language idea this spec was compiled from. */

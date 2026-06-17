@@ -16,6 +16,7 @@ import type {
   Control,
 } from "./types";
 import { GLYPH_PRESET_NAMES } from "./glyphs";
+import { DSL_VERSION, parseVersion, isVersionSupported } from "./version";
 
 const isRows = (v: unknown): v is string[] =>
   Array.isArray(v) && v.length > 0 && v.every((r) => typeof r === "string");
@@ -182,6 +183,15 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
 
   if (!spec || typeof spec !== "object") {
     return { ok: false, errors: ["spec is not an object"] };
+  }
+  // Optional DSL version (Major.Minor.Patch). When set, the spec's MAJOR must
+  // not be newer than the engine's — a future-major spec can't be played here.
+  if (spec.version !== undefined) {
+    if (typeof spec.version !== "string" || !parseVersion(spec.version)) {
+      errors.push(`version: must be a "Major.Minor.Patch" string`);
+    } else if (!isVersionSupported(spec.version)) {
+      errors.push(`version: spec targets DSL ${spec.version}, newer than this engine (${DSL_VERSION})`);
+    }
   }
   // A tilemap sizes the world, so width/height are only required without a map.
   if (!spec.world || typeof spec.world !== "object") {
