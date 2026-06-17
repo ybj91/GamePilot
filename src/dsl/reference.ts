@@ -132,14 +132,17 @@ Recipe — base defense (enemies pour in from the top and advance on a base at t
   },
   {
     id: "glyphs",
-    title: "Glyphs (pixel-grid shapes + animation)",
-    summary: "draw entities as a small bitmap, a named preset shape, or a GIF-like animation; can rotate to show direction",
+    title: "Glyphs (pixel shapes, animation & hit-flash)",
+    summary: "draw entities as a bitmap / named preset / GIF-like animation; rotate to show direction; flash bright on a hit",
     doc: `Glyphs — represent an entity as a tiny pixel grid instead of a bare shape (still no assets, just data). Three ways, cheapest first:
 - "glyph": "<preset>"  — a built-in common shape. Presets: ${GLYPH_PRESET_NAMES.join(", ")}. Some (invader, blob, flame) are multi-frame and ANIMATE on their own, so the entity looks alive with zero extra work. Prefer a preset when one fits.
 - "glyph": [ "<row>", ... ]  — raw rows of a small bitmap (3x3, 5x5, any size) when no preset fits. A cell is "on" for any char except space, "." or "0". Drawn scaled to the entity's box in its color. Author it FACING UP.
 - "frames": [ [ "<row>", ... ], [ "<row>", ... ], ... ] + "fps": <number>  — explicit GIF-like animation: a list of bitmap frames cycled at fps (default 6). Overrides "glyph". Use it for a walk cycle / pulse / spin so the entity feels alive.
 - "loop": false  — play a multi-frame glyph ONCE instead of looping. If the entity also has a "ttl", the frames spread across its lifetime then it despawns — exactly what a one-shot effect (an "explosion") wants. Default true (loop forever).
 - "rotate": true  — turn the glyph to the entity's facing (the way it last moved), so it visibly points its direction. Composes with any of the above (the current frame is rotated). Great for tanks/ships.
+Hit-flash (works on ANY entity, glyph or bare shape):
+- effect { "op":"flash", "target":"self"|"other"|"<id>", "value": <seconds> }  — flashes that entity bright for "value" seconds (default 0.15). Use it in a collision rule for instant "I got hit" feedback, especially on a hit the entity SURVIVES (a multi-hp enemy, the shielded player). target defaults to "self".
+- "flashColor": "#rrggbb"  — the color to flash to (on the EntitySpec; default white).
 Recipes:
   • preset, animated for free:   { "id":"bug","kind":"enemy","shape":"square","color":"#9be15d","size":14,"behavior":"wander","glyph":"invader","spawn":{"count":5} }
   • a tank that points the way it drives:  { "id":"player","kind":"player","shape":"square","color":"#8cb33a","size":15,"control":"arrows","glyph":"tank","rotate":true,"spawn":{"x":400,"y":520} }
@@ -148,6 +151,11 @@ Recipes:
       { "id":"boom","kind":"effect","shape":"dot","color":"#ff9a3c","size":18,"control":"none","glyph":"explosion","loop":false,"spawn":{"count":0},"props":{"ttl":0.4} }
       { "on":"collision","between":["bullet","enemy"],"effects":[{"op":"spawn","target":"boom","from":"other"},{"op":"destroy","target":"self"},{"op":"destroy","target":"other"},{"op":"score","value":1}] }
     (count:0 so it only appears via the rule; loop:false + ttl:0.4 = the 5 explosion frames play once over 0.4s, then it auto-despawns.)
+  • a 3-hp armored enemy that FLASHES on a survivable hit and explodes on the kill (branch on hp; first matching rule wins):
+      enemy: { ..., "props":{"speed":50,"hp":3}, "flashColor":"#ffd23f" }
+      { "on":"collision","between":["bullet","enemy"],"when":"enemy.hp > 1","effects":[{"op":"add","target":"other.hp","value":-1},{"op":"flash","target":"other"},{"op":"destroy","target":"self"}] }
+      { "on":"collision","between":["bullet","enemy"],"when":"enemy.hp <= 1","effects":[{"op":"spawn","target":"boom","from":"other"},{"op":"destroy","target":"self"},{"op":"destroy","target":"other"},{"op":"score","value":1}] }
+    (the surviving hit flashes the enemy bright so the player sees it connected; the killing hit bursts.)
   (Glyphs are visual only — collisions still use "size". A multi-frame glyph cycles on sim time, so it's deterministic and pauses when paused.)`,
   },
   {

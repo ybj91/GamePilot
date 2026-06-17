@@ -70,10 +70,11 @@ export class Renderer {
       return;
     }
     const ctx = this.ctx;
+    const color = e.flash > 0 ? e.flashColor : e.color;
     ctx.save();
-    ctx.shadowColor = e.color;
-    ctx.shadowBlur = e.shape === "dot" ? 8 : 14;
-    ctx.fillStyle = e.color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = (e.shape === "dot" ? 8 : 14) + (e.flash > 0 ? 12 : 0);
+    ctx.fillStyle = color;
     if (e.shape === "square") {
       const s = e.size;
       ctx.fillRect(e.x - s, e.y - s, s * 2, s * 2);
@@ -114,9 +115,10 @@ export class Renderer {
     ctx.translate(e.x, e.y);
     // Glyph is authored facing "up" (0,-1); rotate to the entity's heading.
     if (e.rotate) ctx.rotate(Math.atan2(e.hy, e.hx) + Math.PI / 2);
-    ctx.shadowColor = e.color;
-    ctx.shadowBlur = 8;
-    ctx.fillStyle = e.color;
+    const color = e.flash > 0 ? e.flashColor : e.color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = e.flash > 0 ? 20 : 8;
+    ctx.fillStyle = color;
     for (let r = 0; r < nrows; r++) {
       const row = rows[r]!;
       for (let c = 0; c < row.length; c++) {

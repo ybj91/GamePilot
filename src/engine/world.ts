@@ -136,13 +136,17 @@ export class World {
   }
 
   /**
-   * Decrement the reserved `ttl` prop (seconds) on any entity that has one and
-   * kill it at zero. Lets projectiles and temporary effects clean themselves up
-   * without per-rule bookkeeping. Called each step before reaping.
+   * Per-step entity timers: tick down a hit-`flash` (visual only) and the
+   * reserved `ttl` prop (seconds), killing the entity at ttl zero. Lets
+   * projectiles/effects clean themselves up without per-rule bookkeeping.
+   * Called each step before reaping.
    */
   stepLifetimes(dt: number): void {
     for (const e of this.entities) {
-      if (!e.alive || e.props.ttl === undefined) continue;
+      if (!e.alive) continue;
+      // Tick down a hit-flash, if any (visual only).
+      if (e.flash > 0) e.flash = Math.max(0, e.flash - dt);
+      if (e.props.ttl === undefined) continue;
       e.props.ttl -= dt;
       if (e.props.ttl <= 0) e.alive = false;
     }

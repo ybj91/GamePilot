@@ -51,6 +51,10 @@ export interface Entity {
   ttl0: number;
   /** Rotate the glyph to face the heading. */
   rotate: boolean;
+  /** Seconds of hit-flash remaining; while > 0 the entity is drawn in flashColor. */
+  flash: number;
+  /** Color to flash to on a `flash` effect (hit feedback). */
+  flashColor: string;
   alive: boolean;
   /** Per-entity scratch state for behaviours (e.g. wander heading). */
   scratch: Record<string, number>;
@@ -82,6 +86,8 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     loop: spec.loop ?? true,
     ttl0: spec.props?.ttl ?? 0,
     rotate: spec.rotate ?? false,
+    flash: 0,
+    flashColor: spec.flashColor ?? "#ffffff",
     alive: true,
     scratch: {},
   };

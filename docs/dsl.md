@@ -71,11 +71,12 @@ Advanced features, each a self-contained slice with a worked recipe. An agent lo
 - **`solid: true`** blocks movement. Static walls (`control:"none"` squares — bricks, steel) *and* moving bodies (mark tanks/units solid so they don't overlap/stack). Enemies don't pathfind around solids, so leave open lanes.
 - *Recipe:* destructible brick (`bullet+brick → destroy both`) vs. indestructible steel (`bullet+steel → destroy self`); gate steel-breaking on a `power` var for an upgrade.
 
-### `glyphs` — pixel-grid shapes & animation
+### `glyphs` — pixel shapes, animation & hit-flash
 - **`glyph`**: a **preset name** (a built-in common shape — `tank`, `ship`, `arrow`, `heart`, `star`, `diamond`, `plus`, `ring`, `face`, `skull`, `alien`, plus the self-animating `invader`, `blob`, `flame`, `explosion`) *or* raw rows of a small bitmap (a cell is "on" for any char but space/`.`/`0`). Drawn scaled in the entity's color instead of the bare shape. Still no assets — just data.
 - **`frames`** + **`fps`**: a GIF-like animation — a list of bitmap frames cycled at `fps` (default 6); overrides `glyph`. Multi-frame presets animate automatically. Cycling runs on sim time, so it's deterministic and freezes on pause; a small per-entity phase keeps a crowd from moving in lockstep.
 - **`loop: false`**: play a multi-frame glyph once instead of looping. With a `ttl`, the frames spread across the entity's lifetime then it despawns — a one-shot effect. Default `true`.
 - **`rotate: true`** turns the (current frame of the) glyph to the entity's heading, so it visibly points its direction. Glyphs are visual only; collisions use `size`.
+- **`flash` effect** (`{op:"flash", target:"self"|"other"|"<id>", value:<seconds>}`, default 0.15s) flashes any entity bright for instant hit feedback — best on a hit the entity *survives*. **`flashColor`** on the EntitySpec sets the color (default white). Works on bare shapes too.
 - *Recipe — a directional tank:* `glyph:"tank", rotate:true`. *Animated enemy for free:* `glyph:"invader"`. *Custom pulse:* `frames:[[...],[...]], fps:4`. *Explosion on a kill:* a `glyph:"explosion", loop:false, props:{ttl:0.4}` effect with `spawn.count:0`, spawned `from:"other"` in the collision rule — it plays once where the enemy died, then vanishes.
 
 ### `camera` — world bigger than the screen

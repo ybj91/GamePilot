@@ -136,6 +136,8 @@ export interface EntitySpec {
   loop?: boolean;
   /** Rotate the glyph to the entity's facing (heading), so it shows direction. */
   rotate?: boolean;
+  /** Color the entity flashes to on a `flash` effect (hit feedback). Default white. */
+  flashColor?: string;
   /**
    * Free-form numeric properties readable/writable by rule effects via
    * `<id>.<prop>` targets. `speed` is special-cased by the engine as movement
@@ -157,6 +159,7 @@ export type EffectOp =
   | "mul" // target *= value
   | "destroy" // remove an entity instance ("self" | "other" | entity id)
   | "spawn" // create one instance of entity type `target`
+  | "flash" // briefly flash an entity bright (hit feedback) for `value` seconds
   | "score" // global score += value
   | "win"
   | "gameover";
@@ -167,6 +170,8 @@ export type EffectOp =
  *    "self"/"other" combined with a prop, e.g. "other.size".
  *  - destroy: "self" | "other" | "<entityId>".
  *  - spawn:   "<entityId>" (entity type to spawn).
+ *  - flash:   "self" | "other" | "<entityId>" (defaults to "self") — flashes that
+ *    entity bright for `value` seconds (default 0.15) as hit feedback.
  *  - score/win/gameover: target ignored.
  *
  * In a `collision` rule, "self" = the first entity in `between`, "other" = the

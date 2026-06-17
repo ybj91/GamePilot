@@ -417,6 +417,39 @@ check("non-boolean loop rejected",
   check("explosion despawns after its ttl", w.countOf("boom") === 0);
 }
 
+// 14e. hit-flash: a survivable hit flashes the enemy bright, and the flash
+//      timer ticks down to zero (visual only — the entity lives on).
+const flashSpec: GameSpec = {
+  meta: { title: "Flash test" },
+  world: { width: 400, height: 300, background: "#000" },
+  entities: [
+    { id: "bullet", kind: "obstacle", shape: "dot", color: "#fff", size: 4,
+      control: "none", spawn: { x: 200, y: 150 }, props: { speed: 0 } },
+    { id: "enemy", kind: "enemy", shape: "square", color: "#d24b4b", size: 14,
+      control: "none", flashColor: "#ffd23f", spawn: { x: 200, y: 150 }, props: { speed: 0, hp: 3 } },
+  ],
+  rules: [
+    { on: "collision", between: ["bullet", "enemy"], when: "enemy.hp > 1",
+      effects: [{ op: "add", target: "other.hp", value: -1 }, { op: "flash", target: "other", value: 0.2 }, { op: "destroy", target: "self" }] },
+  ],
+};
+check("flash spec validates", validateGameSpec(flashSpec).ok);
+check("flash op is accepted", validateGameSpec(flashSpec).ok);
+check("bad flashColor rejected",
+  !validateGameSpec({ ...flashSpec, entities: [flashSpec.entities[0]!, { ...flashSpec.entities[1]!, flashColor: 7 as never }] }).ok);
+{
+  const w = new World(flashSpec, 1);
+  const enemy = w.firstOf("enemy")!;
+  check("flashColor lands on the entity", enemy.flashColor === "#ffd23f" && enemy.flash === 0);
+  // the bullet overlaps the enemy -> survivable hit flashes it
+  evaluateRules(w, new RuleTimers(), noInput(), 1 / 60);
+  check("survivable hit flashes the enemy (and it lives)",
+    enemy.flash > 0 && enemy.alive && enemy.props.hp === 2);
+  // the flash ticks down to zero over its 0.2s
+  for (let i = 0; i < 15; i++) w.stepLifetimes(1 / 60);
+  check("flash decays to zero, entity still alive", enemy.flash === 0 && enemy.alive);
+}
+
 // 15. tilemap: a grid of chars expands into solid walls + a player at its cell.
 const mapSpec: GameSpec = {
   meta: { title: "Map test" },

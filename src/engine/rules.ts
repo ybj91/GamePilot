@@ -91,6 +91,12 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
       if (ent) ent.alive = false;
       break;
     }
+    case "flash": {
+      // Brief bright flash as hit feedback; defaults to "self" for ~0.15s.
+      const ent = resolveEntity(fx.target ?? "self", ctx, world);
+      if (ent) ent.flash = fx.value ?? 0.15;
+      break;
+    }
     case "spawn": {
       if (!fx.target) break;
       const e = world.spawn(fx.target);

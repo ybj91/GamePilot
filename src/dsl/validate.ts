@@ -28,7 +28,7 @@ export interface ValidationResult {
 const SHAPES: Shape[] = ["circle", "square", "dot"];
 const CONTROLS: Control[] = ["none", "follow-pointer", "arrows"];
 const TRIGGERS = ["collision", "tick", "interval", "input"];
-const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "score", "win", "gameover"];
+const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "flash", "score", "win", "gameover"];
 
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isStr = (v: unknown): v is string => typeof v === "string" && v.length > 0;
@@ -107,6 +107,7 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   if (e.fps !== undefined && !isNum(e.fps)) errs.push(`${where}: fps must be a number`);
   if (e.loop !== undefined && typeof e.loop !== "boolean") errs.push(`${where}: loop must be a boolean`);
   if (e.rotate !== undefined && typeof e.rotate !== "boolean") errs.push(`${where}: rotate must be a boolean`);
+  if (e.flashColor !== undefined && !isStr(e.flashColor)) errs.push(`${where}: flashColor must be a string (CSS color)`);
   ids.add(e.id);
 }
 
@@ -132,6 +133,12 @@ function validateEffect(
   }
   if (fx.op === "destroy" && !isStr(fx.target)) {
     errs.push(`${where}: destroy needs a target ("self" | "other" | entity id)`);
+  }
+  if (fx.op === "flash") {
+    if (fx.target !== undefined && !isStr(fx.target)) {
+      errs.push(`${where}: flash target must be a string ("self" | "other" | entity id)`);
+    }
+    if (fx.value !== undefined && !isNum(fx.value)) errs.push(`${where}: flash value (seconds) must be a number`);
   }
   if (fx.op === "spawn") {
     if (!isStr(fx.target)) errs.push(`${where}: spawn needs a target entity id`);
