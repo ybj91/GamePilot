@@ -53,7 +53,8 @@ function aimVector(
     case "left": return { x: -1, y: 0 };
     case "right": return { x: 1, y: 0 };
     case "pointer":
-      return env.pointerActive ? toward(env.pointerX, env.pointerY) : { x: 0, y: -1 };
+      // Pointer is viewport pixels; add the camera to get world coords.
+      return env.pointerActive ? toward(env.pointerX + world.camX, env.pointerY + world.camY) : { x: 0, y: -1 };
     case "self":
     case "other": {
       const t = resolveEntity(aim, ctx, world);

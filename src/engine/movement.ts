@@ -15,12 +15,15 @@ function aimToward(e: Entity, tx: number, ty: number, sign: number): void {
   e.vy = (dy / len) * e.speed * sign;
 }
 
-function applyControl(e: Entity, input: Input): void {
+function applyControl(e: Entity, input: Input, world: World): void {
   if (e.control === "follow-pointer") {
     if (input.pointerActive) {
-      const dist = Math.hypot(input.pointerX - e.x, input.pointerY - e.y);
+      // Pointer is in viewport pixels; add the camera to get world coords.
+      const px = input.pointerX + world.camX;
+      const py = input.pointerY + world.camY;
+      const dist = Math.hypot(px - e.x, py - e.y);
       // Ease off near the target so the blob doesn't jitter on top of the cursor.
-      if (dist > e.size * 0.5) aimToward(e, input.pointerX, input.pointerY, 1);
+      if (dist > e.size * 0.5) aimToward(e, px, py, 1);
       else (e.vx = 0), (e.vy = 0);
     } else {
       e.vx = 0;
@@ -95,7 +98,7 @@ function updateHeading(e: Entity): void {
 export function stepMovement(world: World, input: Input, dt: number): void {
   for (const e of world.entities) {
     if (!e.alive) continue;
-    applyControl(e, input);
+    applyControl(e, input, world);
     applyBehavior(e, world);
     updateHeading(e);
     integrate(e, world, dt);

@@ -4,7 +4,7 @@
  * read entity-type definitions when respawning.
  */
 
-import type { GameSpec, EntitySpec } from "../dsl/types";
+import type { GameSpec, EntitySpec, TileMap } from "../dsl/types";
 import { createEntity, type Entity } from "./entity";
 import { Rng } from "./rng";
 
@@ -16,6 +16,13 @@ export class World {
   readonly height: number;
   readonly edges: "wall" | "wrap";
   readonly rng: Rng;
+
+  /** Visible window onto the world (the camera viewport). */
+  readonly viewW: number;
+  readonly viewH: number;
+  /** Camera top-left in world coords (scrolls to follow the player). */
+  camX = 0;
+  camY = 0;
 
   entities: Entity[] = [];
   score = 0;
@@ -29,13 +36,36 @@ export class World {
 
   constructor(spec: GameSpec, seed = 12345) {
     this.spec = spec;
-    this.width = spec.world.width;
-    this.height = spec.world.height;
+    // A tilemap sizes the world (cols*tile x rows*tile); otherwise use world.w/h.
+    if (spec.map) {
+      const cols = Math.max(...spec.map.rows.map((r) => r.length));
+      this.width = cols * spec.map.tile;
+      this.height = spec.map.rows.length * spec.map.tile;
+    } else {
+      this.width = spec.world.width ?? 800;
+      this.height = spec.world.height ?? 600;
+    }
+    this.viewW = spec.world.viewport?.width ?? this.width;
+    this.viewH = spec.world.viewport?.height ?? this.height;
     this.edges = spec.world.edges ?? "wall";
     this.rng = new Rng(seed);
     this.vars = { ...(spec.vars ?? {}) };
     for (const e of spec.entities) this.specsById.set(e.id, e);
     this.populate();
+    this.updateCamera();
+  }
+
+  /** Scroll the view to centre on the player, clamped to the world. */
+  updateCamera(): void {
+    if (this.viewW >= this.width && this.viewH >= this.height) {
+      this.camX = 0;
+      this.camY = 0;
+      return;
+    }
+    const p = this.firstOf("player");
+    if (!p) return;
+    this.camX = Math.max(0, Math.min(this.width - this.viewW, p.x - this.viewW / 2));
+    this.camY = Math.max(0, Math.min(this.height - this.viewH, p.y - this.viewH / 2));
   }
 
   /** Read a global by name. `score` is built-in; others default to 0. */
@@ -50,9 +80,31 @@ export class World {
   }
 
   private populate(): void {
+    // Entity types placed by the map are positioned by the grid, not by their
+    // own spawn config — skip them here.
+    const mapped = new Set(Object.values(this.spec.map?.legend ?? {}));
     for (const spec of this.spec.entities) {
+      if (mapped.has(spec.id)) continue;
       const count = spec.spawn.count ?? 1;
       for (let i = 0; i < count; i++) this.spawn(spec.id);
+    }
+    if (this.spec.map) this.placeMap(this.spec.map);
+  }
+
+  /** Expand the grid: place each legend entity at its cell centre. */
+  private placeMap(map: TileMap): void {
+    const half = map.tile / 2;
+    for (let r = 0; r < map.rows.length; r++) {
+      const row = map.rows[r]!;
+      for (let c = 0; c < row.length; c++) {
+        const id = map.legend[row[c]!];
+        if (!id) continue;
+        const e = this.spawn(id);
+        if (e) {
+          e.x = c * map.tile + half;
+          e.y = r * map.tile + half;
+        }
+      }
     }
   }
 

@@ -75,6 +75,14 @@ Advanced features, each a self-contained slice with a worked recipe. An agent lo
 - **`glyph`**: rows of a small bitmap (a cell is "on" for any char but space/`.`/`0`), drawn scaled in the entity's color instead of the bare shape. **`rotate: true`** turns it to the entity's heading, so it visibly points its direction. Still no assets — just data. Glyph is visual only; collisions use `size`.
 - *Recipe — a directional tank:* `glyph:["..X..",".XXX.","XXXXX","XXXXX","X.X.X"], rotate:true`.
 
+### `camera` — world bigger than the screen
+- Add **`world.viewport`** (`{ "width": W, "height": H }`) to show only a `W×H` window. When the world is larger, the camera centres on the player and clamps at the world edges; the canvas is the viewport size and the HUD/overlays stay fixed on screen. Pointer aim/control is converted to world coordinates automatically. Defaults to the full world (no scrolling).
+- *Recipe — a big arena:* `world:{ width:1600, height:1200, viewport:{ width:800, height:600 } }`; the player starts mid-world and the view follows it.
+
+### `tilemap` — author levels as a grid
+- Add a top-level **`map`** (`{ "tile": N, "legend": { "<char>": "<entityId>" }, "rows": [...] }`). Each grid char is looked up in `legend` and that entity is placed at the cell centre; unmapped chars (space/`.`) are empty. The world size comes from the grid (`cols×tile × rows×tile`), so you may omit `world.width/height`. Legend entities are placed by the grid only (`spawn.count:0`); other entities (roaming enemies, randomly-scattered food) still spawn normally.
+- *Recipe — a scrolling maze:* draw walls as ASCII (`#`), put the player start in the legend (`P`), size each wall `tile/2`, and pair with `camera`.
+
 ## Extending it
 
 New features follow a decision ladder (recipe → enum token → optional field behind a capability) so the DSL grows in capability without growing the AI's working set. See **[Extending the DSL](extending-the-dsl.md)** — the constitution.

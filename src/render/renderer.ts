@@ -17,10 +17,11 @@ export class Renderer {
     hudCanvas: HTMLCanvasElement,
     world: World,
   ) {
-    gameCanvas.width = world.width;
-    gameCanvas.height = world.height;
-    hudCanvas.width = world.width;
-    hudCanvas.height = world.height;
+    // The canvas is the viewport (the visible window), not the whole world.
+    gameCanvas.width = world.viewW;
+    gameCanvas.height = world.viewH;
+    hudCanvas.width = world.viewW;
+    hudCanvas.height = world.viewH;
     const ctx = gameCanvas.getContext("2d");
     const hud = hudCanvas.getContext("2d");
     if (!ctx || !hud) throw new Error("2D canvas context unavailable");
@@ -31,11 +32,19 @@ export class Renderer {
   draw(world: World, paused = false): void {
     const ctx = this.ctx;
     ctx.fillStyle = world.spec.world.background ?? "#0b0b12";
-    ctx.fillRect(0, 0, world.width, world.height);
+    ctx.fillRect(0, 0, world.viewW, world.viewH);
 
+    // Translate by the camera so world coords map into the viewport; cull
+    // anything off-screen (matters for big maps).
+    ctx.save();
+    ctx.translate(-world.camX, -world.camY);
+    const x0 = world.camX, y0 = world.camY, x1 = world.camX + world.viewW, y1 = world.camY + world.viewH;
     for (const e of world.entities) {
-      if (e.alive) this.drawEntity(e);
+      if (!e.alive) continue;
+      if (e.x + e.size < x0 || e.x - e.size > x1 || e.y + e.size < y0 || e.y - e.size > y1) continue;
+      this.drawEntity(e);
     }
+    ctx.restore();
 
     this.drawHud(world);
     if (paused && world.status === "playing") this.drawPaused(world);
@@ -44,14 +53,14 @@ export class Renderer {
   private drawPaused(world: World): void {
     const hud = this.hud;
     hud.fillStyle = "rgba(7,7,13,0.5)";
-    hud.fillRect(0, 0, world.width, world.height);
+    hud.fillRect(0, 0, world.viewW, world.viewH);
     hud.textAlign = "center";
     hud.fillStyle = "rgba(232,232,240,0.92)";
     hud.font = "700 36px ui-sans-serif, system-ui, sans-serif";
-    hud.fillText("PAUSED", world.width / 2, world.height / 2 - 6);
+    hud.fillText("PAUSED", world.viewW / 2, world.viewH / 2 - 6);
     hud.font = "400 14px ui-sans-serif, system-ui, sans-serif";
     hud.fillStyle = "rgba(232,232,240,0.5)";
-    hud.fillText("press Resume to continue", world.width / 2, world.height / 2 + 26);
+    hud.fillText("press Resume to continue", world.viewW / 2, world.viewH / 2 + 26);
     hud.textAlign = "left";
   }
 
@@ -108,7 +117,7 @@ export class Renderer {
 
   private drawHud(world: World): void {
     const hud = this.hud;
-    hud.clearRect(0, 0, world.width, world.height);
+    hud.clearRect(0, 0, world.viewW, world.viewH);
 
     hud.fillStyle = "rgba(232,232,240,0.9)";
     hud.font = "600 16px ui-sans-serif, system-ui, sans-serif";
@@ -125,7 +134,7 @@ export class Renderer {
     if (title) {
       hud.textAlign = "right";
       hud.fillStyle = "rgba(232,232,240,0.45)";
-      hud.fillText(title, world.width - 14, 12);
+      hud.fillText(title, world.viewW - 14, 12);
       hud.textAlign = "left";
     }
 
@@ -135,10 +144,10 @@ export class Renderer {
   private drawOverlay(world: World, status: GameStatus): void {
     const hud = this.hud;
     hud.fillStyle = "rgba(7,7,13,0.62)";
-    hud.fillRect(0, 0, world.width, world.height);
+    hud.fillRect(0, 0, world.viewW, world.viewH);
 
-    const cx = world.width / 2;
-    const cy = world.height / 2;
+    const cx = world.viewW / 2;
+    const cy = world.viewH / 2;
     hud.textAlign = "center";
     hud.fillStyle = status === "won" ? "#7CFFB0" : "#ff8080";
     hud.font = "700 42px ui-sans-serif, system-ui, sans-serif";

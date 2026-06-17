@@ -76,6 +76,7 @@ export class Engine {
     if (w.status !== "playing") return;
     w.time += dt;
 
+    w.updateCamera(); // scroll the view to the player before reading input/sim
     stepMovement(w, this.input, dt);
     evaluateRules(w, this.timers, this.input.frameEnv(), dt);
     this.input.endFrame(); // consume this step's input edges

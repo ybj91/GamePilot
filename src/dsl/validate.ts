@@ -157,8 +157,17 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
   if (!spec || typeof spec !== "object") {
     return { ok: false, errors: ["spec is not an object"] };
   }
-  if (!spec.world || !isNum(spec.world.width) || !isNum(spec.world.height)) {
+  // A tilemap sizes the world, so width/height are only required without a map.
+  if (!spec.world || typeof spec.world !== "object") {
+    errors.push("world: missing");
+  } else if (!spec.map && (!isNum(spec.world.width) || !isNum(spec.world.height))) {
     errors.push("world: needs numeric width and height");
+  }
+  if (spec.world?.viewport !== undefined) {
+    const vp = spec.world.viewport;
+    if (typeof vp !== "object" || vp === null || !isNum(vp.width) || !isNum(vp.height)) {
+      errors.push("world.viewport: needs numeric width and height");
+    }
   }
   if (!Array.isArray(spec.entities) || spec.entities.length === 0) {
     errors.push("entities: needs at least one entity");
@@ -179,6 +188,31 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
 
   const ids = new Set<string>();
   (spec.entities ?? []).forEach((e) => validateEntity(e, ids, errors));
+
+  // Tilemap: tile size + legend (char -> declared entity id) + rows of chars.
+  if (spec.map !== undefined) {
+    const m = spec.map;
+    if (typeof m !== "object" || m === null) {
+      errors.push("map: must be an object");
+    } else {
+      if (!isNum(m.tile) || m.tile <= 0) errors.push("map.tile: must be a positive number");
+      if (typeof m.legend !== "object" || m.legend === null || Array.isArray(m.legend)) {
+        errors.push("map.legend: must be an object of { char: entityId }");
+      } else {
+        for (const [ch, id] of Object.entries(m.legend)) {
+          if (ch.length !== 1) errors.push(`map.legend: key "${ch}" must be a single character`);
+          if (typeof id !== "string" || !ids.has(id)) {
+            errors.push(`map.legend["${ch}"]: unknown entity "${id}"`);
+          }
+        }
+      }
+      if (!Array.isArray(m.rows) || m.rows.length === 0) {
+        errors.push("map.rows: must be a non-empty array of strings");
+      } else if (m.rows.some((r) => typeof r !== "string")) {
+        errors.push("map.rows: every row must be a string");
+      }
+    }
+  }
 
   // Cross-references: rules must point at declared entity ids.
   (spec.rules ?? []).forEach((r, i) => {

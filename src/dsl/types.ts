@@ -30,12 +30,35 @@ export type Behavior = "chase" | "flee" | "wander";
 export type BehaviorSpec = Behavior | `${Behavior}:${string}`;
 
 export interface World {
-  width: number;
-  height: number;
+  /** World size in units. Optional only when a `map` provides it (grid x tile). */
+  width?: number;
+  height?: number;
   /** CSS color for the backdrop. */
   background: string;
   /** Entities that leave the world are clamped ("wall") or wrapped ("wrap"). */
   edges?: "wall" | "wrap";
+  /**
+   * Visible window onto the world. When smaller than width/height the view
+   * scrolls to follow the player (a camera). Defaults to the full world (no
+   * scrolling). Use it for maps bigger than the screen.
+   */
+  viewport?: { width: number; height: number };
+}
+
+/**
+ * A grid level: rows of characters expanded into entity instances at build
+ * time. Each cell char is looked up in `legend` (char -> entity id) and that
+ * entity is placed at the cell centre; chars not in the legend (space/".") are
+ * empty. The world's size is taken from the grid (cols*tile x rows*tile).
+ * Makes wall-heavy levels easy to author — draw them as ASCII art.
+ */
+export interface TileMap {
+  /** World units per cell. */
+  tile: number;
+  /** Character -> entity id. */
+  legend: Record<string, string>;
+  /** Grid rows (top to bottom). */
+  rows: string[];
 }
 
 /** Region to scatter spawns within (takes precedence over random/x/y). */
@@ -181,6 +204,8 @@ export interface GameSpec {
   world: World;
   entities: EntitySpec[];
   rules: Rule[];
+  /** Optional grid level — places legend entities on a grid and sizes the world. */
+  map?: TileMap;
   /**
    * Named global variables (game-wide state) with their starting values, e.g.
    * `{ "lives": 3, "level": 1, "ammo": 10 }`. Read/written by rules and

@@ -154,6 +154,47 @@ Recipe — walls/cover: place a few solid squares at fixed positions:
   { "id":"w1","kind":"obstacle","shape":"square","color":"#6b7280","size":42,"control":"none","solid":true,"spawn":{"x":300,"y":300,"count":1} }
   (repeat with different ids and x/y for more walls / a maze)`,
   },
+  {
+    id: "camera",
+    title: "Camera (world bigger than the screen)",
+    summary: "a scrolling viewport that follows the player when the world is larger than the window",
+    doc: `Camera — make the world bigger than the visible screen; the view scrolls to follow the player.
+- By default the viewport equals the world, so everything is on screen (no scrolling).
+- Add "viewport": { "width": W, "height": H } to "world" to show only a W×H window. When the world is bigger than the viewport, the camera centres on the player and clamps at the world edges (no scrolling past the border). The canvas is the viewport size; the HUD/overlays stay fixed on screen.
+- Pointer aim/control is automatically converted to world coordinates, so "follow-pointer" and "aim":"pointer" keep working while scrolling.
+Recipe — a big arena you explore (1600x1200 world seen through an 800x600 window):
+  "world": { "width":1600,"height":1200,"background":"#0b0b12","edges":"wall","viewport":{ "width":800,"height":600 } },
+  player: { ...,"control":"arrows","spawn":{ "x":800,"y":600 } }   // starts mid-world; the camera follows it
+  (Combine with the tilemap capability to author the whole big level as ASCII art.)`,
+  },
+  {
+    id: "tilemap",
+    title: "Tilemap (author levels as a grid)",
+    summary: "draw wall-heavy levels as rows of characters; a legend maps each char to an entity",
+    doc: `Tilemap — author a level as a grid of characters instead of placing every wall by hand. Best for mazes / wall-heavy levels.
+- Add a top-level "map": { "tile": N, "legend": { "<char>": "<entityId>" }, "rows": [ "....", ... ] }.
+- "tile" is the world size of one cell. Each character in "rows" is looked up in "legend"; the matching entity is placed at that cell's CENTRE. Characters not in the legend (space or ".") are empty. Use a single character per legend key.
+- The world size is taken from the grid: width = (longest row length) x tile, height = (row count) x tile. With a map you may omit world.width/height.
+- Entity types used in the legend are placed ONLY by the grid (their own spawn x/y/count is ignored). Other entities (the player, roaming enemies) still spawn normally — give the player a fixed spawn inside the open space, OR put it in the legend too for a precise start cell. Size each wall so it fills a cell (square "size" = tile/2).
+Recipe — a scrolling maze (40px tiles, walls from ASCII; pair with the camera capability):
+  "world": { "background":"#0b0b12","edges":"wall","viewport":{ "width":640,"height":480 } },
+  "map": {
+    "tile": 40,
+    "legend": { "#": "wall", "P": "player" },
+    "rows": [
+      "####################",
+      "#P.......#.........#",
+      "#.######.#.#######.#",
+      "#......#...#.......#",
+      "######.#####.#####.#",
+      "#..................#",
+      "####################"
+    ]
+  },
+  wall:   { "id":"wall","kind":"obstacle","shape":"square","color":"#6b7280","size":20,"control":"none","solid":true,"spawn":{"count":0} },
+  player: { "id":"player","kind":"player","shape":"square","color":"#8cb33a","size":14,"control":"arrows","spawn":{"count":0},"props":{"speed":200} }
+  (Legend entities set "spawn":{"count":0} — the grid places them. size 20 = tile/2 fills the cell; the player is a touch smaller so it slips through gaps.)`,
+  },
 ];
 
 /** A complete, valid GameSpec (core-only), pretty-printed — the worked example. */

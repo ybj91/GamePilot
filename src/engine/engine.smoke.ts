@@ -359,6 +359,65 @@ check("bad glyph rejected",
   !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "tank" as never }] }).ok);
 check("glyph copied onto the runtime entity", new World(glyphSpec, 1).firstOf("player")!.glyph?.length === 5);
 
+// 15. tilemap: a grid of chars expands into solid walls + a player at its cell.
+const mapSpec: GameSpec = {
+  meta: { title: "Map test" },
+  world: { background: "#000", edges: "wall", viewport: { width: 120, height: 120 } },
+  entities: [
+    { id: "wall", kind: "obstacle", shape: "square", color: "#888", size: 20, control: "none", solid: true, spawn: { count: 0 } },
+    { id: "player", kind: "player", shape: "square", color: "#8cb33a", size: 14, control: "arrows", spawn: { count: 0 }, props: { speed: 200 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+  map: {
+    tile: 40,
+    legend: { "#": "wall", P: "player" },
+    rows: [
+      "#####",
+      "#P..#",
+      "#.#.#",
+      "#...#",
+      "#####",
+    ],
+  },
+};
+check("map spec validates", validateGameSpec(mapSpec).ok);
+// legend referencing an unknown entity is rejected
+check("map with unknown legend entity is rejected",
+  !validateGameSpec({ ...mapSpec, map: { ...mapSpec.map!, legend: { "#": "nope" } } }).ok);
+{
+  const w = new World(mapSpec, 1);
+  // grid is 5x5 of 40px tiles -> world is 200x200
+  check("map sizes the world from the grid", w.width === 200 && w.height === 200);
+  // 17 '#' border/interior cells -> 17 walls; exactly one player at cell (1,1)
+  check("map expands '#' cells into walls", w.countOf("wall") === 17);
+  const mp = w.firstOf("player")!;
+  check("map places the player at its cell centre", mp.x === 60 && mp.y === 60);
+  // legend entities are placed by the grid only (player count:0 didn't pre-spawn a second one)
+  check("legend entity isn't double-spawned", w.countOf("player") === 1);
+}
+
+// 16. camera: a world bigger than the viewport scrolls to follow the player and
+//     clamps at the edges; an unscrolled world keeps the camera at the origin.
+{
+  const w = new World(mapSpec, 1); // 200x200 world, 120x120 viewport
+  check("viewport is read from the spec", w.viewW === 120 && w.viewH === 120);
+  const p = w.firstOf("player")!;
+  // player near the top-left -> camera clamps to origin (can't scroll past 0)
+  p.x = 20; p.y = 20; w.updateCamera();
+  check("camera clamps at the world's top-left", w.camX === 0 && w.camY === 0);
+  // player in the middle -> camera centres on it (60 = 80 - 120/2)
+  p.x = 140; p.y = 140; w.updateCamera();
+  check("camera centres on the player mid-world", w.camX === 80 && w.camY === 80);
+  // player at the far corner -> camera clamps to the max (world - viewport = 80)
+  p.x = 200; p.y = 200; w.updateCamera();
+  check("camera clamps at the world's bottom-right", w.camX === 80 && w.camY === 80);
+}
+{
+  // no viewport -> camera stays at the origin (whole world on screen)
+  const w = new World(growAndSlow, 1);
+  check("no viewport: camera fixed at origin", w.camX === 0 && w.camY === 0 && w.viewW === w.width);
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);
