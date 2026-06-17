@@ -63,6 +63,24 @@ export const GLYPH_PRESETS: Record<string, string[][]> = {
     [".XXX.", "XXXXX", "X.X.X", "XXXXX", "X...X"],
     [".XXX.", "XXXXX", "X.X.X", "XXXXX", ".X.X."],
   ],
+
+  // --- nature & scenery (decoration; single colour silhouettes) ---
+  tree: [[".XXX.", "XXXXX", "XXXXX", "..X..", "..X.."]],
+  flower: [["X.X.X", ".XXX.", "..X..", ".X.X.", "..X.."]],
+  cloud: [[".....", ".XXX.", "XXXXX", "XXXXX", "....."]],
+  bush: [[".X.X.", "XXXXX", "XXXXX", "XXXXX", ".X.X."]],
+  mountain: [["..X..", ".XXX.", "XXXXX", "XXXXX", "XXXXX"]],
+  sun: [["X.X.X", ".XXX.", "XXXXX", ".XXX.", "X.X.X"]],
+  moon: [[".XXX.", "XX...", "XX...", "XX...", ".XXX."]],
+  drop: [["..X..", "..X..", ".XXX.", "XXXXX", ".XXX."]],
+  rock: [[".....", ".XX..", "XXXXX", "XXXXX", "....."]],
+  grass: [[".....", "X...X", "X.X.X", "X.X.X", "XXXXX"]],
+  leaf: [["...XX", "..XXX", ".XXX.", "XXX..", "XX..."]],
+  snowflake: [["..X..", "X.X.X", ".XXX.", "X.X.X", "..X.."]],
+  house: [["..X..", ".XXX.", "XXXXX", "XX.XX", "XX.XX"]],
+  bird: [[".....", "XX.XX", ".XXX.", "..X..", "....."]],
+  key: [[".XXX.", ".X.X.", ".XXX.", "..X..", "..XX."]],
+  crown: [[".....", "X.X.X", "XXXXX", "XXXXX", "....."]],
 };
 
 /** All preset names (for validation messages + the reference menu). */

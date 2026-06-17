@@ -15,6 +15,10 @@ const COLORS: Record<string, string> = {
   alien: "#9be15d", invader: "#d24b4b", blob: "#a86bd6", flame: "#ff9a3c", explosion: "#ff9a3c",
   hero: "#e23d3d", coin: "#ffd23f", brick: "#c8743a", flag: "#39d353", mushroom: "#ff5d73",
   pipe: "#2ec16e", goomba: "#b07a3a",
+  tree: "#4caf50", flower: "#ff7eb6", cloud: "#dfe7f2", bush: "#5fae5f", mountain: "#9aa0aa",
+  sun: "#ffd23f", moon: "#e6e6c0", drop: "#5bb8ff", rock: "#9a9aa2", grass: "#7bc043",
+  leaf: "#6fbf4a", snowflake: "#a8e0ff", house: "#d98a4a", bird: "#9ad0ff", key: "#ffd23f",
+  crown: "#ffcf3a",
 };
 
 const PX = 96; // canvas size
