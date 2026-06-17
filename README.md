@@ -31,7 +31,7 @@ The one rule that makes it all work: **the AI emits *data*, never code.** Its on
 
 Every bit of that is *data* — entities, rules, conditions, variables, glyphs — composed together. Across a dozen refinements (directional firing, roaming AI, solid bodies, pixel-glyph tanks, power-ups…) only two ever touched the engine as genuinely new **capabilities** (glyph rendering, solid-body collision); the rest was pure composition. **The games got richer; the schema didn't.**
 
-…and it's not just tanks. The same contract already plays **Breakout** (bounce physics + a tilemap of bricks), a **Frogger** lane-crosser (built with *zero* new engine code), scrolling **mazes**, and **Snake** — a *growing* snake you steer Tron-style. Snake is the telling one: a trailing-body genre that started out *past* the engine's edge, brought fully in-scope by two tiny, composable additions — a `runner` control (constant-forward, steer-only) and a `ttlFrom` spawn field (a body that lengthens as you eat). New genres, almost always, are new *data* — not new engine.
+…and it's not just tanks. The same contract already plays **Breakout** (bounce physics + a tilemap of bricks), a **Frogger** lane-crosser (built with *zero* new engine code), scrolling **mazes**, **Snake** — a *growing* snake you steer Tron-style — and even a side-scrolling **Mario-lite** platformer (run, jump, land on platforms, hop the pits, grab coins, reach the flag, camera scrolling along). Snake and Mario are the telling ones: genres that started out *past* the engine's edge, each brought in-scope by a small, composable addition — Snake by a `runner` control + a `ttlFrom` spawn field (a body that grows as you eat); Mario by a platformer cluster (`world.gravity` + a `platformer` run/jump control that lands on `solid` platforms). New genres, almost always, are new *data* — and when they aren't, it's a tiny, well-shaped capability, never a rewrite.
 
 ---
 
@@ -90,7 +90,7 @@ Three strictly separated layers — **DSL** (the contract), a deterministic **en
 }
 ```
 
-A game is `world` + `entities` + `rules` (+ optional `vars`, `win`/`lose`). Rules are `on` *event* → `effects`, optionally guarded by a `when` condition. That tiny, uniform shape — plus a handful of composable capabilities (input & projectiles, variables, spawn areas, obstacles, **glyphs + animation + hit-flash**, a **scrolling camera**, **tilemap** levels, **bounce** physics, and **runner** movement) — spans whole genres: shooters, dodgers, collectors, **tank battles**, **scrolling mazes**, **Breakout**, **Frogger-style lane-crossers**, and **Snake**. Most archetypes are pure composition — e.g. the lane-crosser added *zero* new engine code. → [full DSL reference](docs/dsl.md)
+A game is `world` + `entities` + `rules` (+ optional `vars`, `win`/`lose`). Rules are `on` *event* → `effects`, optionally guarded by a `when` condition. That tiny, uniform shape — plus a handful of composable capabilities (input & projectiles, variables, spawn areas, obstacles, **glyphs + animation + hit-flash**, a **scrolling camera**, **tilemap** levels, **bounce** physics, **runner** movement, and a **platformer** cluster (gravity + jumping)) — spans whole genres: shooters, dodgers, collectors, **tank battles**, **scrolling mazes**, **Breakout**, **Frogger-style lane-crossers**, **Snake**, and side-scrolling **platformers (Mario-lite)**. Most archetypes are pure composition — e.g. the lane-crosser added *zero* new engine code. → [full DSL reference](docs/dsl.md)
 
 ---
 
