@@ -26,7 +26,7 @@ export interface ValidationResult {
 }
 
 const SHAPES: Shape[] = ["circle", "square", "dot"];
-const CONTROLS: Control[] = ["none", "follow-pointer", "follow-pointer-x", "arrows", "runner"];
+const CONTROLS: Control[] = ["none", "follow-pointer", "follow-pointer-x", "arrows", "runner", "platformer"];
 const TRIGGERS = ["collision", "tick", "interval", "input"];
 const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "flash", "bounce", "score", "win", "gameover"];
 
@@ -197,6 +197,9 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
   }
   if (spec.world?.edges !== undefined && !["wall", "wrap", "bounce"].includes(spec.world.edges)) {
     errors.push(`world.edges: must be "wall", "wrap", or "bounce"`);
+  }
+  if (spec.world?.gravity !== undefined && (!isNum(spec.world.gravity) || spec.world.gravity < 0)) {
+    errors.push("world.gravity: must be a non-negative number");
   }
   if (!Array.isArray(spec.entities) || spec.entities.length === 0) {
     errors.push("entities: needs at least one entity");

@@ -693,6 +693,56 @@ check("ttlFrom with an undeclared var is rejected",
   check("growing the var lengthens new segments (body grows)", Math.abs((longest.props.ttl ?? 0) - 1.2) < 1e-6);
 }
 
+// 21. platformer: gravity makes a platformer entity fall, it lands on a solid
+//     (grounded + fall stops), jumps only when grounded (no double-jump), runs.
+const platformSpec: GameSpec = {
+  meta: { title: "Platformer test" },
+  world: { width: 400, height: 400, background: "#000", edges: "wall", gravity: 1600 },
+  entities: [
+    { id: "player", kind: "player", shape: "square", color: "#e23d3d", size: 12,
+      control: "platformer", spawn: { x: 200, y: 100 }, props: { speed: 160, jump: 560 } },
+    { id: "ground", kind: "obstacle", shape: "square", color: "#7a4a23", size: 16,
+      control: "none", solid: true, spawn: { x: 200, y: 360 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("platformer spec validates", validateGameSpec(platformSpec).ok);
+check("negative gravity rejected", !validateGameSpec({ ...platformSpec, world: { ...platformSpec.world, gravity: -5 } }).ok);
+{
+  const w = new World(platformSpec, 1);
+  const p = w.firstOf("player")!;
+  const y0 = p.y;
+  // with no input, gravity pulls the player down (vy grows, y increases)
+  for (let i = 0; i < 5; i++) stepMovement(w, new Input(), 1 / 60);
+  check("gravity makes a platformer entity fall", p.vy > 0 && p.y > y0);
+
+  // let it fall onto the ground (solid at y=360, top ~344) -> grounded + fall stops
+  for (let i = 0; i < 120; i++) { stepMovement(w, new Input(), 1 / 60); resolveSolids(w); }
+  check("player lands on the ground (grounded, fall stopped)", p.grounded && Math.abs(p.vy) < 1 && p.y < 360);
+
+  // jump from the ground: an up-press launches it upward
+  const up = new Input();
+  (up as unknown as { justPressed: Set<string> }).justPressed.add("up");
+  stepMovement(w, up, 1 / 60);
+  check("grounded jump launches upward (vy negative)", p.vy < 0 && !p.grounded);
+
+  // mid-air: another up-press does NOT jump again (no double-jump)
+  const vyAir = p.vy;
+  const up2 = new Input();
+  (up2 as unknown as { justPressed: Set<string> }).justPressed.add("up");
+  stepMovement(w, up2, 1 / 60);
+  check("no mid-air double-jump", p.vy > vyAir); // only gravity changed vy (made it less negative), not a fresh impulse
+
+  // horizontal run: holding right moves the player in +x
+  const w2 = new World(platformSpec, 1);
+  const p2 = w2.firstOf("player")!;
+  const right = new Input();
+  (right as unknown as { keys: Set<string> }).keys.add("right");
+  const x0 = p2.x;
+  for (let i = 0; i < 5; i++) stepMovement(w2, right, 1 / 60);
+  check("platformer runs left/right (held right -> +x)", p2.x > x0 && p2.vx > 0);
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

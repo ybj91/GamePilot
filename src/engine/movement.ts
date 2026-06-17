@@ -60,6 +60,16 @@ function applyControl(e: Entity, input: Input, world: World): void {
     if (!(dx === -e.hx && dy === -e.hy)) { e.hx = dx; e.hy = dy; }
     e.vx = e.hx * e.speed;
     e.vy = e.hy * e.speed;
+  } else if (e.control === "platformer") {
+    // Left/right run; vertical is owned by gravity (in integrate). Jump is an
+    // upward impulse on a key-down edge, ONLY when grounded (no mid-air jumps).
+    e.vx = input.axisX * e.speed;
+    if (e.vx !== 0) e.hx = Math.sign(e.vx);
+    const pressed = input.frameEnv().pressed;
+    if (e.grounded && (pressed.has("up") || pressed.has("w") || pressed.has("space"))) {
+      e.vy = -(e.props.jump || 500);
+      e.grounded = false;
+    }
   }
 }
 
@@ -94,6 +104,11 @@ function applyBehavior(e: Entity, world: World): void {
 }
 
 function integrate(e: Entity, world: World, dt: number): void {
+  // Platformer gravity: accelerate downward (capped to avoid tunnelling thin
+  // platforms), then integrate. Only platformer-controlled entities fall.
+  if (world.gravity && e.control === "platformer") {
+    e.vy = Math.min(e.vy + world.gravity * dt, 1200);
+  }
   e.x += e.vx * dt;
   e.y += e.vy * dt;
   const m = e.size;
@@ -187,6 +202,9 @@ function pushVector(m: Entity, s: Entity): { x: number; y: number } | null {
  * sees the overlap first.
  */
 export function resolveSolids(world: World): void {
+  // Recompute grounded each step (a platformer mover is grounded only while a
+  // solid is pushing it up this frame).
+  for (const e of world.entities) if (e.alive) e.grounded = false;
   const solids = world.entities.filter((e) => e.alive && e.solid);
   if (!solids.length) return;
 
@@ -197,6 +215,10 @@ export function resolveSolids(world: World): void {
       if (p) {
         m.x += p.x;
         m.y += p.y;
+        // Landing on a solid's top stops the fall and grounds the mover; a head
+        // bonk on a solid's underside just stops upward motion.
+        if (p.y < 0 && m.vy > 0) { m.vy = 0; m.grounded = true; }
+        else if (p.y > 0 && m.vy < 0) { m.vy = 0; }
       }
     }
   }

@@ -24,8 +24,11 @@ export type Shape = "circle" | "square" | "dot";
  *  - "arrows"           move with arrow keys / WASD (stops when nothing is held)
  *  - "runner"           ALWAYS moves forward at `speed`; arrows/WASD steer it to a
  *    cardinal but never a direct 180° reversal (Snake / Tron light-cycle).
+ *  - "platformer"       left/right run at `speed`; gravity pulls down; ↑/W/space
+ *    JUMP (impulse = `jump` prop) but only when grounded (Mario). Needs
+ *    `world.gravity` and `solid` platforms to stand on.
  */
-export type Control = "none" | "follow-pointer" | "follow-pointer-x" | "arrows" | "runner";
+export type Control = "none" | "follow-pointer" | "follow-pointer-x" | "arrows" | "runner" | "platformer";
 
 /**
  * Built-in autonomous behaviours. The target after ":" is an entity-type id.
@@ -57,6 +60,12 @@ export interface World {
    * scrolling). Use it for maps bigger than the screen.
    */
   viewport?: { width: number; height: number };
+  /**
+   * Downward acceleration in units/second² applied to `control:"platformer"`
+   * entities — turns the world into a side-on platformer (Mario). Unset/0 = no
+   * gravity (top-down / free-2D, the default). Pair with `solid` platforms.
+   */
+  gravity?: number;
 }
 
 /**

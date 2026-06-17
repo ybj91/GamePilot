@@ -40,6 +40,7 @@ export function canCompile(spec: GameSpec): { ok: boolean; unsupported: string[]
   if (spec.map) bad.push("map (tilemap)");
   if (spec.world.viewport) bad.push("world.viewport (camera)");
   if (spec.world.edges === "bounce") bad.push('world.edges: "bounce"');
+  if (spec.world.gravity) bad.push("world.gravity (platformer)");
   for (const e of spec.entities) {
     if (e.glyph) bad.push(`entity "${e.id}": glyph`);
     if (e.frames) bad.push(`entity "${e.id}": frames`);
@@ -47,6 +48,7 @@ export function canCompile(spec: GameSpec): { ok: boolean; unsupported: string[]
     if (e.flashColor) bad.push(`entity "${e.id}": flashColor`);
     if (e.control === "follow-pointer-x") bad.push(`entity "${e.id}": control follow-pointer-x`);
     if (e.control === "runner") bad.push(`entity "${e.id}": control runner`);
+    if (e.control === "platformer") bad.push(`entity "${e.id}": control platformer`);
   }
   for (const [i, r] of spec.rules.entries()) {
     for (const fx of r.effects) {

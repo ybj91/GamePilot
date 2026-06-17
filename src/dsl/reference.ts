@@ -216,6 +216,29 @@ Recipe — Snake (grows as you eat):
   { "on":"collision","between":["head","seg"],"effects":[{"op":"gameover"}] }`,
   },
   {
+    id: "platformer",
+    title: "Platformer (gravity, jumping, platforms — Mario)",
+    summary: "side-on gravity + a run/jump control that lands on solid platforms (Mario / side-scroller)",
+    doc: `Platformer — side-on gravity, running, and jumping onto platforms (Mario-style).
+- world "gravity": <number>  — downward acceleration (units/s²) applied to platformer entities. Try 1600–1900. Without it the world is top-down (the default).
+- "control": "platformer"  — left/right (arrows/AD) RUN at "speed"; gravity pulls the entity down; ↑/W/space JUMP with an upward impulse of the "jump" prop, but ONLY when grounded (no mid-air double-jumps).
+- Platforms/ground are "solid":true squares (control "none"). The player lands on top of them (becomes grounded) and is blocked sideways — standard solid bodies, now with gravity. Best authored as a "tilemap" (legend "#"→ground). Leave GAPS in the ground for pits.
+- Pits / falling death: put a "deadzone" strip ("solid":false squares, e.g. a tilemap bottom row "D"→deadzone) below the ground; a player↔deadzone collision → gameover. Coins (collect→score) and a goal (reach→win) are ordinary collision rules.
+- The "camera" capability composes: a viewport narrower than the world scrolls to follow the player.
+Recipe — Mario-lite (run, jump, platforms, coins, a flag, pits; level as a tilemap):
+  "world": { "background":"#5c94fc","edges":"wall","gravity":1700,"viewport":{ "width":640,"height":448 } },
+  player: { "id":"player","kind":"player","shape":"square","color":"#e23d3d","size":13,"control":"platformer","spawn":{"count":0},"props":{"speed":170,"jump":640} },
+  ground: { "id":"ground","kind":"obstacle","shape":"square","color":"#7a4a23","size":16,"control":"none","solid":true,"spawn":{"count":0} },
+  coin:   { "id":"coin","kind":"food","shape":"dot","color":"#ffd23f","size":7,"control":"none","spawn":{"count":0} },
+  goal:   { "id":"goal","kind":"goal","shape":"square","color":"#2e7d32","size":14,"control":"none","spawn":{"count":0} },
+  deadzone:{ "id":"deadzone","kind":"obstacle","shape":"square","color":"#5c94fc","size":16,"control":"none","spawn":{"count":0} },
+  "map": { "tile":32, "legend":{ "#":"ground","C":"coin","G":"goal","D":"deadzone","P":"player" }, "rows":[ ...ASCII level, ground row with gaps, a deadzone bottom row... ] },
+  { "on":"collision","between":["player","coin"],"effects":[{"op":"score","value":1},{"op":"destroy","target":"other"}] },
+  { "on":"collision","between":["player","goal"],"effects":[{"op":"win"}] },
+  { "on":"collision","between":["player","deadzone"],"effects":[{"op":"gameover"}] }
+  (size 16 ground = a 32px tile. The player jump 640 + gravity 1700 clears ~120px up and a ~3-tile pit. Put the player 'P' a row above the ground so it drops onto it.)`,
+  },
+  {
     id: "camera",
     title: "Camera (world bigger than the screen)",
     summary: "a scrolling viewport that follows the player when the world is larger than the window",

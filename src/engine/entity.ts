@@ -37,6 +37,8 @@ export interface Entity {
   control: string;
   /** Blocks other entities' movement (walls/obstacles). */
   solid: boolean;
+  /** True while resting on a solid (platformer): gates jumping. Set by resolveSolids. */
+  grounded: boolean;
   /**
    * Resolved animation frames (each a bitmap) drawn instead of the bare shape —
    * from a raw glyph, a named preset, or explicit `frames`. One frame = static.
@@ -81,6 +83,7 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     behavior: verb ? { verb, target: target || undefined } : undefined,
     control: spec.control ?? "none",
     solid: spec.solid ?? false,
+    grounded: false,
     frames: resolveFrames(spec.glyph, spec.frames),
     fps: spec.fps ?? 6,
     loop: spec.loop ?? true,

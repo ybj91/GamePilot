@@ -90,6 +90,12 @@ Advanced features, each a self-contained slice with a worked recipe. An agent lo
 - *Trailing body:* drop short-lived segments behind the head on an `interval` (`spawn from:"head" aim:"backward"`, seg `control:"none" speed:0`); a head↔seg collision ends the game.
 - *Growth:* spawn each seg with **`ttlFrom:"length"`** (a var) so its lifetime = the current `length`; eating adds to `length`, so new segments live longer and the body grows. `ttlFrom` sets a spawned entity's `ttl` from a var instead of its type's fixed `ttl` — the primitive that makes a body grow with game state.
 
+### `platformer` — gravity, jumping, platforms (Mario)
+- **`world.gravity`** (e.g. `1700`) applies downward acceleration to `control:"platformer"` entities — a side-on platformer.
+- **`control:"platformer"`** — left/right run at `speed`, gravity pulls down, ↑/W/space **jump** (impulse = the `jump` prop) but only when **grounded** (no double-jumps).
+- Stand on **`solid`** platforms/ground (best authored as a `tilemap`; leave gaps for **pits**). A bottom **deadzone** strip + `player↔deadzone → gameover` handles falling deaths; coins (`→ score`) and a goal (`→ win`) are ordinary collision rules. Composes with the `camera` for a scrolling level.
+- *Recipe — Mario-lite:* `world.gravity:1700`; a `platformer` player with `props:{speed,jump}`; `solid` ground with gaps; coins, a goal, a bottom deadzone; viewport narrower than the world.
+
 ### `camera` — world bigger than the screen
 - Add **`world.viewport`** (`{ "width": W, "height": H }`) to show only a `W×H` window. When the world is larger, the camera centres on the player and clamps at the world edges; the canvas is the viewport size and the HUD/overlays stay fixed on screen. Pointer aim/control is converted to world coordinates automatically. Defaults to the full world (no scrolling).
 - *Recipe — a big arena:* `world:{ width:1600, height:1200, viewport:{ width:800, height:600 } }`; the player starts mid-world and the view follows it.

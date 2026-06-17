@@ -15,6 +15,8 @@ export class World {
   readonly width: number;
   readonly height: number;
   readonly edges: "wall" | "wrap" | "bounce";
+  /** Downward acceleration (units/s²) for platformer entities; 0 = none. */
+  readonly gravity: number;
   readonly rng: Rng;
 
   /** Visible window onto the world (the camera viewport). */
@@ -48,6 +50,7 @@ export class World {
     this.viewW = spec.world.viewport?.width ?? this.width;
     this.viewH = spec.world.viewport?.height ?? this.height;
     this.edges = spec.world.edges ?? "wall";
+    this.gravity = spec.world.gravity ?? 0;
     this.rng = new Rng(seed);
     this.vars = { ...(spec.vars ?? {}) };
     for (const e of spec.entities) this.specsById.set(e.id, e);
