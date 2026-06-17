@@ -26,7 +26,7 @@ export interface ValidationResult {
 }
 
 const SHAPES: Shape[] = ["circle", "square", "dot"];
-const CONTROLS: Control[] = ["none", "follow-pointer", "follow-pointer-x", "arrows"];
+const CONTROLS: Control[] = ["none", "follow-pointer", "follow-pointer-x", "arrows", "runner"];
 const TRIGGERS = ["collision", "tick", "interval", "input"];
 const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "flash", "bounce", "score", "win", "gameover"];
 

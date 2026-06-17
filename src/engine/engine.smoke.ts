@@ -622,6 +622,40 @@ check("edge spec validates", validateGameSpec(edgeSpec).ok);
   check("a behaviour enemy clamps at the wall (doesn't despawn)", w3.countOf("enemy") === 1 && en.x <= 400 - en.size);
 }
 
+// 19. runner control: constant forward motion, cardinal steering, no 180 reversal.
+const runnerSpec: GameSpec = {
+  meta: { title: "Runner test" },
+  world: { width: 400, height: 400, background: "#000", edges: "wrap" },
+  entities: [
+    { id: "head", kind: "player", shape: "square", color: "#6fcf52", size: 10,
+      control: "runner", spawn: { x: 200, y: 200 }, props: { speed: 120 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("runner spec validates", validateGameSpec(runnerSpec).ok);
+{
+  const w = new World(runnerSpec, 1);
+  const h = w.firstOf("head")!;
+  // no input -> it moves forward (up) on its own and never stops
+  stepMovement(w, new Input(), 1 / 60);
+  check("runner moves forward with no input (never stops)", h.vy < 0 && Math.abs(h.vx) < 1);
+  // a TAP (key-down edge) steers right
+  const right = new Input();
+  (right as unknown as { justPressed: Set<string> }).justPressed.add("right");
+  stepMovement(w, right, 1 / 60);
+  check("runner steers to a cardinal on a tap (right)", h.vx > 0 && Math.abs(h.vy) < 1 && h.hx === 1);
+  // attempt a direct reversal (left while moving right) -> refused, keeps going right
+  const left = new Input();
+  (left as unknown as { justPressed: Set<string> }).justPressed.add("left");
+  stepMovement(w, left, 1 / 60);
+  check("runner refuses a 180 reversal (keeps heading right)", h.vx > 0 && h.hx === 1);
+  // a perpendicular turn IS allowed (down)
+  const down = new Input();
+  (down as unknown as { justPressed: Set<string> }).justPressed.add("down");
+  stepMovement(w, down, 1 / 60);
+  check("runner turns perpendicular (down)", h.vy > 0 && h.hy === 1 && Math.abs(h.vx) < 1);
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

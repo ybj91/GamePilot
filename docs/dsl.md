@@ -85,6 +85,10 @@ Advanced features, each a self-contained slice with a worked recipe. An agent lo
 - **`flash` effect** (`{op:"flash", target:"self"|"other"|"<id>", value:<seconds>}`, default 0.15s) flashes any entity bright for instant hit feedback — best on a hit the entity *survives*. **`flashColor`** on the EntitySpec sets the color (default white). Works on bare shapes too.
 - *Recipe — a directional tank:* `glyph:"tank", rotate:true`. *Animated enemy for free:* `glyph:"invader"`. *Custom pulse:* `frames:[[...],[...]], fps:4`. *Explosion on a kill:* a `glyph:"explosion", loop:false, props:{ttl:0.4}` effect with `spawn.count:0`, spawned `from:"other"` in the collision rule — it plays once where the enemy died, then vanishes.
 
+### `runner` — Snake / Tron constant-forward movement
+- **`control: "runner"`** — the entity always moves forward at `speed` in its heading; arrows/WASD steer it to a cardinal, but a direct 180° reversal is refused (it can't turn back into its own trail). Never stops; heading starts "up". Pair with `edges:"wrap"` + `glyph`+`rotate`.
+- *Trailing body:* drop short-lived segments behind the head on an `interval` (`spawn from:"head" aim:"backward"`, seg `control:"none" speed:0` + a `ttl`); a head↔seg collision ends the game. **Body length is fixed** (a seg's `ttl` can't grow on eating) — true Snake growth is a [known edge](extending-the-dsl.md#scope-the-hard-boundary); this gives Tron-light-cycle / fixed-length-snake play.
+
 ### `camera` — world bigger than the screen
 - Add **`world.viewport`** (`{ "width": W, "height": H }`) to show only a `W×H` window. When the world is larger, the camera centres on the player and clamps at the world edges; the canvas is the viewport size and the HUD/overlays stay fixed on screen. Pointer aim/control is converted to world coordinates automatically. Defaults to the full world (no scrolling).
 - *Recipe — a big arena:* `world:{ width:1600, height:1200, viewport:{ width:800, height:600 } }`; the player starts mid-world and the view follows it.

@@ -45,6 +45,21 @@ function applyControl(e: Entity, input: Input, world: World): void {
     const len = Math.hypot(ax, ay) || 1;
     e.vx = (ax / len) * e.speed * (ax || ay ? 1 : 0);
     e.vy = (ay / len) * e.speed * (ax || ay ? 1 : 0);
+  } else if (e.control === "runner") {
+    // Always moving forward in the current heading. A TAP of an arrow/WASD latches
+    // a new cardinal heading (edge-triggered, so a quick tap turns you and you
+    // keep going), but a direct 180° reversal is refused — you can't turn back
+    // into your own trail. Heading defaults to "up", so it starts moving at once.
+    const pressed = input.frameEnv().pressed;
+    let dx = e.hx;
+    let dy = e.hy;
+    if (pressed.has("left") || pressed.has("a")) { dx = -1; dy = 0; }
+    else if (pressed.has("right") || pressed.has("d")) { dx = 1; dy = 0; }
+    else if (pressed.has("up") || pressed.has("w")) { dx = 0; dy = -1; }
+    else if (pressed.has("down") || pressed.has("s")) { dx = 0; dy = 1; }
+    if (!(dx === -e.hx && dy === -e.hy)) { e.hx = dx; e.hy = dy; }
+    e.vx = e.hx * e.speed;
+    e.vy = e.hy * e.speed;
   }
 }
 

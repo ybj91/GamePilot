@@ -46,6 +46,7 @@ export function canCompile(spec: GameSpec): { ok: boolean; unsupported: string[]
     if (e.solid) bad.push(`entity "${e.id}": solid`);
     if (e.flashColor) bad.push(`entity "${e.id}": flashColor`);
     if (e.control === "follow-pointer-x") bad.push(`entity "${e.id}": control follow-pointer-x`);
+    if (e.control === "runner") bad.push(`entity "${e.id}": control runner`);
   }
   for (const [i, r] of spec.rules.entries()) {
     for (const fx of r.effects) {

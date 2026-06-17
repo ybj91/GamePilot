@@ -21,9 +21,11 @@ export type Shape = "circle" | "square" | "dot";
  * How an entity type is controlled / moves on its own.
  *  - "follow-pointer"   chase the cursor in both axes (a blob)
  *  - "follow-pointer-x" track only the cursor's X, hold Y (a Breakout paddle)
- *  - "arrows"           move with arrow keys / WASD
+ *  - "arrows"           move with arrow keys / WASD (stops when nothing is held)
+ *  - "runner"           ALWAYS moves forward at `speed`; arrows/WASD steer it to a
+ *    cardinal but never a direct 180° reversal (Snake / Tron light-cycle).
  */
-export type Control = "none" | "follow-pointer" | "follow-pointer-x" | "arrows";
+export type Control = "none" | "follow-pointer" | "follow-pointer-x" | "arrows" | "runner";
 
 /**
  * Built-in autonomous behaviours. The target after ":" is an entity-type id.

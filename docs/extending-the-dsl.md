@@ -29,9 +29,10 @@ segment `speed:0` so it stays put + a `ttl` so the tail fades), which **looks**
 like a snake and whose **self-collision works** (run into a `seg` → game over).
 But it hits three real edges of the movement model:
 
-1. **No auto-forward motion.** `arrows` is *direct velocity* — release the keys
-   and the head stops. A runner needs *persistent forward motion + turn-only
-   steering*; there's no control for it.
+1. ~~**No auto-forward motion.**~~ **SOLVED** — the `runner` control (a `runner`
+   capability slice) gives constant forward motion with tap-to-turn steering and
+   no 180° reversal. The head now moves on its own; you only steer. (This was the
+   cleanest of the three; it makes the demo play as Tron / fixed-length Snake.)
 2. **No body growth tied to state.** A spawned entity's `ttl` is fixed by its
    type; it can't be parametrized from a `length` var, so the body length is
    constant. Eating can't lengthen the snake — the defining progression is gone.
@@ -39,16 +40,14 @@ But it hits three real edges of the movement model:
    "follow the leader's path" primitive (`chase` clumps onto the target, it
    doesn't trail); spacing is an artifact of `speed × tick`.
 
-**Diagnosis:** the engine computes *velocity from control/behaviour each frame* —
-it has no notion of persistent motion-state or path-replay/segmented bodies. So
-trailing-body / auto-runner is a **movement paradigm at the edge**, not a missing
-recipe. **Recommendation:** treat it as a scope edge for now. If these games
-become a priority, it's a real *capability cluster* (not free composition): a
-`runner` control (constant forward + steer), a way to parametrize a spawned
-entity's lifetime/count from a var, and optionally a `follow`/path-trail
-behaviour — land them via the ladder below. (Snake is also a useful signal for
-the [compiler experiment](compiler-eject.md): the movement model still has genuine
-gaps, i.e. the engine isn't settled yet.)
+**Diagnosis:** the engine computes *velocity from control/behaviour each frame*.
+The motion-state gap (edge 1) is now closed by `runner`; the remaining edges are
+about a body that *grows* and *replays the head's path*. **Recommendation:** the
+`runner` capability ships (Tron / fixed-length Snake play). True Snake growth (#2)
++ a real linked body (#3) remain a deliberate scope edge — pick them up only if
+prioritized, as a parametrizable spawn lifetime + a `follow`/path-trail behaviour,
+via the ladder below. (Edges #2/#3 are still a useful signal for the
+[compiler experiment](compiler-eject.md): the movement model isn't fully settled.)
 
 ## The decision ladder (try these in order)
 
