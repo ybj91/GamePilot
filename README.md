@@ -88,7 +88,7 @@ Three strictly separated layers — **DSL** (the contract), a deterministic **en
 }
 ```
 
-A game is `world` + `entities` + `rules` (+ optional `vars`, `win`/`lose`). Rules are `on` *event* → `effects`, optionally guarded by a `when` condition. That tiny, uniform shape — plus a handful of composable capabilities (input & projectiles, variables, spawn areas, obstacles, glyphs) — covers shooters, dodgers, collectors, tank battles, and more. → [full DSL reference](docs/dsl.md)
+A game is `world` + `entities` + `rules` (+ optional `vars`, `win`/`lose`). Rules are `on` *event* → `effects`, optionally guarded by a `when` condition. That tiny, uniform shape — plus a handful of composable capabilities (input & projectiles, variables, spawn areas, obstacles, **glyphs + animation + hit-flash**, a **scrolling camera**, **tilemap** levels, and **bounce** physics) — spans whole genres: shooters, dodgers, collectors, **tank battles**, **scrolling mazes**, **Breakout**, and **Frogger-style lane-crossers**. Most archetypes are pure composition — e.g. the lane-crosser added *zero* new engine code. → [full DSL reference](docs/dsl.md)
 
 ---
 
