@@ -199,6 +199,15 @@ export function buildServer(): FastifyInstance {
     }
   });
 
+  // The glyph-preset gallery (extensionless route -> the built glyphs.html).
+  app.get("/glyphs", async (_req, reply) => {
+    try {
+      return reply.type("text/html").send(readFileSync(path.join(DIST, "glyphs.html"), "utf8"));
+    } catch {
+      return reply.code(503).type("text/plain").send("Client not built. Run `npm run build` first.");
+    }
+  });
+
   // Static assets + the landing page (the sample) at /.
   app.register(fastifyStatic, { root: DIST, prefix: "/" });
 

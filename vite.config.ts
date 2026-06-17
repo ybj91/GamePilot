@@ -19,10 +19,12 @@ export default defineConfig({
     target: "es2022",
     outDir: "dist",
     rollupOptions: {
-      // Multi-page: the management UI (index) and the games library (games).
+      // Multi-page: the management UI (index), the games library (games), and
+      // the glyph-preset gallery (glyphs).
       input: {
         main: "index.html",
         games: "games.html",
+        glyphs: "glyphs.html",
       },
     },
   },

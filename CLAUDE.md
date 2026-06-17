@@ -98,7 +98,10 @@ Standalone, runs independently of Vite so the MCP server / agent can drive it as
 - `mcp-stdio.ts` — stdio transport entry (`npm run mcp`).
 
 ### `games.html` + `src/library.ts` — the games library
-A second client page (Vite multi-page: `rollupOptions.input` = `index.html` + `games.html`) listing all saved games as cards from `GET /api/games`; each links to `/play/:id`, with delete. The backend serves it at the extensionless `/games` route. The main UI links to it via the fixed `.topnav`.
+A second client page (Vite multi-page: `rollupOptions.input` = `index.html` + `games.html` + `glyphs.html`) listing all saved games as cards from `GET /api/games`; each links to `/play/:id`, with delete. The backend serves it at the extensionless `/games` route. The main UI links to it via the fixed `.topnav`.
+
+### `glyphs.html` + `src/glyphs-gallery.ts` — the glyph library gallery
+A third client page (served at `/glyphs`) that renders every `GLYPH_PRESETS` entry to a small canvas — the same pixel-grid the engine renderer draws, in a thematic color with glow, with multi-frame presets animating live (a frame-counter `setInterval` at 6fps). Imports the preset data straight from `src/dsl/glyphs.ts`, so the gallery is always in sync with the library. Linked from the `.topnav`/toolbars. Verify: `scripts/glyphs-verify.mjs`.
 
 ### `src/main.ts` + `index.html` — the management UI
 A two-pane workspace: a game **stage** (canvas + **Pause/Replay/New** buttons + status) beside a **conversation panel**. Chat messages POST to `/api/chat` and the stage reloads with the created/adjusted game (`currentGameId` tracks the working game; **New** clears it to start fresh). On `/play/:id` it loads that saved game and **polls `updatedAt` (every 1.5s) to hot-reload** external agent edits (`startLiveReload`). Pause/Replay drive the engine; `R` also restarts. The live `Engine` is exposed as `window.gamepilot` for debugging/automated verification. The full UI needs the Fastify backend (`npm start`); `npm run dev` proxies `/api` to it.
