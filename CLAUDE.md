@@ -86,6 +86,9 @@ The key path: browser `httpCompiler` → Vite dev middleware `POST /api/compile`
 ### `src/index.ts` — the library barrel
 Public API for "create a game": `GameSpec` types, `validateGameSpec`, `Engine`, `World`, `Renderer`, `growAndSlow`. The backend and (future) MCP server import the engine/DSL through here.
 
+### `src/export/` — compiler/eject experiment (NOT wired into the product)
+A **second consumer of the DSL contract**: `compile.ts` turns a `GameSpec` into a single self-contained standalone HTML game (only this game's code, no shared engine import) — framed as a one-way **eject/migration** (source → build artifact), not a maintained second backend. It's a **held proof-of-concept**; nothing in the product imports it. Its `canCompile(spec)` is a **coverage ledger** — keep it honest as the DSL grows, and treat "hard to compile cleanly" as a DSL smell (the compiler is a *linter for the contract*). See `docs/compiler-eject.md` for the rationale, the green-light signal for actually building it, and the repro (`npx tsx scripts/eject.ts && node scripts/eject-verify.mjs`). Do not wire it in until the DSL surface (`types.ts`) stops changing systems.
+
 ### `server/` — management backend + MCP server (stages 1–2)
 Standalone, runs independently of Vite so the MCP server / agent can drive it as a separate process.
 - `store.ts` — file-based GameSpec store (`data/games/<id>.json`, gitignored; dir overridable via `GAMEPILOT_DATA_DIR`). `saveGame` (new) and `updateGame` (edit in place — keeps id/createdAt, bumps `updatedAt`) both validate before writing — the write-side guard at the seam. Shared by the HTTP server AND the MCP server. Uses `node:crypto`/`Date` for ids/timestamps (fine — server code, not the deterministic engine).
