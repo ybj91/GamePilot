@@ -26,9 +26,9 @@ export interface ValidationResult {
 }
 
 const SHAPES: Shape[] = ["circle", "square", "dot"];
-const CONTROLS: Control[] = ["none", "follow-pointer", "arrows"];
+const CONTROLS: Control[] = ["none", "follow-pointer", "follow-pointer-x", "arrows"];
 const TRIGGERS = ["collision", "tick", "interval", "input"];
-const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "flash", "score", "win", "gameover"];
+const EFFECT_OPS = ["add", "set", "mul", "destroy", "spawn", "flash", "bounce", "score", "win", "gameover"];
 
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isStr = (v: unknown): v is string => typeof v === "string" && v.length > 0;
@@ -190,6 +190,9 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
     if (typeof vp !== "object" || vp === null || !isNum(vp.width) || !isNum(vp.height)) {
       errors.push("world.viewport: needs numeric width and height");
     }
+  }
+  if (spec.world?.edges !== undefined && !["wall", "wrap", "bounce"].includes(spec.world.edges)) {
+    errors.push(`world.edges: must be "wall", "wrap", or "bounce"`);
   }
   if (!Array.isArray(spec.entities) || spec.entities.length === 0) {
     errors.push("entities: needs at least one entity");

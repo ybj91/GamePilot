@@ -172,6 +172,31 @@ Recipe — walls/cover: place a few solid squares at fixed positions:
   (repeat with different ids and x/y for more walls / a maze)`,
   },
   {
+    id: "bounce",
+    title: "Bounce & paddles (Breakout / Pong)",
+    summary: "a ball that reflects off walls, bricks, and a paddle — the brick-breaker / paddle genre",
+    doc: `Bounce physics — reflect a moving ball off surfaces. Unlocks Breakout, Pong, and ball toys.
+- world "edges": "bounce"  — the ball reflects off the LEFT/RIGHT/TOP walls; the BOTTOM is left OPEN so the player can "miss" (put a deadzone strip along the bottom to catch a lost ball).
+- effect { "op": "bounce" }  — in a collision rule, reflects "self"'s velocity off "other" along the face it hit (and nudges it clear). Put it FIRST in the effects so it bounces before "other" is destroyed.
+- control "follow-pointer-x"  — track only the cursor's X (a paddle pinned to its row); never moves vertically.
+- The ball is a projectile: "control":"none", "spawn":{"count":0}, and a "speed". LAUNCH it from the paddle with a spawn effect (aim "up") so it starts moving (a pre-spawned ball has zero velocity). It has NO ttl — it lives until it hits the deadzone.
+Recipe — Breakout (mouse paddle; bricks via the tilemap; 3 lives):
+  "world": { "width":640, "height":640, "background":"#0b0b12", "edges":"bounce" },
+  "vars": { "lives": 3 },
+  paddle:  { "id":"paddle","kind":"player","shape":"square","color":"#8cb33a","size":20,"control":"follow-pointer-x","spawn":{"x":320,"y":600,"count":1},"props":{"speed":420} },
+  ball:    { "id":"ball","kind":"obstacle","shape":"dot","color":"#dff0ff","size":7,"control":"none","spawn":{"count":0},"props":{"speed":300} },
+  brick:   { "id":"brick","kind":"obstacle","shape":"square","color":"#d24b4b","size":18,"spawn":{"count":0} },
+  deadzone:{ "id":"deadzone","kind":"obstacle","shape":"square","color":"#1a1a26","size":320,"control":"none","spawn":{"x":320,"y":700,"count":1} },
+  // bricks placed by a tilemap grid at the top; '#'->brick. (See the tilemap capability.)
+  rules:
+  { "on":"input","key":"pointer","when":"ball.count == 0","effects":[{"op":"spawn","target":"ball","from":"paddle","aim":"up"}] },
+  { "on":"collision","between":["ball","paddle"],"effects":[{"op":"bounce"}] },
+  { "on":"collision","between":["ball","brick"],"effects":[{"op":"bounce"},{"op":"destroy","target":"other"},{"op":"score","value":1}] },
+  { "on":"collision","between":["ball","deadzone"],"effects":[{"op":"destroy","target":"self"},{"op":"add","target":"lives","value":-1}] },
+  "win": { "when": "brick.count == 0" }, "lose": { "when": "lives <= 0" }
+  (bounce is "self" off "other" — self is between[0], so list the BALL first in every bounce rule's "between".)`,
+  },
+  {
     id: "camera",
     title: "Camera (world bigger than the screen)",
     summary: "a scrolling viewport that follows the player when the world is larger than the window",

@@ -29,6 +29,16 @@ function applyControl(e: Entity, input: Input, world: World): void {
       e.vx = 0;
       e.vy = 0;
     }
+  } else if (e.control === "follow-pointer-x") {
+    // Track only the cursor's X (a paddle); never move vertically.
+    if (input.pointerActive) {
+      const px = input.pointerX + world.camX;
+      const dist = Math.abs(px - e.x);
+      e.vx = dist > e.size * 0.5 ? Math.sign(px - e.x) * e.speed : 0;
+    } else {
+      e.vx = 0;
+    }
+    e.vy = 0;
   } else if (e.control === "arrows") {
     const ax = input.axisX;
     const ay = input.axisY;
@@ -77,6 +87,11 @@ function integrate(e: Entity, world: World, dt: number): void {
     if (e.x > world.width + m) e.x = -m;
     if (e.y < -m) e.y = world.height + m;
     if (e.y > world.height + m) e.y = -m;
+  } else if (world.edges === "bounce") {
+    // Reflect off left/right/top; leave the BOTTOM open so paddle games can miss.
+    if (e.x < m) { e.x = m; e.vx = Math.abs(e.vx); }
+    else if (e.x > world.width - m) { e.x = world.width - m; e.vx = -Math.abs(e.vx); }
+    if (e.y < m) { e.y = m; e.vy = Math.abs(e.vy); }
   } else {
     e.x = Math.min(world.width - m, Math.max(m, e.x));
     e.y = Math.min(world.height - m, Math.max(m, e.y));

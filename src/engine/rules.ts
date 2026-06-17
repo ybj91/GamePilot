@@ -97,6 +97,30 @@ function applyEffect(fx: Effect, ctx: Ctx, world: World, env: InputEnv): void {
       if (ent) ent.flash = fx.value ?? 0.15;
       break;
     }
+    case "bounce": {
+      // Reflect self's velocity off other along the axis of least penetration
+      // (treats both as boxes of half-extent = size), then nudge it clear so it
+      // doesn't immediately re-collide. Ball/paddle physics.
+      const a = ctx.self;
+      const b = ctx.other;
+      if (!a || !b) break;
+      const reach = a.size + b.size;
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const overlapX = reach - Math.abs(dx);
+      const overlapY = reach - Math.abs(dy);
+      if (overlapX <= 0 && overlapY <= 0) break;
+      if (overlapX < overlapY) {
+        const s = dx >= 0 ? 1 : -1;
+        a.vx = Math.abs(a.vx) * s;
+        a.x += overlapX * s;
+      } else {
+        const s = dy >= 0 ? 1 : -1;
+        a.vy = Math.abs(a.vy) * s;
+        a.y += overlapY * s;
+      }
+      break;
+    }
     case "spawn": {
       if (!fx.target) break;
       const e = world.spawn(fx.target);

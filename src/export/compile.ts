@@ -39,14 +39,19 @@ export function canCompile(spec: GameSpec): { ok: boolean; unsupported: string[]
   const bad: string[] = [];
   if (spec.map) bad.push("map (tilemap)");
   if (spec.world.viewport) bad.push("world.viewport (camera)");
+  if (spec.world.edges === "bounce") bad.push('world.edges: "bounce"');
   for (const e of spec.entities) {
     if (e.glyph) bad.push(`entity "${e.id}": glyph`);
     if (e.frames) bad.push(`entity "${e.id}": frames`);
     if (e.solid) bad.push(`entity "${e.id}": solid`);
     if (e.flashColor) bad.push(`entity "${e.id}": flashColor`);
+    if (e.control === "follow-pointer-x") bad.push(`entity "${e.id}": control follow-pointer-x`);
   }
   for (const [i, r] of spec.rules.entries()) {
-    for (const fx of r.effects) if (fx.op === "flash") bad.push(`rule[${i}]: flash effect`);
+    for (const fx of r.effects) {
+      if (fx.op === "flash") bad.push(`rule[${i}]: flash effect`);
+      if (fx.op === "bounce") bad.push(`rule[${i}]: bounce effect`);
+    }
   }
   return { ok: bad.length === 0, unsupported: [...new Set(bad)] };
 }

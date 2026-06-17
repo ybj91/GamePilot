@@ -17,8 +17,13 @@
 
 export type Shape = "circle" | "square" | "dot";
 
-/** How an entity type is controlled / moves on its own. */
-export type Control = "none" | "follow-pointer" | "arrows";
+/**
+ * How an entity type is controlled / moves on its own.
+ *  - "follow-pointer"   chase the cursor in both axes (a blob)
+ *  - "follow-pointer-x" track only the cursor's X, hold Y (a Breakout paddle)
+ *  - "arrows"           move with arrow keys / WASD
+ */
+export type Control = "none" | "follow-pointer" | "follow-pointer-x" | "arrows";
 
 /**
  * Built-in autonomous behaviours. The target after ":" is an entity-type id.
@@ -35,8 +40,15 @@ export interface World {
   height?: number;
   /** CSS color for the backdrop. */
   background: string;
-  /** Entities that leave the world are clamped ("wall") or wrapped ("wrap"). */
-  edges?: "wall" | "wrap";
+  /**
+   * What happens at the world boundary:
+   *  - "wall"   clamp inside (default)
+   *  - "wrap"   teleport to the opposite edge
+   *  - "bounce" reflect velocity off the left/right/top walls; the BOTTOM is
+   *    left open so paddle/ball games (Breakout) can "miss" — catch the ball
+   *    with a deadzone entity along the bottom.
+   */
+  edges?: "wall" | "wrap" | "bounce";
   /**
    * Visible window onto the world. When smaller than width/height the view
    * scrolls to follow the player (a camera). Defaults to the full world (no
@@ -160,6 +172,7 @@ export type EffectOp =
   | "destroy" // remove an entity instance ("self" | "other" | entity id)
   | "spawn" // create one instance of entity type `target`
   | "flash" // briefly flash an entity bright (hit feedback) for `value` seconds
+  | "bounce" // reflect the colliding entity's velocity off the other (ball physics)
   | "score" // global score += value
   | "win"
   | "gameover";
@@ -172,6 +185,8 @@ export type EffectOp =
  *  - spawn:   "<entityId>" (entity type to spawn).
  *  - flash:   "self" | "other" | "<entityId>" (defaults to "self") — flashes that
  *    entity bright for `value` seconds (default 0.15) as hit feedback.
+ *  - bounce:  no target — in a collision rule, reflects "self"'s velocity off
+ *    "other" (off the face it hit) and nudges it clear. Ball/paddle physics.
  *  - score/win/gameover: target ignored.
  *
  * In a `collision` rule, "self" = the first entity in `between`, "other" = the

@@ -14,7 +14,7 @@ export class World {
   readonly spec: GameSpec;
   readonly width: number;
   readonly height: number;
-  readonly edges: "wall" | "wrap";
+  readonly edges: "wall" | "wrap" | "bounce";
   readonly rng: Rng;
 
   /** Visible window onto the world (the camera viewport). */

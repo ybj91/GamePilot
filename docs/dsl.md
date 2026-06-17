@@ -71,6 +71,12 @@ Advanced features, each a self-contained slice with a worked recipe. An agent lo
 - **`solid: true`** blocks movement. Static walls (`control:"none"` squares — bricks, steel) *and* moving bodies (mark tanks/units solid so they don't overlap/stack). Enemies don't pathfind around solids, so leave open lanes.
 - *Recipe:* destructible brick (`bullet+brick → destroy both`) vs. indestructible steel (`bullet+steel → destroy self`); gate steel-breaking on a `power` var for an upgrade.
 
+### `bounce` — ball & paddle games (Breakout / Pong)
+- **`world.edges: "bounce"`** reflects a moving entity off the left/right/top walls; the **bottom is left open** so paddle games can "miss" (catch a lost ball with a deadzone strip).
+- **`{op:"bounce"}` effect** — in a collision rule, reflects `self`'s velocity off `other` along the face it hit (list the ball first in `between`; put `bounce` before any `destroy`).
+- **`control:"follow-pointer-x"`** — a paddle that tracks only the cursor's X.
+- *Recipe — Breakout:* `edges:"bounce"`; a `follow-pointer-x` paddle; a `control:"none"` ball launched from the paddle (`spawn` `aim:"up"`, `count:0`); bricks (a tilemap grid) that `bounce`+`destroy`+`score`; a bottom deadzone that costs a life; win on `brick.count == 0`.
+
 ### `glyphs` — pixel shapes, animation & hit-flash
 - **`glyph`**: a **preset name** (a built-in common shape — `tank`, `ship`, `arrow`, `heart`, `star`, `diamond`, `plus`, `ring`, `face`, `skull`, `alien`, plus the self-animating `invader`, `blob`, `flame`, `explosion`) *or* raw rows of a small bitmap (a cell is "on" for any char but space/`.`/`0`). Drawn scaled in the entity's color instead of the bare shape. Still no assets — just data.
 - **`frames`** + **`fps`**: a GIF-like animation — a list of bitmap frames cycled at `fps` (default 6); overrides `glyph`. Multi-frame presets animate automatically. Cycling runs on sim time, so it's deterministic and freezes on pause; a small per-entity phase keeps a crowd from moving in lockstep.

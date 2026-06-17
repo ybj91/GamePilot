@@ -509,6 +509,74 @@ check("map with unknown legend entity is rejected",
   check("no viewport: camera fixed at origin", w.camX === 0 && w.camY === 0 && w.viewW === w.width);
 }
 
+// 17. bounce archetype: a ball reflects off a brick (bounce effect), off the
+//     side walls (edges:"bounce"), and a follow-pointer-x paddle tracks the
+//     cursor's X only.
+const breakoutSpec: GameSpec = {
+  meta: { title: "Breakout test" },
+  world: { width: 400, height: 400, background: "#000", edges: "bounce" },
+  vars: { lives: 3 },
+  entities: [
+    { id: "paddle", kind: "player", shape: "square", color: "#8cb33a", size: 20,
+      control: "follow-pointer-x", spawn: { x: 200, y: 370 }, props: { speed: 400 } },
+    { id: "ball", kind: "obstacle", shape: "dot", color: "#fff", size: 6,
+      control: "none", spawn: { count: 0 }, props: { speed: 200 } },
+    { id: "brick", kind: "obstacle", shape: "square", color: "#d24b4b", size: 16, spawn: { count: 0 } },
+    { id: "deadzone", kind: "obstacle", shape: "square", color: "#111", size: 200,
+      control: "none", spawn: { x: 200, y: 460 } },
+  ],
+  rules: [
+    { on: "input", key: "pointer", when: "ball.count == 0", effects: [{ op: "spawn", target: "ball", from: "paddle", aim: "up" }] },
+    { on: "collision", between: ["ball", "brick"], effects: [{ op: "bounce" }, { op: "destroy", target: "other" }, { op: "score", value: 1 }] },
+    { on: "collision", between: ["ball", "deadzone"], effects: [{ op: "destroy", target: "self" }, { op: "add", target: "lives", value: -1 }] },
+  ],
+  win: { when: "brick.count == 0" },
+  lose: { when: "lives <= 0" },
+};
+check("breakout spec validates", validateGameSpec(breakoutSpec).ok);
+check("invalid edges rejected", !validateGameSpec({ ...breakoutSpec, world: { ...breakoutSpec.world, edges: "boing" as never } }).ok);
+check("invalid control rejected",
+  !validateGameSpec({ ...breakoutSpec, entities: [{ ...breakoutSpec.entities[0]!, control: "follow-pointer-z" as never }, ...breakoutSpec.entities.slice(1)] }).ok);
+
+// bounce effect: a ball moving down-right into a brick directly below reflects vy.
+{
+  const w = new World(breakoutSpec, 1);
+  const ball = w.spawn("ball")!;
+  const brick = w.spawn("brick")!;
+  ball.x = 200; ball.y = 200; ball.vx = 40; ball.vy = 120; // moving down
+  brick.x = 200; brick.y = 218; // just below the ball (overlap on Y)
+  evaluateRules(w, new RuleTimers(), noInput(), 1 / 60);
+  check("bounce reflects the ball off the brick's face (vy flips up)", ball.vy < 0 && ball.alive);
+  check("ball+brick also destroyed the brick and scored", w.countOf("brick") === 0 && w.score === 1);
+}
+
+// edges:"bounce" reflects off a side wall but leaves the bottom open.
+{
+  const w = new World(breakoutSpec, 1);
+  const ball = w.spawn("ball")!;
+  ball.x = 395; ball.y = 200; ball.vx = 200; ball.vy = 0; // heading into the right wall
+  stepMovement(w, new Input(), 1 / 60);
+  check("edges bounce reflects off the right wall (vx flips)", ball.vx < 0 && ball.x <= 400 - ball.size);
+  // falling past the bottom is NOT clamped (open) so a miss is possible
+  ball.x = 200; ball.y = 398; ball.vx = 0; ball.vy = 200;
+  stepMovement(w, new Input(), 1 / 60);
+  check("edges bounce leaves the bottom open (ball falls through)", ball.y > 400 - ball.size && ball.vy > 0);
+}
+
+// follow-pointer-x: the paddle tracks the cursor's X and never moves in Y.
+{
+  const w = new World(breakoutSpec, 1);
+  const paddle = w.firstOf("paddle")!;
+  const y0 = paddle.y;
+  const input = new Input();
+  (input as unknown as { pointerX: number; pointerActive: boolean }).pointerX = 360;
+  (input as unknown as { pointerY: number }).pointerY = 50; // should be ignored
+  (input as unknown as { pointerActive: boolean }).pointerActive = true;
+  for (let i = 0; i < 30; i++) stepMovement(w, input, 1 / 60);
+  check("follow-pointer-x tracks the cursor's X", paddle.x > 300);
+  check("follow-pointer-x never moves the paddle in Y", paddle.y === y0);
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);
