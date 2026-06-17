@@ -20,6 +20,36 @@ scope (a *different runtime paradigm*, not a missing feature): turn-based / boar
 asset-dependent. Don't try to express these in the arcade engine; decline and
 redirect to an arcade idea.
 
+### Edge finding: trailing-body / auto-runner games (Snake, Tron, Centipede)
+
+A deliberate probe (`scripts/seed-snake.mjs` + `snake-verify.mjs`) tested whether
+**Snake** is expressible. Result: a passable *approximation* exists — the head
+drops short-lived `seg` segments behind itself (`spawn from:"head" aim:"backward"`,
+segment `speed:0` so it stays put + a `ttl` so the tail fades), which **looks**
+like a snake and whose **self-collision works** (run into a `seg` → game over).
+But it hits three real edges of the movement model:
+
+1. **No auto-forward motion.** `arrows` is *direct velocity* — release the keys
+   and the head stops. A runner needs *persistent forward motion + turn-only
+   steering*; there's no control for it.
+2. **No body growth tied to state.** A spawned entity's `ttl` is fixed by its
+   type; it can't be parametrized from a `length` var, so the body length is
+   constant. Eating can't lengthen the snake — the defining progression is gone.
+3. **The body is a timed-ghost trail, not a true linked chain.** There's no
+   "follow the leader's path" primitive (`chase` clumps onto the target, it
+   doesn't trail); spacing is an artifact of `speed × tick`.
+
+**Diagnosis:** the engine computes *velocity from control/behaviour each frame* —
+it has no notion of persistent motion-state or path-replay/segmented bodies. So
+trailing-body / auto-runner is a **movement paradigm at the edge**, not a missing
+recipe. **Recommendation:** treat it as a scope edge for now. If these games
+become a priority, it's a real *capability cluster* (not free composition): a
+`runner` control (constant forward + steer), a way to parametrize a spawned
+entity's lifetime/count from a var, and optionally a `follow`/path-trail
+behaviour — land them via the ladder below. (Snake is also a useful signal for
+the [compiler experiment](compiler-eject.md): the movement model still has genuine
+gaps, i.e. the engine isn't settled yet.)
+
 ## The decision ladder (try these in order)
 
 When you want a new capability, take the **first** option that works — do not
