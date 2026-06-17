@@ -224,7 +224,13 @@ Recipe — Snake (grows as you eat):
 - "control": "platformer"  — left/right (arrows/AD) RUN at "speed"; gravity pulls the entity down; ↑/W/space JUMP with an upward impulse of the "jump" prop, but ONLY when grounded (no mid-air double-jumps).
 - Platforms/ground are "solid":true squares (control "none"). The player lands on top of them (becomes grounded) and is blocked sideways — standard solid bodies, now with gravity. Best authored as a "tilemap" (legend "#"→ground). Leave GAPS in the ground for pits.
 - Pits / falling death: put a "deadzone" strip ("solid":false squares, e.g. a tilemap bottom row "D"→deadzone) below the ground; a player↔deadzone collision → gameover. Coins (collect→score) and a goal (reach→win) are ordinary collision rules.
+- Enemies (Goombas): give an enemy "behavior":"walker" — it patrols horizontally at "speed", gravity pulls it down onto the ground, and it reverses at walls and ledges (stays on its platform). Use the "goomba" glyph (it waddles).
+- STOMP vs. get hurt: in a collision, "self.vy" (and "vx"/"grounded") are readable in "when". Branch the player↔goomba collision: a falling player (when "self.vy > 40") STOMPS — "bounce" (springs the player up) + destroy the goomba + score; otherwise (a side bump) it's a "gameover". List the stomp rule FIRST (first matching collision rule wins).
 - The "camera" capability composes: a viewport narrower than the world scrolls to follow the player.
+Goomba + stomp rules:
+  goomba: { "id":"goomba","kind":"enemy","shape":"square","color":"#9a6324","size":13,"behavior":"walker","glyph":"goomba","spawn":{"count":0},"props":{"speed":55} },
+  { "on":"collision","between":["player","goomba"],"when":"self.vy > 40","effects":[{"op":"bounce"},{"op":"destroy","target":"other"},{"op":"score","value":1}] },
+  { "on":"collision","between":["player","goomba"],"when":"self.vy <= 40","effects":[{"op":"gameover"}] }
 Recipe — Mario-lite (run, jump, platforms, coins, a flag, pits; level as a tilemap):
   "world": { "background":"#5c94fc","edges":"wall","gravity":1700,"viewport":{ "width":640,"height":448 } },
   player: { "id":"player","kind":"player","shape":"square","color":"#e23d3d","size":13,"control":"platformer","spawn":{"count":0},"props":{"speed":170,"jump":640} },

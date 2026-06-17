@@ -19,6 +19,8 @@ for (let c = 0; c < COLS; c++) grid[DEAD][c] = "D";
 // floating platforms to hop onto
 const plats = [[8, 10], [18, 20], [30, 32]];
 for (const [a, b] of plats) for (let c = a; c <= b; c++) grid[PLAT][c] = "#";
+// goombas patrolling the ground (on solid stretches, away from pit edges)
+for (const c of [9, 21, 35]) grid[GROUND - 1][c] = "E";
 // coins: a row above each platform (jump for them) + a few walkable ones
 for (const [a, b] of plats) for (let c = a; c <= b; c++) grid[PLAT - 1][c] = "C";
 for (const c of [6, 20, 33]) grid[GROUND - 1][c] = "C";
@@ -30,7 +32,7 @@ const rows = grid.map((r) => r.join(""));
 const spec = {
   meta: { title: "Mario-lite", idea: "run and jump across platforms over pits, grab coins, reach the flag" },
   world: { background: "#5c94fc", edges: "wall", gravity: 1700, viewport: { width: 640, height: 448 } },
-  map: { tile: TILE, legend: { "#": "ground", C: "coin", G: "goal", D: "deadzone", P: "player" }, rows },
+  map: { tile: TILE, legend: { "#": "ground", C: "coin", G: "goal", D: "deadzone", P: "player", E: "goomba" }, rows },
   entities: [
     { id: "player", kind: "player", shape: "square", color: "#e23d3d", size: 13,
       control: "platformer", glyph: "hero", spawn: { count: 0 }, props: { speed: 170, jump: 640 } },
@@ -38,11 +40,15 @@ const spec = {
     { id: "coin", kind: "food", shape: "dot", color: "#ffd23f", size: 8, control: "none", glyph: "coin", spawn: { count: 0 } },
     { id: "goal", kind: "goal", shape: "square", color: "#39d353", size: 15, control: "none", glyph: "flag", spawn: { count: 0 } },
     { id: "deadzone", kind: "obstacle", shape: "square", color: "#5c94fc", size: 16, control: "none", spawn: { count: 0 } },
+    { id: "goomba", kind: "enemy", shape: "square", color: "#9a6324", size: 13, behavior: "walker", glyph: "goomba", spawn: { count: 0 }, props: { speed: 55 } },
   ],
   rules: [
     { on: "collision", between: ["player", "coin"], effects: [{ op: "score", value: 1 }, { op: "destroy", target: "other" }] },
     { on: "collision", between: ["player", "goal"], effects: [{ op: "win" }] },
     { on: "collision", between: ["player", "deadzone"], effects: [{ op: "gameover" }] },
+    // STOMP a goomba from above (falling), get hurt on a side bump
+    { on: "collision", between: ["player", "goomba"], when: "self.vy > 40", effects: [{ op: "bounce" }, { op: "destroy", target: "other" }, { op: "score", value: 1 }] },
+    { on: "collision", between: ["player", "goomba"], when: "self.vy <= 40", effects: [{ op: "gameover" }] },
   ],
   win: { when: "score >= 999" }, // real win is reaching the flag (rule above)
 };

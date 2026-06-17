@@ -35,8 +35,10 @@ export type Control = "none" | "follow-pointer" | "follow-pointer-x" | "arrows" 
  *  - "chase:player"  move toward nearest entity of that type
  *  - "flee:player"   move away from nearest entity of that type
  *  - "wander"        drift in slowly-changing random direction
+ *  - "walker"        patrol horizontally (a Goomba): gravity pulls it down, it
+ *    walks at `speed` and reverses at a wall or a ledge. Needs `world.gravity`.
  */
-export type Behavior = "chase" | "flee" | "wander";
+export type Behavior = "chase" | "flee" | "wander" | "walker";
 export type BehaviorSpec = Behavior | `${Behavior}:${string}`;
 
 export interface World {

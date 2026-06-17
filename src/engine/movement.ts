@@ -73,12 +73,34 @@ function applyControl(e: Entity, input: Input, world: World): void {
   }
 }
 
+/** Is there a solid entity covering this point? (ground-ahead check for walkers) */
+function solidBelow(world: World, x: number, y: number): boolean {
+  for (const s of world.entities) {
+    if (!s.alive || !s.solid) continue;
+    const half = s.size;
+    if (x >= s.x - half && x <= s.x + half && y >= s.y - half && y <= s.y + half) return true;
+  }
+  return false;
+}
+
 function applyBehavior(e: Entity, world: World): void {
   if (!e.behavior) return;
   const { verb, target } = e.behavior;
   if (verb === "chase" || verb === "flee") {
     const t = target ? world.firstOf(target) : undefined;
     if (t) aimToward(e, t.x, t.y, verb === "chase" ? 1 : -1);
+  } else if (verb === "walker") {
+    // Patrol horizontally (a Goomba). Gravity (in integrate) owns the vertical;
+    // reverse when blocked by a wall, or when grounded with no ground ahead (a
+    // ledge) so it stays on its platform.
+    let dir = e.scratch.wdir ?? -1;
+    const moved = Math.abs(e.x - (e.scratch.wlastx ?? e.x));
+    const wall = moved < 0.3 && world.time > 0.3;
+    const ledge = e.grounded && !solidBelow(world, e.x + dir * (e.size + 2), e.y + e.size + 4);
+    if (wall || ledge) dir = -dir;
+    e.scratch.wdir = dir;
+    e.scratch.wlastx = e.x;
+    e.vx = dir * e.speed;
   } else if (verb === "wander") {
     // Roam deliberately: hold a random cardinal direction for a beat, then pick
     // a new one (and re-pick early when stuck against a wall). Tank-like, not
@@ -105,8 +127,9 @@ function applyBehavior(e: Entity, world: World): void {
 
 function integrate(e: Entity, world: World, dt: number): void {
   // Platformer gravity: accelerate downward (capped to avoid tunnelling thin
-  // platforms), then integrate. Only platformer-controlled entities fall.
-  if (world.gravity && e.control === "platformer") {
+  // platforms), then integrate. Affects the platformer player and `walker`
+  // enemies (Goombas) — both fall and land on solids.
+  if (world.gravity && (e.control === "platformer" || e.behavior?.verb === "walker")) {
     e.vy = Math.min(e.vy + world.gravity * dt, 1200);
   }
   e.x += e.vx * dt;

@@ -86,7 +86,7 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   }
   if (e.behavior) {
     const verb = String(e.behavior).split(":")[0] ?? "";
-    if (!["chase", "flee", "wander"].includes(verb)) {
+    if (!["chase", "flee", "wander", "walker"].includes(verb)) {
       errs.push(`${where}: invalid behavior "${e.behavior}"`);
     }
   }

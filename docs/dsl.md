@@ -94,6 +94,7 @@ Advanced features, each a self-contained slice with a worked recipe. An agent lo
 - **`world.gravity`** (e.g. `1700`) applies downward acceleration to `control:"platformer"` entities — a side-on platformer.
 - **`control:"platformer"`** — left/right run at `speed`, gravity pulls down, ↑/W/space **jump** (impulse = the `jump` prop) but only when **grounded** (no double-jumps).
 - Stand on **`solid`** platforms/ground (best authored as a `tilemap`; leave gaps for **pits**). A bottom **deadzone** strip + `player↔deadzone → gameover` handles falling deaths; coins (`→ score`) and a goal (`→ win`) are ordinary collision rules. Composes with the `camera` for a scrolling level.
+- **Goombas:** an enemy with **`behavior:"walker"`** patrols horizontally under gravity and reverses at walls/ledges (`goomba` glyph waddles). **Stomp:** conditions can read **`self.vy`** (`vx`/`grounded` too), so branch `player↔goomba` — `when:"self.vy > 40"` (falling) → `bounce` + destroy + score; else → `gameover`. Stomp rule first.
 - *Recipe — Mario-lite:* `world.gravity:1700`; a `platformer` player with `props:{speed,jump}`; `solid` ground with gaps; coins, a goal, a bottom deadzone; viewport narrower than the world.
 
 ### `camera` — world bigger than the screen

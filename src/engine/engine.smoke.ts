@@ -749,6 +749,66 @@ check("negative gravity rejected", !validateGameSpec({ ...platformSpec, world: {
   check("platformer runs left/right (held right -> +x)", p2.x > x0 && p2.vx > 0);
 }
 
+// 22. walker enemy (Goomba) + stomp: a gravity-affected horizontal patrol that
+//     reverses at walls/ledges; the player stomps it from above (self.vy > 0)
+//     but is hurt on a side hit. Exercises reading self.vy in a condition.
+const goombaSpec: GameSpec = {
+  meta: { title: "Goomba test" },
+  world: { width: 400, height: 400, background: "#000", edges: "wall", gravity: 1600 },
+  entities: [
+    { id: "player", kind: "player", shape: "square", color: "#e23d3d", size: 12, control: "platformer", spawn: { x: 200, y: 100 }, props: { speed: 150, jump: 500 } },
+    { id: "goomba", kind: "enemy", shape: "square", color: "#9a6324", size: 12, behavior: "walker", spawn: { x: 200, y: 310 }, props: { speed: 60 } },
+    { id: "ground", kind: "obstacle", shape: "square", color: "#888", size: 40, control: "none", solid: true, spawn: { x: 200, y: 380 } },
+  ],
+  rules: [
+    { on: "collision", between: ["player", "goomba"], when: "self.vy > 40", effects: [{ op: "bounce" }, { op: "destroy", target: "other" }, { op: "score", value: 1 }] },
+    { on: "collision", between: ["player", "goomba"], when: "self.vy <= 40", effects: [{ op: "gameover" }] },
+  ],
+};
+check("goomba spec validates (walker behavior + self.vy condition)", validateGameSpec(goombaSpec).ok);
+
+// gravity affects the walker (it falls)
+{
+  const w = new World(goombaSpec, 1);
+  const g = w.firstOf("goomba")!;
+  const y0 = g.y;
+  for (let i = 0; i < 5; i++) stepMovement(w, new Input(), 1 / 60);
+  check("walker falls under gravity", g.vy > 0 && g.y > y0);
+}
+// the walker patrols and reverses (goes both ways across the platform)
+{
+  const w = new World(goombaSpec, 1);
+  const g = w.firstOf("goomba")!;
+  let sawLeft = false, sawRight = false;
+  for (let i = 0; i < 120; i++) { stepMovement(w, new Input(), 1 / 60); resolveSolids(w); if (g.vx < -1) sawLeft = true; if (g.vx > 1) sawRight = true; }
+  check("walker patrols and reverses at walls/ledges", sawLeft && sawRight && g.grounded);
+}
+// conditions can read self.vy
+{
+  const w = new World(goombaSpec, 1);
+  const e = w.firstOf("player")!;
+  e.vy = 100;
+  check("conditions read self.vy (live)", evalCondition("self.vy > 40", w, { self: e }) && !evalCondition("self.vy <= 40", w, { self: e }));
+}
+// stomp: a falling player kills the goomba, scores, and bounces up
+{
+  const w = new World(goombaSpec, 1);
+  const p = w.firstOf("player")!, g = w.firstOf("goomba")!;
+  p.x = 200; g.x = 200; p.y = 150; g.y = 162; p.vy = 300; // player just above the goomba, falling
+  const sc = w.score;
+  evaluateRules(w, new RuleTimers(), noInput(), 1 / 60);
+  check("stomp: falling onto a goomba kills it, scores, and bounces up",
+    w.countOf("goomba") === 0 && w.score === sc + 1 && p.vy < 0);
+}
+// side hit: walking into a goomba (not falling) is a game over
+{
+  const w = new World(goombaSpec, 1);
+  const p = w.firstOf("player")!, g = w.firstOf("goomba")!;
+  p.x = 200; g.x = 200; p.y = 150; g.y = 150; p.vy = 0; // same level, not falling
+  evaluateRules(w, new RuleTimers(), noInput(), 1 / 60);
+  check("side hit (not falling) = game over", w.status === "lost");
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

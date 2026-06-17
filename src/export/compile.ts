@@ -49,6 +49,7 @@ export function canCompile(spec: GameSpec): { ok: boolean; unsupported: string[]
     if (e.control === "follow-pointer-x") bad.push(`entity "${e.id}": control follow-pointer-x`);
     if (e.control === "runner") bad.push(`entity "${e.id}": control runner`);
     if (e.control === "platformer") bad.push(`entity "${e.id}": control platformer`);
+    if (e.behavior && String(e.behavior).startsWith("walker")) bad.push(`entity "${e.id}": behavior walker`);
   }
   for (const [i, r] of spec.rules.entries()) {
     for (const fx of r.effects) {

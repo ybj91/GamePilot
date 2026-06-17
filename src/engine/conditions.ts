@@ -35,7 +35,12 @@ function readLeft(token: string, world: World, ctx?: CondContext): number {
   if (prop === "count") return world.countOf(who);
   const ent =
     who === "self" ? ctx?.self : who === "other" ? ctx?.other : world.firstOf(who);
-  return ent ? getEntityProp(ent, prop) : NaN;
+  if (!ent) return NaN;
+  // Live motion state readable in conditions (e.g. a stomp = "self.vy > 0").
+  if (prop === "vx") return ent.vx;
+  if (prop === "vy") return ent.vy;
+  if (prop === "grounded") return ent.grounded ? 1 : 0;
+  return getEntityProp(ent, prop);
 }
 
 function compare(a: number, op: Op, b: number): boolean {
