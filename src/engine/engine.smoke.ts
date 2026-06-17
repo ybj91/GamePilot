@@ -376,6 +376,12 @@ check("preset resolves to a frame on the entity",
 const invaderSpec: GameSpec = { ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "invader" }] };
 check("animated preset resolves to multiple frames",
   (new World(invaderSpec, 1).firstOf("player")!.frames?.length ?? 0) >= 2);
+// platformer glyph set
+check("platformer presets validate (hero/coin/brick/flag/goomba)",
+  ["hero", "coin", "brick", "flag", "goomba"].every(
+    (g) => validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: g }] }).ok));
+check("animated goomba resolves to multiple frames",
+  (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "goomba" }] }, 1).firstOf("player")!.frames?.length ?? 0) >= 2);
 
 // 14c. explicit frames + fps — GIF-like animation authored inline.
 const animSpec: GameSpec = {

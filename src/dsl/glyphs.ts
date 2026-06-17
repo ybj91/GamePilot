@@ -50,6 +50,19 @@ export const GLYPH_PRESETS: Record<string, string[][]> = {
     ["X...X", "..X..", "X.X.X", "..X..", "X...X"],
     ["X...X", ".....", ".....", ".....", "X...X"],
   ],
+
+  // --- platformer / Mario set (silhouettes; drawn in the entity's color) ---
+  hero: [[".XXX.", ".XXX.", "XXXXX", ".X.X.", "XX.XX"]],       // a little character (don't rotate)
+  coin: [[".XXX.", "XXXXX", "XX.XX", "XXXXX", ".XXX."]],       // a round coin
+  brick: [["XXXXX", "X.X.X", "XXXXX", "XX.XX", "XXXXX"]],      // a brick block / ground
+  flag: [["XXXX.", "XXXXX", "XXXX.", "X....", "X...."]],       // a goal flag on a pole
+  mushroom: [[".XXX.", "XXXXX", "XXXXX", ".X.X.", ".XXX."]],   // a power-up
+  pipe: [["XXXXX", "XXXXX", ".XXX.", ".XXX.", ".XXX."]],       // a Mario pipe
+  // a goomba that waddles (feet alternate)
+  goomba: [
+    [".XXX.", "XXXXX", "X.X.X", "XXXXX", "X...X"],
+    [".XXX.", "XXXXX", "X.X.X", "XXXXX", ".X.X."],
+  ],
 };
 
 /** All preset names (for validation messages + the reference menu). */

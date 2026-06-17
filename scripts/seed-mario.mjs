@@ -33,10 +33,10 @@ const spec = {
   map: { tile: TILE, legend: { "#": "ground", C: "coin", G: "goal", D: "deadzone", P: "player" }, rows },
   entities: [
     { id: "player", kind: "player", shape: "square", color: "#e23d3d", size: 13,
-      control: "platformer", spawn: { count: 0 }, props: { speed: 170, jump: 640 } },
-    { id: "ground", kind: "obstacle", shape: "square", color: "#7a4a23", size: 16, control: "none", solid: true, spawn: { count: 0 } },
-    { id: "coin", kind: "food", shape: "dot", color: "#ffd23f", size: 7, control: "none", spawn: { count: 0 } },
-    { id: "goal", kind: "goal", shape: "square", color: "#2e7d32", size: 14, control: "none", spawn: { count: 0 } },
+      control: "platformer", glyph: "hero", spawn: { count: 0 }, props: { speed: 170, jump: 640 } },
+    { id: "ground", kind: "obstacle", shape: "square", color: "#c8743a", size: 16, control: "none", solid: true, glyph: "brick", spawn: { count: 0 } },
+    { id: "coin", kind: "food", shape: "dot", color: "#ffd23f", size: 8, control: "none", glyph: "coin", spawn: { count: 0 } },
+    { id: "goal", kind: "goal", shape: "square", color: "#39d353", size: 15, control: "none", glyph: "flag", spawn: { count: 0 } },
     { id: "deadzone", kind: "obstacle", shape: "square", color: "#5c94fc", size: 16, control: "none", spawn: { count: 0 } },
   ],
   rules: [
