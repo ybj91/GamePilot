@@ -82,6 +82,11 @@ function integrate(e: Entity, world: World, dt: number): void {
   e.x += e.vx * dt;
   e.y += e.vy * dt;
   const m = e.size;
+  // A free-flying projectile (a bullet/car/shell: no control, no behaviour, just
+  // a velocity carrying it) LEAVES the world at an edge — it must not clamp and
+  // pile up against the wall (which, with a ttl, looks like "stuck then vanish").
+  // Steered/autonomous entities (the player, behaviour movers) still clamp.
+  const flying = e.control === "none" && !e.behavior && (e.vx !== 0 || e.vy !== 0);
   if (world.edges === "wrap") {
     if (e.x < -m) e.x = world.width + m;
     if (e.x > world.width + m) e.x = -m;
@@ -92,6 +97,9 @@ function integrate(e: Entity, world: World, dt: number): void {
     if (e.x < m) { e.x = m; e.vx = Math.abs(e.vx); }
     else if (e.x > world.width - m) { e.x = world.width - m; e.vx = -Math.abs(e.vx); }
     if (e.y < m) { e.y = m; e.vy = Math.abs(e.vy); }
+    if (flying && e.y > world.height + m) e.alive = false; // fell out the open bottom
+  } else if (flying && (e.x < m || e.x > world.width - m || e.y < m || e.y > world.height - m)) {
+    e.alive = false; // a projectile reached a wall -> it flies off, doesn't stick
   } else {
     e.x = Math.min(world.width - m, Math.max(m, e.x));
     e.y = Math.min(world.height - m, Math.max(m, e.y));

@@ -577,6 +577,51 @@ check("invalid control rejected",
   check("follow-pointer-x never moves the paddle in Y", paddle.y === y0);
 }
 
+// 18. boundary: a free-flying projectile despawns at a wall (no pile-up), while
+//     the player and behaviour movers still clamp.
+const edgeSpec: GameSpec = {
+  meta: { title: "Edge test" },
+  world: { width: 400, height: 300, background: "#000", edges: "wall" },
+  entities: [
+    { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 10,
+      control: "arrows", spawn: { x: 200, y: 150 }, props: { speed: 300 } },
+    { id: "enemy", kind: "enemy", shape: "square", color: "#f55", size: 10,
+      behavior: "chase:player", spawn: { x: 380, y: 150 }, props: { speed: 300 } },
+    { id: "bullet", kind: "obstacle", shape: "dot", color: "#fff", size: 4,
+      control: "none", spawn: { count: 0 }, props: { speed: 600, ttl: 5 } },
+  ],
+  rules: [{ on: "tick", effects: [{ op: "score", value: 0 }] }],
+};
+check("edge spec validates", validateGameSpec(edgeSpec).ok);
+{
+  const w = new World(edgeSpec, 1);
+  // a bullet flying into the right wall despawns instead of sticking
+  const bullet = w.spawn("bullet")!;
+  bullet.x = 360; bullet.y = 150; bullet.vx = 600; bullet.vy = 0;
+  let despawnedAtWall = false;
+  for (let i = 0; i < 20; i++) {
+    stepMovement(w, new Input(), 1 / 60);
+    w.reap();
+    if (w.countOf("bullet") === 0) { despawnedAtWall = true; break; }
+  }
+  check("a projectile despawns at the wall (no pile-up)", despawnedAtWall);
+
+  // the player (steered) clamps at the wall instead of despawning
+  const w2 = new World(edgeSpec, 1);
+  const p = w2.firstOf("player")!;
+  p.x = 395; // shoved past the right edge
+  for (let i = 0; i < 5; i++) stepMovement(w2, new Input(), 1 / 60);
+  check("the player clamps at the wall (doesn't despawn)",
+    w2.countOf("player") === 1 && p.x === 400 - p.size);
+
+  // a chasing enemy also clamps (behaviour movers aren't projectiles)
+  const w3 = new World(edgeSpec, 1);
+  const en = w3.firstOf("enemy")!;
+  en.x = 395; en.y = 150;
+  for (let i = 0; i < 5; i++) stepMovement(w3, new Input(), 1 / 60);
+  check("a behaviour enemy clamps at the wall (doesn't despawn)", w3.countOf("enemy") === 1 && en.x <= 400 - en.size);
+}
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);
