@@ -42,7 +42,7 @@ export class Renderer {
     for (const e of world.entities) {
       if (!e.alive) continue;
       if (e.x + e.size < x0 || e.x - e.size > x1 || e.y + e.size < y0 || e.y - e.size > y1) continue;
-      this.drawEntity(e);
+      this.drawEntity(e, world.time);
     }
     ctx.restore();
 
@@ -64,9 +64,9 @@ export class Renderer {
     hud.textAlign = "left";
   }
 
-  private drawEntity(e: Entity): void {
-    if (e.glyph?.length) {
-      this.drawGlyph(e);
+  private drawEntity(e: Entity, time: number): void {
+    if (e.frames?.length) {
+      this.drawGlyph(e, time);
       return;
     }
     const ctx = this.ctx;
@@ -86,9 +86,13 @@ export class Renderer {
   }
 
   /** Draw a pixel-grid glyph scaled to the entity's box, rotated to face its heading. */
-  private drawGlyph(e: Entity): void {
+  private drawGlyph(e: Entity, time: number): void {
     const ctx = this.ctx;
-    const rows = e.glyph!;
+    const fr = e.frames!;
+    // Multi-frame: advance by sim time (deterministic). A small per-entity phase
+    // (from the instance id) keeps a crowd from animating in lockstep.
+    const idx = fr.length > 1 ? Math.floor(time * e.fps + (e.iid % fr.length)) % fr.length : 0;
+    const rows = fr[idx]!;
     const nrows = rows.length;
     const ncols = Math.max(...rows.map((r) => r.length));
     if (!nrows || !ncols) return;

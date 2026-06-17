@@ -23,10 +23,13 @@ export type {
   WinCondition,
   Spawn,
   EntityKind,
+  TileMap,
 } from "./dsl/types";
 
 export { validateGameSpec } from "./dsl/validate";
 export type { ValidationResult } from "./dsl/validate";
+
+export { GLYPH_PRESETS, GLYPH_PRESET_NAMES, resolveFrames } from "./dsl/glyphs";
 
 export { growAndSlow } from "./dsl/samples/growAndSlow";
 

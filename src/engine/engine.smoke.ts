@@ -356,8 +356,40 @@ const glyphSpec: GameSpec = {
 };
 check("glyph spec validates", validateGameSpec(glyphSpec).ok);
 check("bad glyph rejected",
-  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "tank" as never }] }).ok);
-check("glyph copied onto the runtime entity", new World(glyphSpec, 1).firstOf("player")!.glyph?.length === 5);
+  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: 42 as never }] }).ok);
+{
+  const gp = new World(glyphSpec, 1).firstOf("player")!;
+  check("raw glyph resolves to one 5-row frame", gp.frames?.length === 1 && gp.frames[0]!.length === 5);
+}
+
+// 14b. glyph presets — a named built-in shape resolves to its frames.
+const presetSpec: GameSpec = {
+  ...glyphSpec,
+  entities: [{ ...glyphSpec.entities[0]!, glyph: "heart" }],
+};
+check("preset name validates", validateGameSpec(presetSpec).ok);
+check("unknown preset rejected",
+  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "banana" }] }).ok);
+check("preset resolves to a frame on the entity",
+  (new World(presetSpec, 1).firstOf("player")!.frames?.[0]?.length ?? 0) > 0);
+// a multi-frame preset (invader) animates -> more than one frame
+const invaderSpec: GameSpec = { ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "invader" }] };
+check("animated preset resolves to multiple frames",
+  (new World(invaderSpec, 1).firstOf("player")!.frames?.length ?? 0) >= 2);
+
+// 14c. explicit frames + fps — GIF-like animation authored inline.
+const animSpec: GameSpec = {
+  ...glyphSpec,
+  entities: [{ ...glyphSpec.entities[0]!, glyph: undefined,
+    frames: [["X.X", ".X.", "X.X"], [".X.", "XXX", ".X."]], fps: 4 }],
+};
+check("frames+fps spec validates", validateGameSpec(animSpec).ok);
+check("bad frames rejected",
+  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, frames: ["nope"] as never }] }).ok);
+{
+  const ap = new World(animSpec, 1).firstOf("player")!;
+  check("explicit frames + fps land on the entity", ap.frames?.length === 2 && ap.fps === 4);
+}
 
 // 15. tilemap: a grid of chars expands into solid walls + a player at its cell.
 const mapSpec: GameSpec = {

@@ -15,6 +15,10 @@ import type {
   Shape,
   Control,
 } from "./types";
+import { GLYPH_PRESET_NAMES } from "./glyphs";
+
+const isRows = (v: unknown): v is string[] =>
+  Array.isArray(v) && v.length > 0 && v.every((r) => typeof r === "string");
 
 export interface ValidationResult {
   ok: boolean;
@@ -88,9 +92,19 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   }
   if (e.props && typeof e.props !== "object") errs.push(`${where}: props must be an object`);
   if (e.solid !== undefined && typeof e.solid !== "boolean") errs.push(`${where}: solid must be a boolean`);
-  if (e.glyph !== undefined && (!Array.isArray(e.glyph) || !e.glyph.length || !e.glyph.every((r) => typeof r === "string"))) {
-    errs.push(`${where}: glyph must be a non-empty array of strings (grid rows)`);
+  if (e.glyph !== undefined) {
+    if (typeof e.glyph === "string") {
+      if (!GLYPH_PRESET_NAMES.includes(e.glyph)) {
+        errs.push(`${where}: glyph "${e.glyph}" is not a known preset (one of: ${GLYPH_PRESET_NAMES.join(", ")})`);
+      }
+    } else if (!isRows(e.glyph)) {
+      errs.push(`${where}: glyph must be a preset name or a non-empty array of grid rows`);
+    }
   }
+  if (e.frames !== undefined && (!Array.isArray(e.frames) || !e.frames.length || !e.frames.every(isRows))) {
+    errs.push(`${where}: frames must be a non-empty array of frames (each a non-empty array of strings)`);
+  }
+  if (e.fps !== undefined && !isNum(e.fps)) errs.push(`${where}: fps must be a number`);
   if (e.rotate !== undefined && typeof e.rotate !== "boolean") errs.push(`${where}: rotate must be a boolean`);
   ids.add(e.id);
 }

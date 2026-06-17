@@ -13,6 +13,7 @@
  */
 
 import { growAndSlow } from "./samples/growAndSlow";
+import { GLYPH_PRESET_NAMES } from "./glyphs";
 
 /** The essentials — entities, rules, effects, conditions, win/lose. */
 export const CORE = `A GameSpec is a declarative JSON document a deterministic 2D engine plays directly. Visuals are primitive shapes (no assets) — gameplay is what matters. Emit DATA ONLY: never code.
@@ -131,15 +132,18 @@ Recipe — base defense (enemies pour in from the top and advance on a base at t
   },
   {
     id: "glyphs",
-    title: "Glyphs (pixel-grid shapes)",
-    summary: "draw entities as a small bitmap that can rotate to show direction (e.g. a tank)",
-    doc: `Glyphs — represent an entity as a tiny pixel grid instead of a bare shape (still no assets, just data).
-- "glyph": [ "<row>", ... ]  — rows of a small bitmap (3x3, 5x5, any size). A cell is "on" for any char except space, "." or "0". It's drawn scaled to the entity's box in the entity's color. Author it FACING UP.
-- "rotate": true  — turn the glyph to the entity's facing (the way it last moved), so it visibly points its direction. Great for tanks/ships so you can see where they face.
-Recipe — a tank that points the way it drives:
-  { "id":"player","kind":"player","shape":"square","color":"#8cb33a","size":15,"control":"arrows",
-    "glyph":["..X..",".XXX.","XXXXX","XXXXX","X.X.X"], "rotate":true, "spawn":{"x":400,"y":520} }
-  (3x3 version: ["·X·","XXX","X·X"]. The glyph is visual only — collisions still use size.)`,
+    title: "Glyphs (pixel-grid shapes + animation)",
+    summary: "draw entities as a small bitmap, a named preset shape, or a GIF-like animation; can rotate to show direction",
+    doc: `Glyphs — represent an entity as a tiny pixel grid instead of a bare shape (still no assets, just data). Three ways, cheapest first:
+- "glyph": "<preset>"  — a built-in common shape. Presets: ${GLYPH_PRESET_NAMES.join(", ")}. Some (invader, blob, flame) are multi-frame and ANIMATE on their own, so the entity looks alive with zero extra work. Prefer a preset when one fits.
+- "glyph": [ "<row>", ... ]  — raw rows of a small bitmap (3x3, 5x5, any size) when no preset fits. A cell is "on" for any char except space, "." or "0". Drawn scaled to the entity's box in its color. Author it FACING UP.
+- "frames": [ [ "<row>", ... ], [ "<row>", ... ], ... ] + "fps": <number>  — explicit GIF-like animation: a list of bitmap frames cycled at fps (default 6). Overrides "glyph". Use it for a walk cycle / pulse / spin so the entity feels alive.
+- "rotate": true  — turn the glyph to the entity's facing (the way it last moved), so it visibly points its direction. Composes with any of the above (the current frame is rotated). Great for tanks/ships.
+Recipes:
+  • preset, animated for free:   { "id":"bug","kind":"enemy","shape":"square","color":"#9be15d","size":14,"behavior":"wander","glyph":"invader","spawn":{"count":5} }
+  • a tank that points the way it drives:  { "id":"player","kind":"player","shape":"square","color":"#8cb33a","size":15,"control":"arrows","glyph":"tank","rotate":true,"spawn":{"x":400,"y":520} }
+  • a custom 2-frame pulsing pickup:  { "id":"gem","kind":"food","shape":"dot","color":"#ffd23f","size":9,"frames":[["..X..",".XXX.","XXXXX",".XXX.","..X.."],[".....","..X..",".XXX.","..X..","....."]],"fps":4,"spawn":{"random":true,"maintain":6} }
+  (Glyphs are visual only — collisions still use "size". A multi-frame glyph cycles on sim time, so it's deterministic and pauses when paused.)`,
   },
   {
     id: "obstacles",

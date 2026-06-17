@@ -7,6 +7,7 @@
  */
 
 import type { EntitySpec, Shape } from "../dsl/types";
+import { resolveFrames } from "../dsl/glyphs";
 
 let nextId = 1;
 
@@ -36,8 +37,13 @@ export interface Entity {
   control: string;
   /** Blocks other entities' movement (walls/obstacles). */
   solid: boolean;
-  /** Optional pixel-grid glyph drawn instead of the bare shape. */
-  glyph?: string[];
+  /**
+   * Resolved animation frames (each a bitmap) drawn instead of the bare shape —
+   * from a raw glyph, a named preset, or explicit `frames`. One frame = static.
+   */
+  frames?: string[][];
+  /** Animation speed in frames/second for a multi-frame glyph. */
+  fps: number;
   /** Rotate the glyph to face the heading. */
   rotate: boolean;
   alive: boolean;
@@ -66,7 +72,8 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     behavior: verb ? { verb, target: target || undefined } : undefined,
     control: spec.control ?? "none",
     solid: spec.solid ?? false,
-    glyph: spec.glyph,
+    frames: resolveFrames(spec.glyph, spec.frames),
+    fps: spec.fps ?? 6,
     rotate: spec.rotate ?? false,
     alive: true,
     scratch: {},

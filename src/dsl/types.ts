@@ -110,12 +110,23 @@ export interface EntitySpec {
    */
   solid?: boolean;
   /**
-   * Optional pixel-grid glyph (rows of a small bitmap), drawn scaled to the
-   * entity's box in its color instead of the bare `shape`. A cell is "on" for
-   * any char except space/"." /"0". Authored facing up. No assets — just data.
-   * e.g. a tank: ["..X..", ".XXX.", "XXXXX", "XXXXX", "X.X.X"].
+   * Optional pixel-grid glyph, drawn scaled to the entity's box in its color
+   * instead of the bare `shape`. Either:
+   *  - raw rows of a small bitmap, e.g. ["..X..", ".XXX.", "XXXXX", ...]; or
+   *  - the NAME of a built-in preset (see GLYPH_PRESETS — tank/heart/star/
+   *    invader/blob/...). Some presets are multi-frame and animate on their own.
+   * A cell is "on" for any char except space/"." /"0". Authored facing up.
+   * No assets — just data.
    */
-  glyph?: string[];
+  glyph?: string[] | string;
+  /**
+   * Explicit GIF-like animation: a list of frames (each a bitmap = rows),
+   * cycled at `fps`. Overrides `glyph` as the drawn shape. Use it to make an
+   * entity look alive (a walk cycle, a pulse, a spin).
+   */
+  frames?: string[][];
+  /** Animation speed for a multi-frame glyph/preset, in frames per second. Default 6. */
+  fps?: number;
   /** Rotate the glyph to the entity's facing (heading), so it shows direction. */
   rotate?: boolean;
   /**
