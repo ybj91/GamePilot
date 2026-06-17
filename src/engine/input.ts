@@ -76,8 +76,14 @@ export class Input {
       this.justPressed.add("pointer");
     };
     const onLeave = () => (this.pointerActive = false);
+    const SCROLLERS = new Set(["up", "down", "left", "right", "space"]);
     const onKeyDown = (ev: KeyboardEvent) => {
       const k = normalizeKey(ev.key);
+      // Stop arrow/Space from scrolling the page while playing — but never when
+      // the user is typing in a field (e.g. the chat box on the management UI).
+      const el = document.activeElement;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || (el as HTMLElement).isContentEditable);
+      if (SCROLLERS.has(k) && !typing) ev.preventDefault();
       if (!this.keys.has(k)) this.justPressed.add(k); // down-edge only
       this.keys.add(k);
     };
