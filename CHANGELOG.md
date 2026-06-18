@@ -25,6 +25,11 @@ Bump policy:
     name, a `{ glyph, color }`, or null/empty. For building big items from tiles.
   - Priority: `tiles` > `parts` > `glyph`/`frames`. A plain single-layer glyph
     stays the flexible default (controllable colour, reusable as a part/tile).
+  - Composed glyphs can also **animate** (a composed preset can be frames of
+    layers), so the animated remakes (`invader2`/`blob2`/`flame2`/`explosion2`/
+    `goomba2`) keep moving in colour.
+- **All 38** v1 glyphs now have a v2 colour remake (the gallery shows every one
+  as a v1 → v2 pair). v1 monochrome presets are unchanged — v2s are options.
 - Built-in **composed presets** (glyph lib "v2", 8×8 multi-colour): nature
   (`pinetree`, `cottage`, `daisy`, `toadstool`) + colour remakes of 20 iconic v1
   glyphs (`tank2`/`heart2`/`star2`/`coin2`/`face2`/`hero2`/`ship2`/`skull2`/

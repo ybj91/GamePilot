@@ -396,13 +396,16 @@ check("animated goomba resolves to multiple frames",
   };
   check("parts spec validates (inline rows + preset reuse + colours)", validateGameSpec(partsSpec).ok);
   const pe = new World(partsSpec, 1).firstOf("player")!;
-  check("parts resolve to coloured layers on the entity",
-    pe.parts?.length === 2 && pe.parts[1]!.color === "#2e8b3d");
+  check("parts resolve to coloured layers (one frame, two layers)",
+    pe.parts?.length === 1 && pe.parts[0]!.length === 2 && pe.parts[0]![1]!.color === "#2e8b3d");
   check("a composed glyph carries no monochrome frames", pe.frames === undefined);
 }
 check("composed preset name validates", validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }).ok);
-check("a composed preset resolves to multiple layers",
-  (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }, 1).firstOf("player")!.parts?.length ?? 0) >= 2);
+check("a composed preset resolves to layers",
+  ((new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }, 1).firstOf("player")!.parts?.[0]?.length) ?? 0) >= 2);
+// an animated composed preset (invader2) resolves to multiple frames of layers
+check("an animated composed preset has multiple frames",
+  (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "invader2" }] }, 1).firstOf("player")!.parts?.length ?? 0) >= 2);
 check("bad parts rejected (unknown preset string)",
   !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, parts: [{ glyph: "nope" }] }] }).ok);
 
@@ -426,8 +429,8 @@ check("bad parts rejected (unknown preset string)",
 check("bad tiles rejected (unknown preset cell)",
   !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, tiles: [["brick", "nope"]] }] }).ok);
 // every composed preset is well-formed, and the v1->v2 map points at real presets
-check("every composed preset resolves to >=1 layer",
-  COMPOSED_PRESET_NAMES.every((n) => (resolveParts(n)?.length ?? 0) >= 1));
+check("every composed preset resolves to >=1 frame with >=1 layer",
+  COMPOSED_PRESET_NAMES.every((n) => { const f = resolveParts(n); return !!f && f.length >= 1 && f.every((fr) => fr.length >= 1); }));
 check("v1->v2 remake map is consistent (v1 mono exists, v2 composed exists)",
   Object.entries(GLYPH_V2_OF).every(([v1, v2]) => GLYPH_PRESET_NAMES.includes(v1) && COMPOSED_PRESET_NAMES.includes(v2)));
 

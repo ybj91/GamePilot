@@ -94,7 +94,7 @@ export const GLYPH_PRESET_NAMES = Object.keys(GLYPH_PRESETS);
  * is a little colored sprite (still pure data, no assets). Usable by name via
  * `glyph: "<name>"`, or compose your own with the `parts` field.
  */
-export const COMPOSED_PRESETS: Record<string, GlyphPart[]> = {
+export const COMPOSED_PRESETS: Record<string, GlyphPart[] | GlyphPart[][]> = {
   pinetree: [
     { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "........", "........"], color: "#2e8b3d" },
     { glyph: ["........", "........", "........", "........", "........", "........", "...XX...", "...XX..."], color: "#7a4a23" },
@@ -203,6 +203,42 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[]> = {
     { glyph: ["....XX..", "...XXX..", "..XXXX..", ".XXXX...", "XXXX....", "XXX.....", "X.......", "........"], color: "#5fae5f" },
     { glyph: ["....X...", "...X....", "..X.....", ".X......", "X.......", "........", "........", "........"], color: "#2e7d32" }, // vein
   ],
+
+  // --- animated v2 remakes (frames of layers — colour + keeps moving) ---
+  invader2: [
+    [{ glyph: ["X...X", ".XXX.", "XXXXX", "X.X.X", "X...X"], color: "#5fae5f" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#ffffff" }],
+    [{ glyph: ["X...X", ".XXX.", "XXXXX", ".XXX.", ".X.X."], color: "#5fae5f" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#ffffff" }],
+  ],
+  blob2: [
+    [{ glyph: [".....", ".XXX.", "XXXXX", ".XXX.", "....."], color: "#a86bd6" }, { glyph: [".....", "..X..", ".....", ".....", "....."], color: "#e3c6ff" }],
+    [{ glyph: [".XXX.", "XXXXX", "XXXXX", "XXXXX", ".XXX."], color: "#a86bd6" }, { glyph: [".X...", ".....", ".....", ".....", "....."], color: "#e3c6ff" }],
+  ],
+  flame2: [
+    [{ glyph: ["..X..", ".XXX.", ".XXX.", "XXXXX", "XX.XX"], color: "#ff7a18" }, { glyph: [".....", "..X..", "..X..", ".XXX.", "....."], color: "#ffe066" }],
+    [{ glyph: [".X.X.", ".XXX.", "XXXXX", "XXXXX", "X.X.X"], color: "#ff7a18" }, { glyph: [".....", ".XXX.", "..X..", ".XXX.", "....."], color: "#ffe066" }],
+  ],
+  explosion2: [
+    [{ glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffd23f" }],
+    [{ glyph: [".....", "..X..", ".XXX.", "..X..", "....."], color: "#ff9a3c" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffe066" }],
+    [{ glyph: ["X.X.X", ".XXX.", "XXXXX", ".XXX.", "X.X.X"], color: "#ff7a18" }, { glyph: [".....", ".XXX.", ".XXX.", ".XXX.", "....."], color: "#ffe066" }],
+    [{ glyph: ["X...X", "..X..", "X.X.X", "..X..", "X...X"], color: "#ff7a18" }],
+    [{ glyph: ["X...X", ".....", ".....", ".....", "X...X"], color: "#c0392b" }],
+  ],
+  goomba2: [
+    [{ glyph: [".XXX.", "XXXXX", "X.X.X", "XXXXX", "X...X"], color: "#9a6324" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#3a2510" }],
+    [{ glyph: [".XXX.", "XXXXX", "X.X.X", "XXXXX", ".X.X."], color: "#9a6324" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#3a2510" }],
+  ],
+
+  // --- abstract icon v2s (a colour accent on the v1 shape) ---
+  arrow2: [{ glyph: ["..X..", ".XXX.", "XXXXX", "..X..", "..X.."], color: "#ffd23f" }, { glyph: ["..X..", ".....", ".....", ".....", "....."], color: "#fff3b0" }],
+  diamond2: [{ glyph: ["..X..", ".XXX.", "XXXXX", ".XXX.", "..X.."], color: "#4ad7e0" }, { glyph: [".....", "..X..", ".....", ".....", "....."], color: "#ffffff" }],
+  plus2: [{ glyph: ["..X..", "..X..", "XXXXX", "..X..", "..X.."], color: "#e23d3d" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffffff" }],
+  ring2: [{ glyph: [".XXX.", "X...X", "X...X", "X...X", ".XXX."], color: "#ffd23f" }, { glyph: [".X...", ".....", ".....", ".....", "....."], color: "#fff3b0" }],
+  moon2: [{ glyph: [".XXX.", "XX...", "XX...", "XX...", ".XXX."], color: "#e6e6c0" }, { glyph: [".....", "X....", "X....", ".....", "....."], color: "#fffdf0" }],
+  rock2: [{ glyph: [".....", ".XX..", "XXXXX", "XXXXX", "....."], color: "#9a9aa2" }, { glyph: [".....", ".....", ".....", "XXXXX", "....."], color: "#6b6b73" }],
+  grass2: [{ glyph: [".....", "X...X", "X.X.X", "X.X.X", "XXXXX"], color: "#4a9d4a" }, { glyph: [".....", "X...X", "X.X.X", ".....", "....."], color: "#7bc043" }],
+  snowflake2: [{ glyph: ["..X..", "X.X.X", ".XXX.", "X.X.X", "..X.."], color: "#a8e0ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffffff" }],
+  bird2: [{ glyph: [".....", "XX.XX", ".XXX.", "..X..", "....."], color: "#6cb4ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ff9a3c" }],
 };
 
 /**
@@ -215,6 +251,9 @@ export const GLYPH_V2_OF: Record<string, string> = {
   ship: "ship2", skull: "skull2", alien: "alien2", brick: "brick2", flag: "flag2", pipe: "pipe2",
   key: "key2", crown: "crown2", sun: "sun2", cloud: "cloud2", bush: "bush2", mountain: "mountain2",
   drop: "drop2", leaf: "leaf2",
+  invader: "invader2", blob: "blob2", flame: "flame2", explosion: "explosion2", goomba: "goomba2",
+  arrow: "arrow2", diamond: "diamond2", plus: "plus2", ring: "ring2", moon: "moon2", rock: "rock2",
+  grass: "grass2", snowflake: "snowflake2", bird: "bird2",
 };
 
 export const COMPOSED_PRESET_NAMES = Object.keys(COMPOSED_PRESETS);
@@ -231,23 +270,41 @@ function partRows(g: string[] | string): string[] | undefined {
   return g.length ? g : undefined;
 }
 
+/** Resolve a list of parts into concrete layers (skipping any with no bitmap). */
+function resolveLayers(parts: GlyphPart[]): ResolvedLayer[] {
+  const layers: ResolvedLayer[] = [];
+  for (const p of parts) {
+    const rows = partRows(p.glyph);
+    if (rows) layers.push({ rows, color: p.color });
+  }
+  return layers;
+}
+
 /**
  * Resolve a composed glyph (the `parts` field, or a COMPOSED_PRESETS name in
- * `glyph`) into concrete layers. Returns undefined for plain/monochrome glyphs
- * (those go through resolveFrames instead).
+ * `glyph`) into FRAMES of layers (one frame = static; many = animated, cycled
+ * like `frames`). Returns undefined for plain/monochrome glyphs (those go through
+ * resolveFrames instead).
  */
 export function resolveParts(
   glyph?: string[] | string,
   parts?: GlyphPart[],
-): ResolvedLayer[] | undefined {
-  const src = parts && parts.length ? parts : typeof glyph === "string" ? COMPOSED_PRESETS[glyph] : undefined;
-  if (!src) return undefined;
-  const layers: ResolvedLayer[] = [];
-  for (const p of src) {
-    const rows = partRows(p.glyph);
-    if (rows) layers.push({ rows, color: p.color });
+): ResolvedLayer[][] | undefined {
+  if (parts && parts.length) {
+    const l = resolveLayers(parts);
+    return l.length ? [l] : undefined;
   }
-  return layers.length ? layers : undefined;
+  if (typeof glyph !== "string") return undefined;
+  const preset = COMPOSED_PRESETS[glyph];
+  if (!preset) return undefined;
+  // A preset is either GlyphPart[] (one frame) or GlyphPart[][] (frames).
+  const frames = Array.isArray(preset[0]) ? (preset as GlyphPart[][]) : [preset as GlyphPart[]];
+  const out: ResolvedLayer[][] = [];
+  for (const f of frames) {
+    const l = resolveLayers(f);
+    if (l.length) out.push(l);
+  }
+  return out.length ? out : undefined;
 }
 
 /** Resolve one tile-grid cell into a tile (rows + optional colour), or null (gap). */

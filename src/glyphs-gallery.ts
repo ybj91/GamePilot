@@ -6,7 +6,7 @@
  * subtle glow. Plain DOM, no framework.
  */
 
-import { GLYPH_PRESETS, COMPOSED_PRESETS, GLYPH_V2_OF, resolveParts } from "./dsl/glyphs";
+import { GLYPH_PRESETS, COMPOSED_PRESETS, GLYPH_V2_OF, resolveParts, type ResolvedLayer } from "./dsl/glyphs";
 import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
@@ -56,10 +56,18 @@ function drawFrame(ctx: CanvasRenderingContext2D, rows: string[] | undefined, co
 }
 
 interface Animated { ctx: CanvasRenderingContext2D; frames: string[][]; color: string; }
+interface AnimatedComposed { ctx: CanvasRenderingContext2D; frames: ResolvedLayer[][]; }
 
 const gallery = document.getElementById("gallery") as HTMLDivElement;
 const countEl = document.getElementById("count") as HTMLSpanElement;
 const animated: Animated[] = [];
+const animatedComposed: AnimatedComposed[] = [];
+
+/** Clear then paint one composed frame's layers onto a canvas. */
+function paintComposedFrame(ctx: CanvasRenderingContext2D, layers: ResolvedLayer[] | undefined): void {
+  ctx.clearRect(0, 0, PX, PX);
+  for (const layer of layers ?? []) paint(ctx, layer.rows, layer.color ?? "#9be15d");
+}
 
 const names = Object.keys(GLYPH_PRESETS);
 const composedNames = Object.keys(COMPOSED_PRESETS);
@@ -87,12 +95,13 @@ function monoCanvas(name: string, px: string): HTMLCanvasElement {
   if (frames.length > 1) animated.push({ ctx, frames, color });
   return canvas;
 }
-/** Paint a composed (layered) preset onto a fresh canvas. */
+/** Paint a composed (layered) preset onto a fresh canvas (animates if multi-frame). */
 function composedCanvas(name: string, px: string): HTMLCanvasElement {
   const canvas = newCanvas(px);
   const ctx = canvas.getContext("2d")!;
-  ctx.clearRect(0, 0, PX, PX);
-  for (const layer of resolveParts(name) ?? []) paint(ctx, layer.rows, layer.color ?? "#9be15d");
+  const frames = resolveParts(name) ?? [];
+  paintComposedFrame(ctx, frames[0]);
+  if (frames.length > 1) animatedComposed.push({ ctx, frames });
   return canvas;
 }
 
@@ -148,9 +157,10 @@ for (const name of composedNames) {
 // frame counter keeps the index trivially in range (no timestamp math).
 const FPS = 6;
 let frame = 0;
-if (animated.length) {
+if (animated.length || animatedComposed.length) {
   setInterval(() => {
     frame++;
     for (const a of animated) drawFrame(a.ctx, a.frames[frame % a.frames.length], a.color);
+    for (const a of animatedComposed) paintComposedFrame(a.ctx, a.frames[frame % a.frames.length]);
   }, 1000 / FPS);
 }

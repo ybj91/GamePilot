@@ -70,7 +70,7 @@ export class Renderer {
       return;
     }
     if (e.parts?.length) {
-      this.drawParts(e);
+      this.drawParts(e, time);
       return;
     }
     if (e.frames?.length) {
@@ -95,8 +95,7 @@ export class Renderer {
   }
 
   /** Which animation frame to show now (deterministic, driven by sim time). */
-  private frameIndex(e: Entity, time: number): number {
-    const n = e.frames!.length;
+  private frameIndex(e: Entity, time: number, n: number): number {
     if (n <= 1) return 0;
     if (e.loop) {
       // Loop on fps. A small per-entity phase keeps a crowd out of lockstep.
@@ -110,15 +109,16 @@ export class Renderer {
 
   /** Draw a pixel-grid glyph (current animation frame) scaled to the entity's box. */
   private drawGlyph(e: Entity, time: number): void {
-    const rows = e.frames![this.frameIndex(e, time)]!;
+    const rows = e.frames![this.frameIndex(e, time, e.frames!.length)]!;
     const color = e.flash > 0 ? e.flashColor : e.color;
     this.drawBitmap(e, rows, color, e.flash > 0 ? 20 : 8);
   }
 
-  /** Draw a composed glyph: each layer's bitmap in its own color, back-to-front. */
-  private drawParts(e: Entity): void {
+  /** Draw a composed glyph: the current frame's layers, each in its own color. */
+  private drawParts(e: Entity, time: number): void {
+    const frame = e.parts![this.frameIndex(e, time, e.parts!.length)]!;
     const flashing = e.flash > 0;
-    for (const layer of e.parts!) {
+    for (const layer of frame) {
       const color = flashing ? e.flashColor : layer.color ?? e.color;
       this.drawBitmap(e, layer.rows, color, flashing ? 20 : 8);
     }
