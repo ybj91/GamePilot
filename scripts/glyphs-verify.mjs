@@ -23,8 +23,11 @@ for (let i = 0; i < 12; i++) { seen.add(await hash()); await new Promise((r) => 
 await page.screenshot({ path: "scripts/shot-glyphs.png" });
 await browser.close();
 
-const allListed = ALL.every((n) => cards.includes(n)) && cards.length === ALL.length;
+// v1 monochrome shown as standalone cards; v2 composed shown inside "v1 → v2" pairs.
+const monoShown = GLYPH_PRESET_NAMES.every((n) => cards.includes(n));
+const v2Shown = COMPOSED_PRESET_NAMES.every((v2) => cards.some((c) => c && c.includes(v2)));
 console.log("no page errors:", errors.length === 0 ? "✓" : "✗ " + errors.join("; "));
-console.log("every preset is shown (mono + composed):", allListed ? "✓" : "✗", `(${cards.length}/${ALL.length})`);
+console.log("every v1 monochrome preset shown:", monoShown ? "✓" : "✗", `(${GLYPH_PRESET_NAMES.length})`);
+console.log("every v2 composed preset shown (paired with v1):", v2Shown ? "✓" : "✗", `(${COMPOSED_PRESET_NAMES.length})`);
 console.log("animated previews cycle:", seen.size >= 2 ? "✓" : "✗", `(${seen.size} distinct frames)`);
-console.log(errors.length === 0 && allListed && seen.size >= 2 ? "\nALL PASS ✓ (glyph gallery)" : "\nFAILED ✗");
+console.log(errors.length === 0 && monoShown && v2Shown && seen.size >= 2 ? "\nALL PASS ✓ (glyph gallery)" : "\nFAILED ✗");

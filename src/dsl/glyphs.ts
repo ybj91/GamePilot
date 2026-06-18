@@ -114,6 +114,45 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[]> = {
     { glyph: ["........", "..X..X..", ".....X..", "..X.....", "........", "........", "........", "........"], color: "#ffffff" },
     { glyph: ["........", "........", "........", "........", "..XXXX..", "..X..X..", "..X..X..", "..XXXX.."], color: "#efe6c8" },
   ],
+
+  // --- v2 remakes of iconic v1 monochrome glyphs (multi-colour, 8x8) ---
+  tank2: [
+    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#333333" }, // tracks
+    { glyph: ["..XXXX..", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "..XXXX.."], color: "#5a8a3a" }, // hull
+    { glyph: ["...XX...", "...XX...", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#444444" }, // barrel
+  ],
+  heart2: [
+    { glyph: [".XX..XX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "...XX...", "........"], color: "#e0394b" },
+    { glyph: [".X......", "XX......", ".X......", "........", "........", "........", "........", "........"], color: "#ff9aa8" }, // shine
+  ],
+  star2: [
+    { glyph: ["...XX...", "...XX...", "XXXXXXXX", ".XXXXXX.", "..XXXX..", ".XX..XX.", ".X....X.", "........"], color: "#ffcf3a" },
+    { glyph: ["........", "........", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#fff3b0" }, // core
+  ],
+  coin2: [
+    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "..XXXX.."], color: "#b8860b" }, // edge
+    { glyph: ["........", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........"], color: "#ffd23f" }, // face
+    { glyph: ["........", "...X....", "..X.....", "........", "........", "........", "........", "........"], color: "#fffbe6" }, // shine
+  ],
+  face2: [
+    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "..XXXX.."], color: "#ffd23f" },
+    { glyph: ["........", "........", "..X..X..", "..X..X..", "........", ".X....X.", "..XXXX..", "........"], color: "#3a2d10" }, // eyes + smile
+  ],
+  hero2: [
+    { glyph: ["..XXXX..", ".XXXXXX.", "........", "........", "........", "........", "........", "........"], color: "#e23d3d" }, // hat
+    { glyph: ["........", "........", "..XXXX..", "..XXXX..", "........", "........", "........", "........"], color: "#f0b890" }, // face
+    { glyph: ["........", "........", "........", "........", "..XXXX..", "..XXXX..", "..XXXX..", "........"], color: "#3a5fcd" }, // body
+    { glyph: ["........", "........", "........", "........", "........", "........", "........", "..X..X.."], color: "#333333" }, // legs
+  ],
+};
+
+/**
+ * Which v1 monochrome presets have a v2 (composed, colour) remake. The gallery
+ * shows them side-by-side; both remain usable by name (v1 unchanged).
+ */
+export const GLYPH_V2_OF: Record<string, string> = {
+  tank: "tank2", heart: "heart2", star: "star2", coin: "coin2", face: "face2", hero: "hero2",
+  tree: "pinetree", house: "cottage", flower: "daisy", mushroom: "toadstool",
 };
 
 export const COMPOSED_PRESET_NAMES = Object.keys(COMPOSED_PRESETS);

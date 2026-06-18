@@ -15,6 +15,7 @@ import { Input, type InputEnv } from "./input";
 import { growAndSlow } from "../dsl/samples/growAndSlow";
 import { validateGameSpec } from "../dsl/validate";
 import { DSL_VERSION, parseVersion, isVersionSupported } from "../dsl/version";
+import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES, GLYPH_V2_OF, resolveParts } from "../dsl/glyphs";
 import type { GameSpec } from "../dsl/types";
 
 let failures = 0;
@@ -404,6 +405,11 @@ check("a composed preset resolves to multiple layers",
   (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }, 1).firstOf("player")!.parts?.length ?? 0) >= 2);
 check("bad parts rejected (unknown preset string)",
   !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, parts: [{ glyph: "nope" }] }] }).ok);
+// every composed preset is well-formed, and the v1->v2 map points at real presets
+check("every composed preset resolves to >=1 layer",
+  COMPOSED_PRESET_NAMES.every((n) => (resolveParts(n)?.length ?? 0) >= 1));
+check("v1->v2 remake map is consistent (v1 mono exists, v2 composed exists)",
+  Object.entries(GLYPH_V2_OF).every(([v1, v2]) => GLYPH_PRESET_NAMES.includes(v1) && COMPOSED_PRESET_NAMES.includes(v2)));
 
 // 14c. explicit frames + fps — GIF-like animation authored inline.
 const animSpec: GameSpec = {

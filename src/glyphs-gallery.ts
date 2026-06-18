@@ -6,7 +6,7 @@
  * subtle glow. Plain DOM, no framework.
  */
 
-import { GLYPH_PRESETS, COMPOSED_PRESETS, resolveParts } from "./dsl/glyphs";
+import { GLYPH_PRESETS, COMPOSED_PRESETS, GLYPH_V2_OF, resolveParts } from "./dsl/glyphs";
 import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
@@ -63,53 +63,84 @@ const animated: Animated[] = [];
 
 const names = Object.keys(GLYPH_PRESETS);
 const composedNames = Object.keys(COMPOSED_PRESETS);
-countEl.textContent = `${names.length + composedNames.length} presets · DSL v${DSL_VERSION}`;
+countEl.textContent = `${names.length} mono + ${composedNames.length} composed · DSL v${DSL_VERSION}`;
 
-for (const name of names) {
+const el = (tag: string, cls: string) => Object.assign(document.createElement(tag), { className: cls });
+function newCanvas(px: string): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = c.height = PX;
+  c.style.width = c.style.height = px;
+  return c;
+}
+function section(label: string, sub: string): void {
+  const h = el("div", "section");
+  h.innerHTML = `${label} <span>${sub}</span>`;
+  gallery.appendChild(h);
+}
+/** Paint a v1 monochrome preset onto a fresh canvas (registers animation). */
+function monoCanvas(name: string, px: string): HTMLCanvasElement {
   const frames = GLYPH_PRESETS[name]!;
   const color = COLORS[name] ?? "#9be15d";
-  const isAnim = frames.length > 1;
-
-  const card = document.createElement("div");
-  card.className = "card";
-
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = PX;
-  canvas.style.width = canvas.style.height = "84px";
+  const canvas = newCanvas(px);
   const ctx = canvas.getContext("2d")!;
   drawFrame(ctx, frames[0]!, color);
-  if (isAnim) animated.push({ ctx, frames, color });
+  if (frames.length > 1) animated.push({ ctx, frames, color });
+  return canvas;
+}
+/** Paint a composed (layered) preset onto a fresh canvas. */
+function composedCanvas(name: string, px: string): HTMLCanvasElement {
+  const canvas = newCanvas(px);
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, PX, PX);
+  for (const layer of resolveParts(name) ?? []) paint(ctx, layer.rows, layer.color ?? "#9be15d");
+  return canvas;
+}
 
-  const nameEl = document.createElement("div");
-  nameEl.className = "name";
+// --- Section 1: every v1 monochrome preset ---
+section("v1 — monochrome", "single colour, drawn in the entity's color");
+for (const name of names) {
+  const frames = GLYPH_PRESETS[name]!;
+  const isAnim = frames.length > 1;
+  const card = el("div", "card");
+  const nameEl = el("div", "name");
   nameEl.textContent = name;
-
-  const tag = document.createElement("div");
-  tag.className = isAnim ? "tag anim" : "tag";
+  const tag = el("div", isAnim ? "tag anim" : "tag");
   tag.textContent = isAnim ? `▸ ${frames.length} frames` : `${frames[0]!.length}×${Math.max(...frames[0]!.map((r) => r.length))}`;
-
-  card.append(canvas, nameEl, tag);
+  card.append(monoCanvas(name, "84px"), nameEl, tag);
   gallery.appendChild(card);
 }
 
-// Composed, multi-colour presets (glyph lib v2): draw their layers stacked.
+// --- Section 2: v2 composed remakes, shown next to their v1 for comparison ---
+section("v2 — composed colour", "multi-layer sprites · v1 → v2");
+const paired = new Set<string>();
+for (const [v1, v2] of Object.entries(GLYPH_V2_OF)) {
+  if (!GLYPH_PRESETS[v1] || !COMPOSED_PRESETS[v2]) continue;
+  paired.add(v2);
+  const card = el("div", "card");
+  const pair = el("div", "pair");
+  const f1 = document.createElement("figure");
+  f1.append(monoCanvas(v1, "60px"), Object.assign(document.createElement("figcaption"), { textContent: "v1" }));
+  const arrow = el("div", "arrow");
+  arrow.textContent = "→";
+  const f2 = document.createElement("figure");
+  f2.append(composedCanvas(v2, "60px"), Object.assign(document.createElement("figcaption"), { textContent: "v2" }));
+  pair.append(f1, arrow, f2);
+  const nameEl = el("div", "name");
+  nameEl.textContent = `${v1} → ${v2}`;
+  const tag = el("div", "tag");
+  tag.textContent = `${(resolveParts(v2) ?? []).length} layers`;
+  card.append(pair, nameEl, tag);
+  gallery.appendChild(card);
+}
+// Any composed preset without a v1 remake — show on its own.
 for (const name of composedNames) {
-  const layers = resolveParts(name) ?? [];
-  const card = document.createElement("div");
-  card.className = "card";
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = PX;
-  canvas.style.width = canvas.style.height = "84px";
-  const ctx = canvas.getContext("2d")!;
-  ctx.clearRect(0, 0, PX, PX);
-  for (const layer of layers) paint(ctx, layer.rows, layer.color ?? "#9be15d");
-  const nameEl = document.createElement("div");
-  nameEl.className = "name";
+  if (paired.has(name)) continue;
+  const card = el("div", "card");
+  const nameEl = el("div", "name");
   nameEl.textContent = name;
-  const tag = document.createElement("div");
-  tag.className = "tag anim";
-  tag.textContent = `◆ ${layers.length} layers`;
-  card.append(canvas, nameEl, tag);
+  const tag = el("div", "tag");
+  tag.textContent = `◆ ${(resolveParts(name) ?? []).length} layers`;
+  card.append(composedCanvas(name, "84px"), nameEl, tag);
   gallery.appendChild(card);
 }
 

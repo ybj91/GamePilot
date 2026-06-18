@@ -20,8 +20,13 @@ Bump policy:
   One entity can now be a little **multi-colour sprite** (a tree = brown trunk +
   green canopy) instead of a monochrome silhouette. Each part's `glyph` is inline
   rows (any size, 8×8 recommended) or a monochrome preset to reuse.
-- Built-in **composed presets** (glyph lib "v2", 8×8 multi-colour): `pinetree`,
-  `cottage`, `daisy`, `toadstool` — usable via `glyph: "<name>"`, shown at `/glyphs`.
+- Built-in **composed presets** (glyph lib "v2", 8×8 multi-colour): nature
+  (`pinetree`, `cottage`, `daisy`, `toadstool`) + colour remakes of iconic v1
+  glyphs (`tank2`, `heart2`, `star2`, `coin2`, `face2`, `hero2`). Usable via
+  `glyph: "<name>"`.
+- The `/glyphs` gallery now has two sections — **v1 monochrome** and **v2
+  composed colour**, the latter showing each remake next to its v1 (the
+  `GLYPH_V2_OF` map) for comparison. The v1 presets are unchanged and stay usable.
 - Existing specs are unaffected (1.0.0 games still validate and play).
 
 ## 1.0.0 — baseline

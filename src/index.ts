@@ -32,7 +32,7 @@ export type { ValidationResult } from "./dsl/validate";
 export { DSL_VERSION, parseVersion, isVersionSupported } from "./dsl/version";
 export type { SemVer } from "./dsl/version";
 
-export { GLYPH_PRESETS, GLYPH_PRESET_NAMES, COMPOSED_PRESETS, COMPOSED_PRESET_NAMES, resolveFrames, resolveParts } from "./dsl/glyphs";
+export { GLYPH_PRESETS, GLYPH_PRESET_NAMES, COMPOSED_PRESETS, COMPOSED_PRESET_NAMES, GLYPH_V2_OF, resolveFrames, resolveParts } from "./dsl/glyphs";
 export type { GlyphPart } from "./dsl/types";
 
 export { growAndSlow } from "./dsl/samples/growAndSlow";
