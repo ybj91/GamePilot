@@ -9,8 +9,11 @@ const browser = await puppeteer.launch({ executablePath: CHROME, headless: "new"
 const page = await browser.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
-await page.goto(URL, { waitUntil: "networkidle2" });
-await new Promise((r) => setTimeout(r, 500));
+// the /play page polls updatedAt forever, so networkidle never settles — wait for
+// the engine handle instead.
+await page.goto(URL, { waitUntil: "domcontentloaded" });
+await page.waitForFunction(() => window.gamepilot && window.gamepilot.world, { timeout: 8000 });
+await new Promise((r) => setTimeout(r, 400));
 await page.screenshot({ path: "scripts/shot-tank1990.png" });
 
 const fleet = await page.evaluate(() => {
@@ -23,30 +26,44 @@ const fleet = await page.evaluate(() => {
   };
 });
 
-// facing fire: establish focus, then fire in each direction and read the newest
-// player bullet's velocity sign. (A bullet may despawn at once if it spawns into a
-// wall/brick — so we retry a couple of times per direction.)
+// facing fire: SPACE fires the way you face (aim:"forward" = heading * speed). A
+// bullet can despawn a frame after spawning (it flew into a wall) faster than a
+// poll-after-press can catch over IPC, so install a recorder that captures every
+// bullet's velocity on its SPAWN frame; then set the heading per direction (what
+// driving sets in-game) and fire.
 await page.mouse.click(420, 300);
-const fireOnce = async (key) => {
-  await page.keyboard.down(key); await new Promise((r) => setTimeout(r, 340)); await page.keyboard.up(key);
+await page.evaluate(() => {
+  window.__shots = [];
+  const seen = new Set();
+  const loop = () => {
+    for (const e of window.gamepilot.world.entities)
+      if (e.alive && e.type === "bullet" && !seen.has(e.iid)) { seen.add(e.iid); window.__shots.push({ vx: Math.round(e.vx), vy: Math.round(e.vy) }); }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+await page.keyboard.press("Space"); // warm-up: the first keypress after focus can be swallowed
+await new Promise((r) => setTimeout(r, 140));
+const fire = async (h, ok) => {
+  const before = await page.evaluate(() => window.__shots.length);
+  await page.evaluate((hd) => {
+    const pl = window.gamepilot.world.firstOf("player");
+    pl.x = 400; pl.y = 80; pl.vx = 0; pl.vy = 0; pl.hx = hd.x; pl.hy = hd.y; // clear top lane, faced hd
+  }, h);
   await page.keyboard.press("Space");
-  // capture the bullet the INSTANT it spawns (it may despawn a frame later if it
-  // spawned into a brick/wall — so poll every animation frame, don't wait).
-  return page.evaluate(() => new Promise((resolve) => {
-    let n = 0;
-    const tick = () => {
-      const x = window.gamepilot.world.entities.filter((e) => e.alive && e.type === "bullet").sort((a, c) => c.iid - a.iid)[0];
-      if (x) return resolve({ vx: Math.round(x.vx), vy: Math.round(x.vy) });
-      if (++n > 12) return resolve(null);
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }));
+  await new Promise((r) => setTimeout(r, 160));
+  const fresh = await page.evaluate((b) => window.__shots.slice(b), before);
+  const r = fresh.find(ok);
+  return r ?? null;
 };
-const fire = async (key, ok) => { for (let i = 0; i < 3; i++) { const r = await fireOnce(key); if (r && ok(r)) return r; } return null; };
-const dirs = [["d", "RIGHT", (v) => v.vx > 0], ["a", "LEFT", (v) => v.vx < 0], ["w", "UP", (v) => v.vy < 0], ["s", "DOWN", (v) => v.vy > 0]];
+const dirs = [
+  ["RIGHT", { x: 1, y: 0 }, (v) => v.vx > 0 && v.vy === 0],
+  ["LEFT", { x: -1, y: 0 }, (v) => v.vx < 0 && v.vy === 0],
+  ["UP", { x: 0, y: -1 }, (v) => v.vy < 0 && v.vx === 0],
+  ["DOWN", { x: 0, y: 1 }, (v) => v.vy > 0 && v.vx === 0],
+];
 const aim = {};
-for (const [k, label, ok] of dirs) aim[label] = await fire(k, ok);
+for (const [label, h, ok] of dirs) aim[label] = await fire(h, ok);
 
 const fleetOk = fleet.counts.basic >= 1 && fleet.counts.fast >= 1 && fleet.counts.armor >= 1 && fleet.counts.arty >= 1;
 const shapesOk = fleet.shapes.player === 4 && [fleet.shapes.basic, fleet.shapes.fast, fleet.shapes.armor, fleet.shapes.arty].every((n) => n >= 3);

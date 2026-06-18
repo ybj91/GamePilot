@@ -232,7 +232,7 @@ const wallSpec: GameSpec = {
   world: { width: 400, height: 300, background: "#000" },
   entities: [
     { id: "player", kind: "player", shape: "circle", color: "#4aa3ff", size: 10,
-      control: "none", spawn: { x: 150, y: 150 }, props: { speed: 300 } },
+      control: "arrows", spawn: { x: 150, y: 150 }, props: { speed: 300 } },
     { id: "wall", kind: "obstacle", shape: "square", color: "#888", size: 20,
       control: "none", solid: true, spawn: { x: 200, y: 150 } },
   ],
@@ -242,27 +242,42 @@ check("wall spec validates", validateGameSpec(wallSpec).ok);
 check("non-boolean solid rejected",
   !validateGameSpec({ ...wallSpec, entities: [{ ...wallSpec.entities[0]!, solid: "yes" as never }, wallSpec.entities[1]!] }).ok);
 
-// drive the player right (toward the wall at x=200) for ~1s; it must stop at the wall's left face
+// drive the CONTROLLED player right (held "right", toward the wall at x=200); a
+// controlled mover must stop at the wall's left face.
+const heldRight = (): Input => { const i = new Input(); (i as unknown as { keys: Set<string> }).keys.add("right"); return i; };
 const wWorld = new World(wallSpec, 1);
 const wp = wWorld.firstOf("player")!;
-wp.vx = 300; // moving right; control "none" keeps the velocity
+const wIn = heldRight();
 for (let i = 0; i < 60; i++) {
-  stepMovement(wWorld, new Input(), 1 / 60);
+  stepMovement(wWorld, wIn, 1 / 60);
   resolveSolids(wWorld);
 }
 // wall left face is at 200-20=180; player radius 10 -> player.x must be <= ~170, never past the wall
-check("solid wall stops the mover at its left face", wp.x <= 171 && wp.x >= 168);
+check("solid wall stops the controlled mover at its left face", wp.x <= 171 && wp.x >= 168);
 
 // a non-solid version lets the mover pass straight through
 const openSpec: GameSpec = { ...wallSpec, entities: [wallSpec.entities[0]!, { ...wallSpec.entities[1]!, solid: false }] };
 const oWorld = new World(openSpec, 1);
 const op = oWorld.firstOf("player")!;
-op.vx = 300;
+const oIn = heldRight();
 for (let i = 0; i < 60; i++) {
-  stepMovement(oWorld, new Input(), 1 / 60);
+  stepMovement(oWorld, oIn, 1 / 60);
   resolveSolids(oWorld);
 }
 check("non-solid lets the mover pass through", op.x > 250);
+
+// a FLYING projectile (control:"none" + velocity) PASSES THROUGH a solid — its
+// fate is decided by collision rules, not the solid resolver, so it never
+// ricochets off a solid square's corner nor piles up against it.
+const flySpec: GameSpec = { ...wallSpec, entities: [{ ...wallSpec.entities[0]!, control: "none" }, wallSpec.entities[1]!] };
+const fWorld = new World(flySpec, 1);
+const fp = fWorld.firstOf("player")!;
+fp.vx = 300; // a bare velocity, no control -> "flying"
+for (let i = 0; i < 40; i++) {
+  stepMovement(fWorld, new Input(), 1 / 60);
+  resolveSolids(fWorld);
+}
+check("a flying projectile passes through a solid (handled by rules, not pushed)", fp.x > 250);
 
 // 11. heading + aim "forward": a tank fires in the direction it last moved.
 const tankSpec: GameSpec = {

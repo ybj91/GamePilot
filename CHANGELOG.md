@@ -13,6 +13,27 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
+## 1.3.0 — tank fleet + projectiles pass through solids
+
+- **MINOR** (backward-compatible): a **tank fleet** of composed glyph presets, each
+  a different 8×8 silhouette so a tank's TYPE reads from its SHAPE, not just its
+  colour: `tankLight`, `tankMedium`, `tankHeavy` (twin barrels), `tankArty` (long
+  gun), `tankHero` (insignia). The hull layer is recolourable (omits its colour →
+  inherits the entity colour); tracks + barrel are fixed dark accents.
+- **Engine fix** — a **free-flying projectile** (control `none` + a velocity, no
+  behaviour: a bullet/shell/ball) now **passes through solids**, leaving its fate
+  to collision rules. Before, the solid resolver pushed it out of a solid square's
+  AABB — whose corners reach past the entity's hit circle — so projectiles
+  *ricocheted* off corners or *piled up* instead of being destroyed on contact.
+  This mirrors the existing "a flying projectile leaves the world at an edge" rule.
+  Controlled/behaviour movers (the player, walkers) are still blocked by solids;
+  nothing solid changes for Breakout (its ball bounces via the `bounce` op).
+- **Tank 1990 recreated** on this foundation: walls placed on a tilemap grid (no
+  overlap), tanks the same size (shape tells them apart), non-solid player (so it
+  no longer shoves pickups it should collect), hit-flash on a survived hit, and an
+  explosion burst on every kill.
+- Existing specs are unaffected (no schema change).
+
 ## 1.2.0 — recolourable tiles (fabric materials + composed cells)
 
 - **MINOR** (backward-compatible): make composition *combine* well by keeping the

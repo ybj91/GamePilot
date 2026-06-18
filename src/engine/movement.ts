@@ -125,6 +125,17 @@ function applyBehavior(e: Entity, world: World): void {
   }
 }
 
+/**
+ * A free-flying projectile: no control, no behaviour, just a velocity carrying it
+ * (a bullet/shell/ball/car). It LEAVES the world at an edge, and PASSES THROUGH
+ * solids — its fate is decided by collision rules (which destroy it on a hit), not
+ * by the solid resolver. So it never piles up against a wall nor ricochets off a
+ * solid square's AABB corner (whose reach exceeds the entity's hit circle).
+ */
+function isFlying(e: Entity): boolean {
+  return e.control === "none" && !e.behavior && (e.vx !== 0 || e.vy !== 0);
+}
+
 function integrate(e: Entity, world: World, dt: number): void {
   // Platformer gravity: accelerate downward (capped to avoid tunnelling thin
   // platforms), then integrate. Affects the platformer player and `walker`
@@ -139,7 +150,7 @@ function integrate(e: Entity, world: World, dt: number): void {
   // a velocity carrying it) LEAVES the world at an edge — it must not clamp and
   // pile up against the wall (which, with a ttl, looks like "stuck then vanish").
   // Steered/autonomous entities (the player, behaviour movers) still clamp.
-  const flying = e.control === "none" && !e.behavior && (e.vx !== 0 || e.vy !== 0);
+  const flying = isFlying(e);
   if (world.edges === "wrap") {
     if (e.x < -m) e.x = world.width + m;
     if (e.x > world.width + m) e.x = -m;
@@ -232,7 +243,7 @@ export function resolveSolids(world: World): void {
   if (!solids.length) return;
 
   for (const m of world.entities) {
-    if (!m.alive || m.solid) continue;
+    if (!m.alive || m.solid || isFlying(m)) continue; // flying projectiles pass through solids
     for (const s of solids) {
       const p = pushVector(m, s);
       if (p) {
