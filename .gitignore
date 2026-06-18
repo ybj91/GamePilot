@@ -8,3 +8,6 @@ dist/
 scripts/shot-*.png
 scripts/out-*.html
 data/
+
+# local server log
+scripts/.serve.log
