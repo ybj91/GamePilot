@@ -1,30 +1,39 @@
-// Tile-grid demo: a BIG composite item built from small single-layer tiles on a
-// SINGLE entity (`tiles`). The castle is one 5x5 entity assembled from "brick"
-// tiles (with a flag, a door gap, crenellations); a big tree from trunk/leaf
-// tiles. Each tile is a plain single-layer glyph — combined spatially, not layered.
+// Tile-grid demo: BIG composite items built from small tiles on a SINGLE entity
+// (`tiles`). The castle + house are assembled from RECOLOURABLE "fabric" material
+// tiles (stone, brickwork, shingle, window, arch) plus a recoloured material v2
+// (brick2 = recolourable body + fixed mortar accent) — the same tiles, tinted to
+// each structure's palette and combined spatially.
 const BASE = process.env.BASE || "http://127.0.0.1:4321";
-const B = "brick", _ = ".";
+const _ = null;
+const St = { glyph: "stone", color: "#9aa0aa" };     // grey stone
+const Bk = { glyph: "brick2", color: "#c8743a" };    // recoloured v2 brick (body + dark mortar)
+const Bw = { glyph: "brickwork", color: "#cf8a5a" }; // tan brick wall
+const Sh = { glyph: "shingle", color: "#c0392b" };   // red roof shingles
+const Wn = { glyph: "window", color: "#7ec0ee" };    // window
+const Ar = { glyph: "arch", color: "#5a3a1a" };      // arched doorway
+const F = { glyph: "flag", color: "#e23d3d" };       // flag (sits ON TOP)
 
 const castle = [
-  [_, _, { glyph: "flag", color: "#e23d3d" }, _, _],  // flag on TOP, above the wall
-  [B, _, B, _, B],          // crenellations (gaps between merlons)
-  [B, B, B, B, B],
-  [B, B, B, B, B],
-  [B, B, _, B, B],          // doorway gap
+  [_, _, F, _, _],          // flag on TOP, above the wall
+  [St, _, St, _, St],       // stone crenellations
+  [St, St, St, St, St],
+  [Bk, Bk, Bk, Bk, Bk],     // a recoloured brick2 course (body recolours; mortar stays)
+  [St, St, Ar, St, St],     // stone wall + arched doorway
 ];
-const tree = [
-  [{ glyph: "leaf", color: "#2e8b3d" }, { glyph: "leaf", color: "#3aa54a" }, { glyph: "leaf", color: "#2e8b3d" }],
-  [{ glyph: "leaf", color: "#3aa54a" }, { glyph: "leaf", color: "#2e8b3d" }, { glyph: "leaf", color: "#3aa54a" }],
-  [_, { glyph: "brick", color: "#7a4a23" }, _],
+const house = [
+  [_, Sh, Sh, Sh, _],       // shingle roof
+  [Sh, Sh, Sh, Sh, Sh],
+  [Bw, Wn, Bw, Wn, Bw],     // brick wall + windows
+  [Bw, Bw, Ar, Bw, Bw],     // brick wall + door
 ];
 
 const spec = {
-  meta: { title: "Big Tile (tile-grid)", idea: "big items each assembled from small tiles on one entity" },
+  meta: { title: "Big Tile (tile-grid)", idea: "big items assembled from recolourable fabric/material tiles on one entity" },
   world: { width: 720, height: 420, background: "#7ec0ee", edges: "wall" },
   entities: [
     { id: "ground", kind: "obstacle", shape: "square", color: "#4a9d4a", size: 220, control: "none", spawn: { x: 360, y: 560, count: 1 } },
-    { id: "castle", kind: "obstacle", shape: "square", color: "#9a9aa2", size: 70, control: "none", solid: true, tiles: castle, spawn: { x: 280, y: 250, count: 1 } },
-    { id: "bigtree", kind: "obstacle", shape: "square", color: "#2e8b3d", size: 48, control: "none", tiles: tree, spawn: { x: 520, y: 270, count: 1 } },
+    { id: "castle", kind: "obstacle", shape: "square", color: "#9a9aa2", size: 70, control: "none", solid: true, tiles: castle, spawn: { x: 250, y: 250, count: 1 } },
+    { id: "house", kind: "obstacle", shape: "square", color: "#cf8a5a", size: 56, control: "none", solid: true, tiles: house, spawn: { x: 520, y: 268, count: 1 } },
     { id: "player", kind: "player", shape: "square", color: "#e23d3d", size: 12, control: "arrows", glyph: "hero", spawn: { x: 60, y: 300, count: 1 }, props: { speed: 180 } },
   ],
   rules: [],

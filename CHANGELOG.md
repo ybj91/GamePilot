@@ -13,6 +13,31 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
+## 1.2.0 — recolourable tiles (fabric materials + composed cells)
+
+- **MINOR** (backward-compatible): make composition *combine* well by keeping the
+  building blocks recolourable.
+  - **Fabric material tiles** — 8 single-layer, fully recolourable 8×8 patterns
+    purpose-built for tiling: `brickwork`, `planks`, `stone`, `shingle`, `window`,
+    `water`, `sand`, `arch`. Pure one-layer, so the entity (or a tile cell's
+    `color`) tints them to any palette. Browsable in the new **fabric — tileable**
+    `/glyphs` section.
+  - **`tiles` cells can be composed (v2) glyphs** — a cell may name a multi-layer
+    preset (e.g. `brick2`), not just a mono one. A cell `color` sets the MAIN
+    colour, filling any colour-less layer; fixed accent layers keep theirs.
+  - **Recolourable material v2s** — the body layer of the material composed presets
+    (`brick2`, `pipe2`, `leaf2`, `bush2`, `mountain2`, `rock2`, `cloud2`, `drop2`)
+    now OMITS its colour, so it inherits the entity/cell colour (a `brick2` can be
+    grey stone or tan brick while its mortar accent stays fixed). Authoring rule:
+    **omit a layer's `color` to make it recolourable.** Character-sprite v2s
+    (`hero2`/`tank2`/`coin2`/…) keep their baked colours.
+- The `/glyphs` gallery now has four sections — v1 monochrome, v2 composed colour,
+  **fabric — tileable**, and **tiles — combined** (worked castle/house/tower
+  examples now assembled from fabric materials + a recoloured `brick2` course).
+- Existing specs are unaffected. Note: games that used a *material* v2 (`brick2`
+  etc.) now render that glyph in the entity's `color` instead of the old baked
+  colour — set the entity `color` to the material's tone to match.
+
 ## 1.1.0 — composed glyphs (layers + tiles)
 
 - **MINOR** (backward-compatible): two opt-in ways to compose richer glyphs from

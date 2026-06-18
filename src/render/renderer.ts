@@ -142,10 +142,14 @@ export class Renderer {
     for (let r = 0; r < rows; r++) {
       const row = grid[r]!;
       for (let c = 0; c < row.length; c++) {
-        const tile = row[c];
-        if (!tile) continue;
-        const color = flashing ? e.flashColor : tile.color ?? e.color;
-        this.fillBitmap(tile.rows, ox + (c + 0.5) * cell, oy + (r + 0.5) * cell, cell / 2, color, flashing ? 12 : 6);
+        const layers = row[c];
+        if (!layers) continue;
+        const cx = ox + (c + 0.5) * cell;
+        const cy = oy + (r + 0.5) * cell;
+        for (const layer of layers) {
+          const color = flashing ? e.flashColor : layer.color ?? e.color;
+          this.fillBitmap(layer.rows, cx, cy, cell / 2, color, flashing ? 12 : 6);
+        }
       }
     }
     ctx.restore();

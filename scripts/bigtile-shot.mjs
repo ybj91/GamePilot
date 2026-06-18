@@ -1,0 +1,13 @@
+import puppeteer from "puppeteer-core";
+const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const URL = "http://127.0.0.1:4321/play/big-tile-tile-grid-438e7b";
+const b = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--no-sandbox"], defaultViewport: { width: 760, height: 460 } });
+const p = await b.newPage();
+const errs = [];
+p.on("pageerror", (e) => errs.push(String(e)));
+await p.goto(URL, { waitUntil: "networkidle2" });
+await new Promise((r) => setTimeout(r, 700));
+console.log("page errors:", errs.length ? errs.join("; ") : "none");
+await p.screenshot({ path: "scripts/shot-bigtile.png" });
+console.log("shot -> scripts/shot-bigtile.png");
+await b.close();

@@ -46,8 +46,8 @@ export interface Entity {
   frames?: string[][];
   /** Resolved composed glyph: frames of colored layers (one frame = static, many = animated). */
   parts?: ResolvedLayer[][];
-  /** Resolved tile-grid glyph: a 2D grid of tiles forming one big sprite (top priority). */
-  tiles?: (ResolvedLayer | null)[][];
+  /** Resolved tile-grid glyph: a 2D grid where each cell is a stack of layers (top priority). */
+  tiles?: (ResolvedLayer[] | null)[][];
   /** Animation speed in frames/second for a multi-frame glyph. */
   fps: number;
   /** Whether a multi-frame glyph loops; false = one-shot (see ttl0). */

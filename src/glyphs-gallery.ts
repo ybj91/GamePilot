@@ -6,7 +6,7 @@
  * subtle glow. Plain DOM, no framework.
  */
 
-import { GLYPH_PRESETS, COMPOSED_PRESETS, GLYPH_V2_OF, TILE_EXAMPLES, resolveParts, resolveTiles, type ResolvedLayer } from "./dsl/glyphs";
+import { GLYPH_PRESETS, FABRIC_PRESET_NAMES, COMPOSED_PRESETS, GLYPH_V2_OF, TILE_EXAMPLES, resolveParts, resolveTiles, type ResolvedLayer } from "./dsl/glyphs";
 import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
@@ -20,7 +20,18 @@ const COLORS: Record<string, string> = {
   sun: "#ffd23f", moon: "#e6e6c0", drop: "#5bb8ff", rock: "#9a9aa2", grass: "#7bc043",
   leaf: "#6fbf4a", snowflake: "#a8e0ff", house: "#d98a4a", bird: "#9ad0ff", key: "#ffd23f",
   crown: "#ffcf3a",
+  // fabric / material tiles
+  brickwork: "#cf8a5a", planks: "#b5793c", stone: "#9aa0aa", shingle: "#c0392b",
+  window: "#7ec0ee", water: "#4aa3ff", sand: "#e2c489", arch: "#6b4a2a",
 };
+
+/** The v1 name a composed (v2) preset remakes — to pick a natural fallback colour
+ *  for a recolourable (colour-less) base layer in the gallery (in a real game the
+ *  entity's own `color` fills it). */
+const V1_OF: Record<string, string> = Object.fromEntries(
+  Object.entries(GLYPH_V2_OF).map(([v1, v2]) => [v2, v1]),
+);
+const repColor = (composedName: string): string => COLORS[V1_OF[composedName] ?? ""] ?? "#9be15d";
 
 const PX = 96; // canvas size
 
@@ -75,8 +86,9 @@ function paintInto(ctx: CanvasRenderingContext2D, rows: string[], x: number, y: 
   ctx.restore();
 }
 
-/** Lay out a resolved tile-grid into the canvas (centred, square tiles). */
-function paintTileGrid(ctx: CanvasRenderingContext2D, grid: (ResolvedLayer | null)[][]): void {
+/** Lay out a resolved tile-grid into the canvas (centred, square tiles). Each cell
+ *  is a stack of layers (a recoloured material v2 tile = body + accent). */
+function paintTileGrid(ctx: CanvasRenderingContext2D, grid: (ResolvedLayer[] | null)[][]): void {
   ctx.clearRect(0, 0, PX, PX);
   const rows = grid.length;
   const cols = Math.max(...grid.map((r) => r.length));
@@ -87,29 +99,32 @@ function paintTileGrid(ctx: CanvasRenderingContext2D, grid: (ResolvedLayer | nul
   const oy = (PX - rows * cell) / 2;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < (grid[r]?.length ?? 0); c++) {
-      const tile = grid[r]![c];
-      if (tile) paintInto(ctx, tile.rows, ox + c * cell, oy + r * cell, cell, tile.color ?? "#9be15d");
+      const layers = grid[r]![c];
+      if (!layers) continue;
+      for (const layer of layers) paintInto(ctx, layer.rows, ox + c * cell, oy + r * cell, cell, layer.color ?? "#9be15d");
     }
   }
 }
 
 interface Animated { ctx: CanvasRenderingContext2D; frames: string[][]; color: string; }
-interface AnimatedComposed { ctx: CanvasRenderingContext2D; frames: ResolvedLayer[][]; }
+interface AnimatedComposed { ctx: CanvasRenderingContext2D; frames: ResolvedLayer[][]; color: string; }
 
 const gallery = document.getElementById("gallery") as HTMLDivElement;
 const countEl = document.getElementById("count") as HTMLSpanElement;
 const animated: Animated[] = [];
 const animatedComposed: AnimatedComposed[] = [];
 
-/** Clear then paint one composed frame's layers onto a canvas. */
-function paintComposedFrame(ctx: CanvasRenderingContext2D, layers: ResolvedLayer[] | undefined): void {
+/** Clear then paint one composed frame's layers onto a canvas. A colour-less
+ *  (recolourable) base layer falls back to the preset's natural colour here. */
+function paintComposedFrame(ctx: CanvasRenderingContext2D, layers: ResolvedLayer[] | undefined, fallback: string): void {
   ctx.clearRect(0, 0, PX, PX);
-  for (const layer of layers ?? []) paint(ctx, layer.rows, layer.color ?? "#9be15d");
+  for (const layer of layers ?? []) paint(ctx, layer.rows, layer.color ?? fallback);
 }
 
-const names = Object.keys(GLYPH_PRESETS);
+const fabricSet = new Set(FABRIC_PRESET_NAMES);
+const names = Object.keys(GLYPH_PRESETS).filter((n) => !fabricSet.has(n)); // fabric tiles get their own section
 const composedNames = Object.keys(COMPOSED_PRESETS);
-countEl.textContent = `${names.length} mono + ${composedNames.length} composed · DSL v${DSL_VERSION}`;
+countEl.textContent = `${names.length} mono + ${composedNames.length} composed + ${FABRIC_PRESET_NAMES.length} fabric · DSL v${DSL_VERSION}`;
 
 const el = (tag: string, cls: string) => Object.assign(document.createElement(tag), { className: cls });
 function newCanvas(px: string): HTMLCanvasElement {
@@ -147,8 +162,9 @@ function composedCanvas(name: string, px: string): HTMLCanvasElement {
   const canvas = newCanvas(px);
   const ctx = canvas.getContext("2d")!;
   const frames = resolveParts(name) ?? [];
-  paintComposedFrame(ctx, frames[0]);
-  if (frames.length > 1) animatedComposed.push({ ctx, frames });
+  const color = repColor(name);
+  paintComposedFrame(ctx, frames[0], color);
+  if (frames.length > 1) animatedComposed.push({ ctx, frames, color });
   return canvas;
 }
 
@@ -196,7 +212,19 @@ for (const name of composedNames) {
   gallery.appendChild(card);
 }
 
-// --- Section 3: combined-tile examples (one big sprite assembled from tiles) ---
+// --- Section 3: "fabric" material tiles — single-layer, recolourable, made to combine ---
+section("fabric — tileable", "single-layer material patterns · recolour & combine");
+for (const name of FABRIC_PRESET_NAMES) {
+  const card = el("div", "card");
+  const nameEl = el("div", "name");
+  nameEl.textContent = name;
+  const tag = el("div", "tag");
+  tag.textContent = "1 layer · recolour";
+  card.append(monoCanvas(name, "84px"), nameEl, tag);
+  gallery.appendChild(card);
+}
+
+// --- Section 4: combined-tile examples (one big sprite assembled from tiles) ---
 section("tiles — combined", "a big item built from small tiles · one entity");
 for (const [name, grid] of Object.entries(TILE_EXAMPLES)) {
   const card = el("div", "card");
@@ -218,6 +246,6 @@ if (animated.length || animatedComposed.length) {
   setInterval(() => {
     frame++;
     for (const a of animated) drawFrame(a.ctx, a.frames[frame % a.frames.length], a.color);
-    for (const a of animatedComposed) paintComposedFrame(a.ctx, a.frames[frame % a.frames.length]);
+    for (const a of animatedComposed) paintComposedFrame(a.ctx, a.frames[frame % a.frames.length], a.color);
   }, 1000 / FPS);
 }

@@ -83,10 +83,26 @@ export const GLYPH_PRESETS: Record<string, string[][]> = {
   bird: [[".....", "XX.XX", ".XXX.", "..X..", "....."]],
   key: [[".XXX.", ".X.X.", ".XXX.", "..X..", "..XX."]],
   crown: [[".....", "X.X.X", "XXXXX", "XXXXX", "....."]],
+
+  // --- "fabric" tiles: single-layer 8x8 MATERIAL patterns, purpose-built to be
+  // tiled/combined into big structures. Pure one-layer, so fully recolourable via
+  // the entity (or a tile cell's "color") — drop them into any palette. ---
+  brickwork: [["XXXXXXXX", "XXX.XXX.", "XXXXXXXX", ".XXX.XXX", "XXXXXXXX", "XXX.XXX.", "XXXXXXXX", ".XXX.XXX"]], // running-bond brick
+  planks: [["XXXXXXXX", "X.XXXX.X", "XXXXXXXX", "XXX.XXXX", "XXXXXXXX", "X.XXXX.X", "XXXXXXXX", "XXX.XXXX"]],     // wood grain
+  stone: [["XXXX.XXX", "XXXX.XXX", "XXXX.XXX", "........", "XXX.XXXX", "XXX.XXXX", "XXX.XXXX", "........"]],      // stacked stone blocks
+  shingle: [["X.XX.XX.", "XXXXXXXX", "XXXXXXXX", ".XX.XX.X", "XXXXXXXX", "XXXXXXXX", "X.XX.XX.", "XXXXXXXX"]],    // roof shingles
+  window: [["XXXXXXXX", "X..XX..X", "X..XX..X", "XXXXXXXX", "XXXXXXXX", "X..XX..X", "X..XX..X", "XXXXXXXX"]],     // 4-pane window frame
+  water: [["XX..XX..", "XXXXXXXX", "XXXXXXXX", "..XX..XX", "XXXXXXXX", "XXXXXXXX", "XX..XX..", "XXXXXXXX"]],      // rippled water
+  sand: [["XXXXXXXX", "XX.XXXXX", "XXXXXX.X", "XXXXXXXX", "X.XXXXXX", "XXXXX.XX", "XXXXXXXX", "XX.XXXXX"]],        // speckled sand
+  arch: [[".XXXXXX.", "XXXXXXXX", "XX....XX", "XX....XX", "XX....XX", "XX....XX", "XX....XX", "XX....XX"]],        // arched doorway
 };
 
 /** All preset names (for validation messages + the reference menu). */
 export const GLYPH_PRESET_NAMES = Object.keys(GLYPH_PRESETS);
+
+/** The single-layer MATERIAL tiles purpose-built for combining (a subset of the
+ *  mono presets). Pure one-layer, so fully recolourable — ideal as `tiles` cells. */
+export const FABRIC_PRESET_NAMES = ["brickwork", "planks", "stone", "shingle", "window", "water", "sand", "arch"];
 
 /**
  * Composed, multi-COLOUR presets (glyph lib "v2") — a stack of layers, each its
@@ -160,7 +176,7 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[] | GlyphPart[][]> = {
     { glyph: ["........", "........", "..X..X..", "........", "........", "........", "........", "........"], color: "#1b3a1b" }, // eyes
   ],
   brick2: [
-    { glyph: ["XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"], color: "#c8743a" },
+    { glyph: ["XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"] }, // body — recolourable (entity/cell color)
     { glyph: ["XXXXXXXX", "X...X...", "XXXXXXXX", "...X...X", "XXXXXXXX", "X...X...", "XXXXXXXX", "...X...X"], color: "#6b3a1a" }, // mortar
   ],
   flag2: [
@@ -168,7 +184,7 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[] | GlyphPart[][]> = {
     { glyph: [".XXXXX..", ".XXXXXX.", ".XXXXX..", ".XXX....", "........", "........", "........", "........"], color: "#e23d3d" }, // flag
   ],
   pipe2: [
-    { glyph: ["XXXXXXXX", "XXXXXXXX", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX."], color: "#2ec16e" },
+    { glyph: ["XXXXXXXX", "XXXXXXXX", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX."] }, // body — recolourable
     { glyph: ["XXXXXXXX", "X......X", "........", "........", "........", "........", "........", "........"], color: "#1a8a4a" }, // rim
   ],
   key2: [
@@ -184,23 +200,23 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[] | GlyphPart[][]> = {
     { glyph: ["...XX...", "........", "X......X", "........", "........", "X......X", "........", "...XX..."], color: "#ff9a3c" }, // rays
   ],
   cloud2: [
-    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "........", "........"], color: "#c8d0da" },
+    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "........", "........"] }, // body — recolourable
     { glyph: ["........", "...XX...", "..XXX...", ".XXX....", "........", "........", "........", "........"], color: "#ffffff" }, // highlight
   ],
   bush2: [
-    { glyph: ["........", "..X.X...", ".XXXXX..", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "........"], color: "#2e7d32" },
+    { glyph: ["........", "..X.X...", ".XXXXX..", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "........"] }, // body — recolourable
     { glyph: ["........", "..X.X...", ".XXXXX..", ".XXXX...", "........", "........", "........", "........"], color: "#5fae5f" }, // highlight
   ],
   mountain2: [
-    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"], color: "#8a8f99" },
+    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"] }, // rock — recolourable
     { glyph: ["...XX...", "..XXXX..", "..X.X...", "........", "........", "........", "........", "........"], color: "#ffffff" }, // snow cap
   ],
   drop2: [
-    { glyph: ["...X....", "...X....", "..XXX...", ".XXXXX..", ".XXXXX..", ".XXXXX..", "..XXX...", "........"], color: "#4aa3ff" },
+    { glyph: ["...X....", "...X....", "..XXX...", ".XXXXX..", ".XXXXX..", ".XXXXX..", "..XXX...", "........"] }, // body — recolourable
     { glyph: ["........", "........", "........", "..X.....", "..X.....", "........", "........", "........"], color: "#cfeaff" }, // shine
   ],
   leaf2: [
-    { glyph: ["....XX..", "...XXX..", "..XXXX..", ".XXXX...", "XXXX....", "XXX.....", "X.......", "........"], color: "#5fae5f" },
+    { glyph: ["....XX..", "...XXX..", "..XXXX..", ".XXXX...", "XXXX....", "XXX.....", "X.......", "........"] }, // blade — recolourable
     { glyph: ["....X...", "...X....", "..X.....", ".X......", "X.......", "........", "........", "........"], color: "#2e7d32" }, // vein
   ],
 
@@ -235,7 +251,7 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[] | GlyphPart[][]> = {
   plus2: [{ glyph: ["..X..", "..X..", "XXXXX", "..X..", "..X.."], color: "#e23d3d" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffffff" }],
   ring2: [{ glyph: [".XXX.", "X...X", "X...X", "X...X", ".XXX."], color: "#ffd23f" }, { glyph: [".X...", ".....", ".....", ".....", "....."], color: "#fff3b0" }],
   moon2: [{ glyph: [".XXX.", "XX...", "XX...", "XX...", ".XXX."], color: "#e6e6c0" }, { glyph: [".....", "X....", "X....", ".....", "....."], color: "#fffdf0" }],
-  rock2: [{ glyph: [".....", ".XX..", "XXXXX", "XXXXX", "....."], color: "#9a9aa2" }, { glyph: [".....", ".....", ".....", "XXXXX", "....."], color: "#6b6b73" }],
+  rock2: [{ glyph: [".....", ".XX..", "XXXXX", "XXXXX", "....."] }, { glyph: [".....", ".....", ".....", "XXXXX", "....."], color: "#6b6b73" }], // body recolourable + shadow
   grass2: [{ glyph: [".....", "X...X", "X.X.X", "X.X.X", "XXXXX"], color: "#4a9d4a" }, { glyph: [".....", "X...X", "X.X.X", ".....", "....."], color: "#7bc043" }],
   snowflake2: [{ glyph: ["..X..", "X.X.X", ".XXX.", "X.X.X", "..X.."], color: "#a8e0ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffffff" }],
   bird2: [{ glyph: [".....", "XX.XX", ".XXX.", "..X..", "....."], color: "#6cb4ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ff9a3c" }],
@@ -307,61 +323,77 @@ export function resolveParts(
   return out.length ? out : undefined;
 }
 
-/** Resolve one tile-grid cell into a tile (rows + optional colour), or null (gap). */
-function resolveTile(cell: GlyphTile): ResolvedLayer | null {
+/**
+ * Resolve one tile-grid cell into its LAYERS (bottom-first), or null (a gap). A
+ * cell may name a composed (multi-layer) v2 preset as well as a mono one; an
+ * object cell's `color` sets the MAIN colour — it fills any colour-less layer
+ * (the recolourable body of a material v2) while fixed accent layers (mortar,
+ * highlights) keep theirs. That's what lets the same tile drop into any palette.
+ */
+function resolveTile(cell: GlyphTile): ResolvedLayer[] | null {
   if (cell == null) return null;
   if (typeof cell === "string") {
     if (cell === "" || cell === "." || cell === " ") return null;
-    const rows = GLYPH_PRESETS[cell]?.[0];
-    return rows ? { rows } : null;
+    const composed = resolveParts(cell); // a composed preset name → its layers
+    if (composed) return composed[0] ?? null; // tiles are static: take frame 0
+    const rows = GLYPH_PRESETS[cell]?.[0]; // else a mono preset → one layer
+    return rows ? [{ rows }] : null;
+  }
+  if (typeof cell.glyph === "string") {
+    const composed = resolveParts(cell.glyph); // {glyph:"brick2",color} → recoloured layers
+    if (composed) return (composed[0] ?? []).map((l) => ({ rows: l.rows, color: l.color ?? cell.color }));
   }
   const rows = partRows(cell.glyph);
-  return rows ? { rows, color: cell.color } : null;
+  return rows ? [{ rows, color: cell.color }] : null;
 }
 
 /**
- * Resolve a tile-grid glyph (the `tiles` field) into a 2D grid of tiles (each a
- * bitmap + optional colour, or null for a gap). The renderer lays them out in a
+ * Resolve a tile-grid glyph (the `tiles` field) into a 2D grid where each cell is
+ * a stack of layers (or null for a gap). The renderer lays the cells out in a
  * grid to form one big composite sprite. Returns undefined when there are no
  * tiles at all.
  */
-export function resolveTiles(tiles?: GlyphTile[][]): (ResolvedLayer | null)[][] | undefined {
+export function resolveTiles(tiles?: GlyphTile[][]): (ResolvedLayer[] | null)[][] | undefined {
   if (!tiles || !tiles.length) return undefined;
   const grid = tiles.map((row) => row.map(resolveTile));
   return grid.some((row) => row.some(Boolean)) ? grid : undefined;
 }
 
 // Example tile-grids for the gallery / docs — big items built by tiling small
-// single-layer tiles together (the `tiles` field). Single-colour tiles, combined.
-const S: GlyphTile = { glyph: "brick", color: "#9aa0aa" }; // grey stone
-const F: GlyphTile = { glyph: "flag", color: "#e23d3d" };  // flag (sits ON TOP)
-const D: GlyphTile = { glyph: "brick", color: "#5a3a1a" }; // dark door
-const R: GlyphTile = { glyph: "brick", color: "#c0392b" }; // red roof
-const W: GlyphTile = { glyph: "brick", color: "#e0c089" }; // tan wall
+// RECOLOURABLE tiles together (the `tiles` field). Mostly single-layer "fabric"
+// material tiles, plus a recoloured material v2 (brick2 = body + mortar accent) to
+// show a multi-layer tile dropping into a palette. Same tiles, different colours.
+const St: GlyphTile = { glyph: "stone", color: "#9aa0aa" };     // grey stone
+const Bk: GlyphTile = { glyph: "brick2", color: "#c8743a" };    // recoloured v2 brick (body + dark mortar)
+const Bw: GlyphTile = { glyph: "brickwork", color: "#cf8a5a" }; // tan brick wall
+const Sh: GlyphTile = { glyph: "shingle", color: "#c0392b" };   // red roof shingles
+const Wn: GlyphTile = { glyph: "window", color: "#7ec0ee" };    // window
+const Ar: GlyphTile = { glyph: "arch", color: "#5a3a1a" };      // arched doorway
+const F: GlyphTile = { glyph: "flag", color: "#e23d3d" };       // flag (sits ON TOP)
 const _: GlyphTile = null;
 
 /** Worked `tiles` examples (one big sprite per entry), shown at /glyphs. */
 export const TILE_EXAMPLES: Record<string, GlyphTile[][]> = {
   castle: [
-    [_, _, F, _, _],   // flag on TOP, above the wall
-    [S, _, S, _, S],   // crenellations
-    [S, S, S, S, S],
-    [S, S, S, S, S],
-    [S, S, D, S, S],   // doorway
+    [_, _, F, _, _],         // flag on TOP, above the wall
+    [St, _, St, _, St],      // stone crenellations
+    [St, St, St, St, St],
+    [Bk, Bk, Bk, Bk, Bk],    // a recoloured brick2 course (body recolours; mortar stays)
+    [St, St, Ar, St, St],    // stone wall + arched doorway
   ],
   house: [
-    [_, R, R, R, _],   // roof
-    [R, R, R, R, R],
-    [W, W, W, W, W],   // walls
-    [W, W, D, W, W],   // door
+    [_, Sh, Sh, Sh, _],      // shingle roof
+    [Sh, Sh, Sh, Sh, Sh],
+    [Bw, Wn, Bw, Wn, Bw],    // brick wall + windows
+    [Bw, Bw, Ar, Bw, Bw],    // brick wall + door
   ],
   tower: [
-    [_, F, _],         // flag on top
-    [S, S, S],
-    [S, _, S],         // window
-    [S, S, S],
-    [S, _, S],
-    [S, S, S],
+    [_, F, _],               // flag on top
+    [St, St, St],
+    [St, Wn, St],            // window
+    [Bk, Bk, Bk],            // brick band
+    [St, Wn, St],
+    [St, Ar, St],            // doorway
   ],
 };
 

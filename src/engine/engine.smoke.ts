@@ -423,11 +423,27 @@ check("bad parts rejected (unknown preset string)",
   const te = new World(tileSpec, 1).firstOf("player")!;
   check("tiles resolve to a 3x3 grid (one entity)", te.tiles?.length === 3 && te.tiles[0]!.length === 3);
   check("a coloured tile keeps its colour; a '.' cell is a gap",
-    te.tiles![1]![1]!.color === "#e23d3d" && te.tiles![2]![1] === null);
+    te.tiles![1]![1]![0]!.color === "#e23d3d" && te.tiles![2]![1] === null);
   check("a tile-grid glyph carries no parts/frames", te.parts === undefined && te.frames === undefined);
+}
+// a tile cell may BE a composed (v2) glyph; the cell's colour recolours its
+// colour-less base layer while fixed accent layers keep theirs.
+{
+  const recolorSpec: GameSpec = {
+    ...glyphSpec,
+    entities: [{ ...glyphSpec.entities[0]!, glyph: undefined, tiles: [[{ glyph: "brick2", color: "#9aa0aa" }]] }],
+  };
+  check("a v2 glyph works as a tile cell", validateGameSpec(recolorSpec).ok);
+  const re = new World(recolorSpec, 1).firstOf("player")!;
+  const cell = re.tiles![0]![0]!;
+  check("a recoloured v2 tile: base inherits cell colour, accent keeps its own",
+    cell.length === 2 && cell[0]!.color === "#9aa0aa" && cell[1]!.color === "#6b3a1a");
 }
 check("bad tiles rejected (unknown preset cell)",
   !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, tiles: [["brick", "nope"]] }] }).ok);
+// fabric material tiles are recolourable single-layer presets
+check("a fabric tile (brickwork) is a known single-layer preset",
+  validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "brickwork" }] }).ok);
 // every composed preset is well-formed, and the v1->v2 map points at real presets
 check("every composed preset resolves to >=1 frame with >=1 layer",
   COMPOSED_PRESET_NAMES.every((n) => { const f = resolveParts(n); return !!f && f.length >= 1 && f.every((fr) => fr.length >= 1); }));

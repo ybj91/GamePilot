@@ -21,6 +21,10 @@ import { DSL_VERSION, parseVersion, isVersionSupported } from "./version";
 const isRows = (v: unknown): v is string[] =>
   Array.isArray(v) && v.length > 0 && v.every((r) => typeof r === "string");
 
+/** A tile cell may name a mono OR a composed (v2) preset. */
+const isKnownGlyph = (name: string): boolean =>
+  GLYPH_PRESET_NAMES.includes(name) || COMPOSED_PRESET_NAMES.includes(name);
+
 export interface ValidationResult {
   ok: boolean;
   errors: string[];
@@ -128,10 +132,10 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
         const at = `${where}: tiles[${r}][${c}]`;
         if (cell === null) return;
         if (typeof cell === "string") {
-          if (cell !== "" && cell !== "." && cell !== " " && !GLYPH_PRESET_NAMES.includes(cell)) errs.push(`${at} "${cell}" is not a known preset`);
+          if (cell !== "" && cell !== "." && cell !== " " && !isKnownGlyph(cell)) errs.push(`${at} "${cell}" is not a known preset`);
         } else if (cell && typeof cell === "object" && !Array.isArray(cell)) {
           if (typeof cell.glyph === "string") {
-            if (!GLYPH_PRESET_NAMES.includes(cell.glyph)) errs.push(`${at}.glyph "${cell.glyph}" is not a known preset`);
+            if (!isKnownGlyph(cell.glyph)) errs.push(`${at}.glyph "${cell.glyph}" is not a known preset`);
           } else if (!isRows(cell.glyph)) {
             errs.push(`${at}.glyph must be a preset name or grid rows`);
           }
