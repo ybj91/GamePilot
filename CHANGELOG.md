@@ -26,9 +26,11 @@ Bump policy:
   - Priority: `tiles` > `parts` > `glyph`/`frames`. A plain single-layer glyph
     stays the flexible default (controllable colour, reusable as a part/tile).
 - Built-in **composed presets** (glyph lib "v2", 8×8 multi-colour): nature
-  (`pinetree`, `cottage`, `daisy`, `toadstool`) + colour remakes of iconic v1
-  glyphs (`tank2`, `heart2`, `star2`, `coin2`, `face2`, `hero2`). Usable via
-  `glyph: "<name>"`.
+  (`pinetree`, `cottage`, `daisy`, `toadstool`) + colour remakes of 20 iconic v1
+  glyphs (`tank2`/`heart2`/`star2`/`coin2`/`face2`/`hero2`/`ship2`/`skull2`/
+  `alien2`/`brick2`/`flag2`/`pipe2`/`key2`/`crown2`/`sun2`/`cloud2`/`bush2`/
+  `mountain2`/`drop2`/`leaf2`). Usable via `glyph: "<name>"`. The v1 monochrome
+  presets are unchanged — these are colour *options*, not replacements.
 - The `/glyphs` gallery now has two sections — **v1 monochrome** and **v2
   composed colour**, the latter showing each remake next to its v1 (the
   `GLYPH_V2_OF` map) for comparison. The v1 presets are unchanged and stay usable.

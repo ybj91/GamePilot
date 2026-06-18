@@ -144,6 +144,65 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[]> = {
     { glyph: ["........", "........", "........", "........", "..XXXX..", "..XXXX..", "..XXXX..", "........"], color: "#3a5fcd" }, // body
     { glyph: ["........", "........", "........", "........", "........", "........", "........", "..X..X.."], color: "#333333" }, // legs
   ],
+
+  // --- more v2 object/scenery remakes (multi-colour, 8x8) ---
+  ship2: [
+    { glyph: ["...XX...", "..XXXX..", "..XXXX..", ".XXXXXX.", ".XXXXXX.", "XXXXXXXX", "X.XXXX.X", "........"], color: "#c8d0d8" },
+    { glyph: ["........", "........", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#4a90e2" }, // window
+    { glyph: ["........", "........", "........", "........", "........", "........", "...XX...", "..X..X.."], color: "#ff7a18" }, // flame
+  ],
+  skull2: [
+    { glyph: [".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", ".X.XX.X.", "........"], color: "#e8e4d8" },
+    { glyph: ["........", ".XX..XX.", ".XX..XX.", "....X...", "........", "........", "........", "........"], color: "#222222" }, // eyes + nose
+  ],
+  alien2: [
+    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XX.XX.XX", "XXXXXXXX", "X.XXXX.X", "X......X", "........"], color: "#6ee06e" },
+    { glyph: ["........", "........", "..X..X..", "........", "........", "........", "........", "........"], color: "#1b3a1b" }, // eyes
+  ],
+  brick2: [
+    { glyph: ["XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"], color: "#c8743a" },
+    { glyph: ["XXXXXXXX", "X...X...", "XXXXXXXX", "...X...X", "XXXXXXXX", "X...X...", "XXXXXXXX", "...X...X"], color: "#6b3a1a" }, // mortar
+  ],
+  flag2: [
+    { glyph: ["X.......", "X.......", "X.......", "X.......", "X.......", "X.......", "X.......", "X......."], color: "#8b6914" }, // pole
+    { glyph: [".XXXXX..", ".XXXXXX.", ".XXXXX..", ".XXX....", "........", "........", "........", "........"], color: "#e23d3d" }, // flag
+  ],
+  pipe2: [
+    { glyph: ["XXXXXXXX", "XXXXXXXX", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX."], color: "#2ec16e" },
+    { glyph: ["XXXXXXXX", "X......X", "........", "........", "........", "........", "........", "........"], color: "#1a8a4a" }, // rim
+  ],
+  key2: [
+    { glyph: [".XXX....", "X...X...", "X...X...", ".XXX....", "..X.....", "..X.....", "..XX....", "..X.X..."], color: "#ffd23f" },
+    { glyph: ["........", "..X.....", "..X.....", "........", "........", "........", "........", "........"], color: "#8b6914" }, // hole
+  ],
+  crown2: [
+    { glyph: ["........", "X..X..X.", "XX.XX.XX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "........", "........"], color: "#ffcf3a" },
+    { glyph: ["........", "........", "........", "...X....", "........", "........", "........", "........"], color: "#e23d3d" }, // gem
+  ],
+  sun2: [
+    { glyph: ["........", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........", "........"], color: "#ffd23f" },
+    { glyph: ["...XX...", "........", "X......X", "........", "........", "X......X", "........", "...XX..."], color: "#ff9a3c" }, // rays
+  ],
+  cloud2: [
+    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "........", "........"], color: "#c8d0da" },
+    { glyph: ["........", "...XX...", "..XXX...", ".XXX....", "........", "........", "........", "........"], color: "#ffffff" }, // highlight
+  ],
+  bush2: [
+    { glyph: ["........", "..X.X...", ".XXXXX..", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "........"], color: "#2e7d32" },
+    { glyph: ["........", "..X.X...", ".XXXXX..", ".XXXX...", "........", "........", "........", "........"], color: "#5fae5f" }, // highlight
+  ],
+  mountain2: [
+    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"], color: "#8a8f99" },
+    { glyph: ["...XX...", "..XXXX..", "..X.X...", "........", "........", "........", "........", "........"], color: "#ffffff" }, // snow cap
+  ],
+  drop2: [
+    { glyph: ["...X....", "...X....", "..XXX...", ".XXXXX..", ".XXXXX..", ".XXXXX..", "..XXX...", "........"], color: "#4aa3ff" },
+    { glyph: ["........", "........", "........", "..X.....", "..X.....", "........", "........", "........"], color: "#cfeaff" }, // shine
+  ],
+  leaf2: [
+    { glyph: ["....XX..", "...XXX..", "..XXXX..", ".XXXX...", "XXXX....", "XXX.....", "X.......", "........"], color: "#5fae5f" },
+    { glyph: ["....X...", "...X....", "..X.....", ".X......", "X.......", "........", "........", "........"], color: "#2e7d32" }, // vein
+  ],
 };
 
 /**
@@ -153,6 +212,9 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[]> = {
 export const GLYPH_V2_OF: Record<string, string> = {
   tank: "tank2", heart: "heart2", star: "star2", coin: "coin2", face: "face2", hero: "hero2",
   tree: "pinetree", house: "cottage", flower: "daisy", mushroom: "toadstool",
+  ship: "ship2", skull: "skull2", alien: "alien2", brick: "brick2", flag: "flag2", pipe: "pipe2",
+  key: "key2", crown: "crown2", sun: "sun2", cloud: "cloud2", bush: "bush2", mountain: "mountain2",
+  drop: "drop2", leaf: "leaf2",
 };
 
 export const COMPOSED_PRESET_NAMES = Object.keys(COMPOSED_PRESETS);
