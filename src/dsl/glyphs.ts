@@ -331,6 +331,42 @@ export function resolveTiles(tiles?: GlyphTile[][]): (ResolvedLayer | null)[][] 
   return grid.some((row) => row.some(Boolean)) ? grid : undefined;
 }
 
+// Example tile-grids for the gallery / docs — big items built by tiling small
+// single-layer tiles together (the `tiles` field). Single-colour tiles, combined.
+const S: GlyphTile = { glyph: "brick", color: "#9aa0aa" }; // grey stone
+const F: GlyphTile = { glyph: "flag", color: "#e23d3d" };  // flag (sits ON TOP)
+const D: GlyphTile = { glyph: "brick", color: "#5a3a1a" }; // dark door
+const R: GlyphTile = { glyph: "brick", color: "#c0392b" }; // red roof
+const W: GlyphTile = { glyph: "brick", color: "#e0c089" }; // tan wall
+const _: GlyphTile = null;
+
+/** Worked `tiles` examples (one big sprite per entry), shown at /glyphs. */
+export const TILE_EXAMPLES: Record<string, GlyphTile[][]> = {
+  castle: [
+    [_, _, F, _, _],   // flag on TOP, above the wall
+    [S, _, S, _, S],   // crenellations
+    [S, S, S, S, S],
+    [S, S, S, S, S],
+    [S, S, D, S, S],   // doorway
+  ],
+  house: [
+    [_, R, R, R, _],   // roof
+    [R, R, R, R, R],
+    [W, W, W, W, W],   // walls
+    [W, W, D, W, W],   // door
+  ],
+  tower: [
+    [_, F, _],         // flag on top
+    [S, S, S],
+    [S, _, S],         // window
+    [S, S, S],
+    [S, _, S],
+    [S, S, S],
+  ],
+};
+
+export const TILE_EXAMPLE_NAMES = Object.keys(TILE_EXAMPLES);
+
 /**
  * Resolve an entity's `glyph`/`frames` spec into a concrete frame list (each a
  * bitmap). Priority: explicit `frames` → a named preset → raw `glyph` rows.

@@ -6,7 +6,7 @@
  * subtle glow. Plain DOM, no framework.
  */
 
-import { GLYPH_PRESETS, COMPOSED_PRESETS, GLYPH_V2_OF, resolveParts, type ResolvedLayer } from "./dsl/glyphs";
+import { GLYPH_PRESETS, COMPOSED_PRESETS, GLYPH_V2_OF, TILE_EXAMPLES, resolveParts, resolveTiles, type ResolvedLayer } from "./dsl/glyphs";
 import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
@@ -55,6 +55,44 @@ function drawFrame(ctx: CanvasRenderingContext2D, rows: string[] | undefined, co
   paint(ctx, rows, color);
 }
 
+/** Fill a bitmap into the rect (x, y, size) in a color (for laying out tiles). */
+function paintInto(ctx: CanvasRenderingContext2D, rows: string[], x: number, y: number, size: number, color: string): void {
+  const nrows = rows.length;
+  const ncols = Math.max(...rows.map((r) => r.length));
+  if (!nrows || !ncols) return;
+  const cw = size / ncols;
+  const ch = size / nrows;
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 3;
+  ctx.fillStyle = color;
+  for (let r = 0; r < nrows; r++) {
+    const row = rows[r]!;
+    for (let c = 0; c < row.length; c++) {
+      if (on(row[c]!)) ctx.fillRect(x + c * cw, y + r * ch, cw + 0.5, ch + 0.5);
+    }
+  }
+  ctx.restore();
+}
+
+/** Lay out a resolved tile-grid into the canvas (centred, square tiles). */
+function paintTileGrid(ctx: CanvasRenderingContext2D, grid: (ResolvedLayer | null)[][]): void {
+  ctx.clearRect(0, 0, PX, PX);
+  const rows = grid.length;
+  const cols = Math.max(...grid.map((r) => r.length));
+  if (!rows || !cols) return;
+  const pad = PX * 0.1;
+  const cell = (PX - pad * 2) / Math.max(rows, cols);
+  const ox = (PX - cols * cell) / 2;
+  const oy = (PX - rows * cell) / 2;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < (grid[r]?.length ?? 0); c++) {
+      const tile = grid[r]![c];
+      if (tile) paintInto(ctx, tile.rows, ox + c * cell, oy + r * cell, cell, tile.color ?? "#9be15d");
+    }
+  }
+}
+
 interface Animated { ctx: CanvasRenderingContext2D; frames: string[][]; color: string; }
 interface AnimatedComposed { ctx: CanvasRenderingContext2D; frames: ResolvedLayer[][]; }
 
@@ -95,6 +133,15 @@ function monoCanvas(name: string, px: string): HTMLCanvasElement {
   if (frames.length > 1) animated.push({ ctx, frames, color });
   return canvas;
 }
+/** A tag showing a composed preset's layer count, or its frame count if animated. */
+function composedTag(name: string): HTMLDivElement {
+  const f = resolveParts(name);
+  const anim = !!f && f.length > 1;
+  const div = el("div", anim ? "tag anim" : "tag") as HTMLDivElement;
+  div.textContent = anim ? `▸ ${f!.length} frames` : `${f?.[0]?.length ?? 0} layers`;
+  return div;
+}
+
 /** Paint a composed (layered) preset onto a fresh canvas (animates if multi-frame). */
 function composedCanvas(name: string, px: string): HTMLCanvasElement {
   const canvas = newCanvas(px);
@@ -136,9 +183,7 @@ for (const [v1, v2] of Object.entries(GLYPH_V2_OF)) {
   pair.append(f1, arrow, f2);
   const nameEl = el("div", "name");
   nameEl.textContent = `${v1} → ${v2}`;
-  const tag = el("div", "tag");
-  tag.textContent = `${(resolveParts(v2) ?? []).length} layers`;
-  card.append(pair, nameEl, tag);
+  card.append(pair, nameEl, composedTag(v2));
   gallery.appendChild(card);
 }
 // Any composed preset without a v1 remake — show on its own.
@@ -147,9 +192,21 @@ for (const name of composedNames) {
   const card = el("div", "card");
   const nameEl = el("div", "name");
   nameEl.textContent = name;
+  card.append(composedCanvas(name, "84px"), nameEl, composedTag(name));
+  gallery.appendChild(card);
+}
+
+// --- Section 3: combined-tile examples (one big sprite assembled from tiles) ---
+section("tiles — combined", "a big item built from small tiles · one entity");
+for (const [name, grid] of Object.entries(TILE_EXAMPLES)) {
+  const card = el("div", "card");
+  const canvas = newCanvas("84px");
+  paintTileGrid(canvas.getContext("2d")!, resolveTiles(grid) ?? []);
+  const nameEl = el("div", "name");
+  nameEl.textContent = name;
   const tag = el("div", "tag");
-  tag.textContent = `◆ ${(resolveParts(name) ?? []).length} layers`;
-  card.append(composedCanvas(name, "84px"), nameEl, tag);
+  tag.textContent = `${grid.length}×${Math.max(...grid.map((r) => r.length))} tiles`;
+  card.append(canvas, nameEl, tag);
   gallery.appendChild(card);
 }
 

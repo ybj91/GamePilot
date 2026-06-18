@@ -6,9 +6,9 @@ const BASE = process.env.BASE || "http://127.0.0.1:4321";
 const B = "brick", _ = ".";
 
 const castle = [
+  [_, _, { glyph: "flag", color: "#e23d3d" }, _, _],  // flag on TOP, above the wall
   [B, _, B, _, B],          // crenellations (gaps between merlons)
   [B, B, B, B, B],
-  [B, B, { glyph: "flag", color: "#e23d3d" }, B, B],
   [B, B, B, B, B],
   [B, B, _, B, B],          // doorway gap
 ];
