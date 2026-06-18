@@ -120,6 +120,28 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
       });
     }
   }
+  if (e.tiles !== undefined) {
+    if (!Array.isArray(e.tiles) || !e.tiles.length || !e.tiles.every((row) => Array.isArray(row))) {
+      errs.push(`${where}: tiles must be a non-empty 2D array (rows of tile cells)`);
+    } else {
+      e.tiles.forEach((row, r) => row.forEach((cell, c) => {
+        const at = `${where}: tiles[${r}][${c}]`;
+        if (cell === null) return;
+        if (typeof cell === "string") {
+          if (cell !== "" && cell !== "." && cell !== " " && !GLYPH_PRESET_NAMES.includes(cell)) errs.push(`${at} "${cell}" is not a known preset`);
+        } else if (cell && typeof cell === "object" && !Array.isArray(cell)) {
+          if (typeof cell.glyph === "string") {
+            if (!GLYPH_PRESET_NAMES.includes(cell.glyph)) errs.push(`${at}.glyph "${cell.glyph}" is not a known preset`);
+          } else if (!isRows(cell.glyph)) {
+            errs.push(`${at}.glyph must be a preset name or grid rows`);
+          }
+          if (cell.color !== undefined && !isStr(cell.color)) errs.push(`${at}.color must be a string`);
+        } else {
+          errs.push(`${at} must be a preset name, { glyph, color }, or null`);
+        }
+      }));
+    }
+  }
   if (e.frames !== undefined && (!Array.isArray(e.frames) || !e.frames.length || !e.frames.every(isRows))) {
     errs.push(`${where}: frames must be a non-empty array of frames (each a non-empty array of strings)`);
   }

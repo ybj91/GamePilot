@@ -7,7 +7,7 @@
  */
 
 import type { EntitySpec, Shape } from "../dsl/types";
-import { resolveFrames, resolveParts, type ResolvedLayer } from "../dsl/glyphs";
+import { resolveFrames, resolveParts, resolveTiles, type ResolvedLayer } from "../dsl/glyphs";
 
 let nextId = 1;
 
@@ -46,6 +46,8 @@ export interface Entity {
   frames?: string[][];
   /** Resolved composed glyph: colored layers drawn back-to-front (takes priority). */
   parts?: ResolvedLayer[];
+  /** Resolved tile-grid glyph: a 2D grid of tiles forming one big sprite (top priority). */
+  tiles?: (ResolvedLayer | null)[][];
   /** Animation speed in frames/second for a multi-frame glyph. */
   fps: number;
   /** Whether a multi-frame glyph loops; false = one-shot (see ttl0). */
@@ -67,8 +69,9 @@ export interface Entity {
 export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
   const speed = spec.props?.speed ?? 0;
   const [verb, target] = (spec.behavior ?? "").split(":");
-  // A composed glyph (parts / a composed-preset name) wins over a plain glyph.
-  const parts = resolveParts(spec.glyph, spec.parts);
+  // Priority: a tile-grid > a composed (parts) glyph > a plain glyph/frames.
+  const tiles = resolveTiles(spec.tiles);
+  const parts = tiles ? undefined : resolveParts(spec.glyph, spec.parts);
   return {
     iid: nextId++,
     type: spec.id,
@@ -88,8 +91,9 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     control: spec.control ?? "none",
     solid: spec.solid ?? false,
     grounded: false,
+    tiles,
     parts,
-    frames: parts ? undefined : resolveFrames(spec.glyph, spec.frames),
+    frames: tiles || parts ? undefined : resolveFrames(spec.glyph, spec.frames),
     fps: spec.fps ?? 6,
     loop: spec.loop ?? true,
     ttl0: spec.props?.ttl ?? 0,

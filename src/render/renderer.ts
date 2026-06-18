@@ -65,6 +65,10 @@ export class Renderer {
   }
 
   private drawEntity(e: Entity, time: number): void {
+    if (e.tiles?.length) {
+      this.drawTiles(e);
+      return;
+    }
     if (e.parts?.length) {
       this.drawParts(e);
       return;
@@ -120,19 +124,54 @@ export class Renderer {
     }
   }
 
-  /** Fill an "on"-cell bitmap scaled to the entity's box, rotated to its heading. */
+  /** Draw a tile-grid glyph: lay each tile in its grid cell to form one big sprite. */
+  private drawTiles(e: Entity): void {
+    const grid = e.tiles!;
+    const rows = grid.length;
+    const cols = Math.max(...grid.map((row) => row.length));
+    if (!rows || !cols) return;
+    const span = e.size * 2;
+    const cell = span / Math.max(rows, cols); // square tiles, centred
+    const ox = -(cols * cell) / 2;
+    const oy = -(rows * cell) / 2;
+    const flashing = e.flash > 0;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    if (e.rotate) ctx.rotate(Math.atan2(e.hy, e.hx) + Math.PI / 2);
+    for (let r = 0; r < rows; r++) {
+      const row = grid[r]!;
+      for (let c = 0; c < row.length; c++) {
+        const tile = row[c];
+        if (!tile) continue;
+        const color = flashing ? e.flashColor : tile.color ?? e.color;
+        this.fillBitmap(tile.rows, ox + (c + 0.5) * cell, oy + (r + 0.5) * cell, cell / 2, color, flashing ? 12 : 6);
+      }
+    }
+    ctx.restore();
+  }
+
+  /** Draw a bitmap scaled to the entity's box, rotated to its heading. */
   private drawBitmap(e: Entity, rows: string[], color: string, glow: number): void {
     const ctx = this.ctx;
-    const nrows = rows.length;
-    const ncols = Math.max(...rows.map((r) => r.length));
-    if (!nrows || !ncols) return;
-    const span = e.size * 2;
-    const cw = span / ncols;
-    const ch = span / nrows;
     ctx.save();
     ctx.translate(e.x, e.y);
     // Bitmaps are authored facing "up" (0,-1); rotate to the entity's heading.
     if (e.rotate) ctx.rotate(Math.atan2(e.hy, e.hx) + Math.PI / 2);
+    this.fillBitmap(rows, 0, 0, e.size, color, glow);
+    ctx.restore();
+  }
+
+  /** Low-level: fill an "on"-cell bitmap centred at (cx,cy) with half-extent `half`.
+   *  Assumes the caller has already set up the transform (translate/rotate). */
+  private fillBitmap(rows: string[], cx: number, cy: number, half: number, color: string, glow: number): void {
+    const ctx = this.ctx;
+    const nrows = rows.length;
+    const ncols = Math.max(...rows.map((r) => r.length));
+    if (!nrows || !ncols) return;
+    const span = half * 2;
+    const cw = span / ncols;
+    const ch = span / nrows;
     ctx.shadowColor = color;
     ctx.shadowBlur = glow;
     ctx.fillStyle = color;
@@ -142,11 +181,10 @@ export class Renderer {
         const cell = row[c]!;
         if (cell !== " " && cell !== "." && cell !== "0") {
           // +0.5 overlap avoids hairline seams between cells.
-          ctx.fillRect(-span / 2 + c * cw, -span / 2 + r * ch, cw + 0.5, ch + 0.5);
+          ctx.fillRect(cx - half + c * cw, cy - half + r * ch, cw + 0.5, ch + 0.5);
         }
       }
     }
-    ctx.restore();
   }
 
   private drawHud(world: World): void {

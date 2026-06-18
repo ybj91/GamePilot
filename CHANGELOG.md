@@ -13,13 +13,18 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
-## 1.1.0 — composed, multi-colour glyphs
+## 1.1.0 — composed glyphs (layers + tiles)
 
-- **MINOR** (backward-compatible): a new optional `parts` field on an entity — a
-  stack of glyph layers, each with its own bitmap + `color`, drawn back-to-front.
-  One entity can now be a little **multi-colour sprite** (a tree = brown trunk +
-  green canopy) instead of a monochrome silhouette. Each part's `glyph` is inline
-  rows (any size, 8×8 recommended) or a monochrome preset to reuse.
+- **MINOR** (backward-compatible): two opt-in ways to compose richer glyphs from
+  the single-layer primitive — *use as needed, not by default*:
+  - **`parts`** — a stack of glyph LAYERS, each its own bitmap + `color`, drawn
+    back-to-front. One entity becomes a **multi-colour sprite** (a tree = brown
+    trunk + green canopy). For multiple colours in the same square.
+  - **`tiles`** — a 2D GRID of small tiles assembled into one big composite sprite
+    on a single entity (a castle from `brick`/`door` tiles). Each cell is a preset
+    name, a `{ glyph, color }`, or null/empty. For building big items from tiles.
+  - Priority: `tiles` > `parts` > `glyph`/`frames`. A plain single-layer glyph
+    stays the flexible default (controllable colour, reusable as a part/tile).
 - Built-in **composed presets** (glyph lib "v2", 8×8 multi-colour): nature
   (`pinetree`, `cottage`, `daisy`, `toadstool`) + colour remakes of iconic v1
   glyphs (`tank2`, `heart2`, `star2`, `coin2`, `face2`, `hero2`). Usable via

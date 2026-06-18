@@ -26,6 +26,14 @@ export interface GlyphPart {
 }
 
 /**
+ * One cell of a tile-grid glyph (see EntitySpec.tiles):
+ *  - a preset name (drawn in the entity's color),
+ *  - a { glyph, color } object (a tile in its own colour; glyph = preset or rows),
+ *  - or null / "" / "." for an empty cell (a gap).
+ */
+export type GlyphTile = string | GlyphPart | null;
+
+/**
  * How an entity type is controlled / moves on its own.
  *  - "follow-pointer"   chase the cursor in both axes (a blob)
  *  - "follow-pointer-x" track only the cursor's X, hold Y (a Breakout paddle)
@@ -168,6 +176,13 @@ export interface EntitySpec {
    * defaults to the entity color. Takes precedence over `glyph`/`frames`.
    */
   parts?: GlyphPart[];
+  /**
+   * A tile-GRID glyph: rows of small tiles assembled into one big composite sprite
+   * on this single entity. Each cell is a `GlyphTile` (a preset name, a
+   * {glyph,color}, or empty). Build big items from reusable single-layer tiles —
+   * e.g. a castle from "brick"/"door" tiles. Takes precedence over parts/glyph.
+   */
+  tiles?: GlyphTile[][];
   /**
    * Whether a multi-frame glyph loops (default true). Set false for a ONE-SHOT
    * animation: if the entity has a `ttl`, the frames play once spread across its

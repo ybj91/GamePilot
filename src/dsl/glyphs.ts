@@ -11,7 +11,7 @@
  * This is the single source of truth for preset names; validate.ts checks
  * against it, entity.ts resolves through it, reference.ts lists it.
  */
-import type { GlyphPart } from "./types";
+import type { GlyphPart, GlyphTile } from "./types";
 
 export const GLYPH_PRESETS: Record<string, string[][]> = {
   // --- single-frame common shapes ---
@@ -186,6 +186,30 @@ export function resolveParts(
     if (rows) layers.push({ rows, color: p.color });
   }
   return layers.length ? layers : undefined;
+}
+
+/** Resolve one tile-grid cell into a tile (rows + optional colour), or null (gap). */
+function resolveTile(cell: GlyphTile): ResolvedLayer | null {
+  if (cell == null) return null;
+  if (typeof cell === "string") {
+    if (cell === "" || cell === "." || cell === " ") return null;
+    const rows = GLYPH_PRESETS[cell]?.[0];
+    return rows ? { rows } : null;
+  }
+  const rows = partRows(cell.glyph);
+  return rows ? { rows, color: cell.color } : null;
+}
+
+/**
+ * Resolve a tile-grid glyph (the `tiles` field) into a 2D grid of tiles (each a
+ * bitmap + optional colour, or null for a gap). The renderer lays them out in a
+ * grid to form one big composite sprite. Returns undefined when there are no
+ * tiles at all.
+ */
+export function resolveTiles(tiles?: GlyphTile[][]): (ResolvedLayer | null)[][] | undefined {
+  if (!tiles || !tiles.length) return undefined;
+  const grid = tiles.map((row) => row.map(resolveTile));
+  return grid.some((row) => row.some(Boolean)) ? grid : undefined;
 }
 
 /**

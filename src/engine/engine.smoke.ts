@@ -405,6 +405,26 @@ check("a composed preset resolves to multiple layers",
   (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }, 1).firstOf("player")!.parts?.length ?? 0) >= 2);
 check("bad parts rejected (unknown preset string)",
   !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, parts: [{ glyph: "nope" }] }] }).ok);
+
+// 14g. tile-grid glyph: several tiles compose one big sprite on a single entity.
+{
+  const tileSpec: GameSpec = {
+    ...glyphSpec,
+    entities: [{ ...glyphSpec.entities[0]!, glyph: undefined, tiles: [
+      ["brick", "brick", "brick"],
+      ["brick", { glyph: "flag", color: "#e23d3d" }, "brick"],
+      ["brick", ".", "brick"],
+    ] }],
+  };
+  check("tiles spec validates (preset cells + {glyph,color} + gap)", validateGameSpec(tileSpec).ok);
+  const te = new World(tileSpec, 1).firstOf("player")!;
+  check("tiles resolve to a 3x3 grid (one entity)", te.tiles?.length === 3 && te.tiles[0]!.length === 3);
+  check("a coloured tile keeps its colour; a '.' cell is a gap",
+    te.tiles![1]![1]!.color === "#e23d3d" && te.tiles![2]![1] === null);
+  check("a tile-grid glyph carries no parts/frames", te.parts === undefined && te.frames === undefined);
+}
+check("bad tiles rejected (unknown preset cell)",
+  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, tiles: [["brick", "nope"]] }] }).ok);
 // every composed preset is well-formed, and the v1->v2 map points at real presets
 check("every composed preset resolves to >=1 layer",
   COMPOSED_PRESET_NAMES.every((n) => (resolveParts(n)?.length ?? 0) >= 1));
