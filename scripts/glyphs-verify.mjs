@@ -1,7 +1,8 @@
 // Verify the /glyphs gallery: it lists every preset, renders them without error,
 // and the multi-frame ones animate.
 import puppeteer from "puppeteer-core";
-import { GLYPH_PRESET_NAMES } from "../src/dsl/glyphs.ts";
+import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES } from "../src/dsl/glyphs.ts";
+const ALL = [...GLYPH_PRESET_NAMES, ...COMPOSED_PRESET_NAMES];
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const BASE = process.env.BASE || "http://127.0.0.1:4321";
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--no-sandbox"] });
@@ -22,8 +23,8 @@ for (let i = 0; i < 12; i++) { seen.add(await hash()); await new Promise((r) => 
 await page.screenshot({ path: "scripts/shot-glyphs.png" });
 await browser.close();
 
-const allListed = GLYPH_PRESET_NAMES.every((n) => cards.includes(n)) && cards.length === GLYPH_PRESET_NAMES.length;
+const allListed = ALL.every((n) => cards.includes(n)) && cards.length === ALL.length;
 console.log("no page errors:", errors.length === 0 ? "✓" : "✗ " + errors.join("; "));
-console.log("every preset is shown:", allListed ? "✓" : "✗", `(${cards.length}/${GLYPH_PRESET_NAMES.length})`);
+console.log("every preset is shown (mono + composed):", allListed ? "✓" : "✗", `(${cards.length}/${ALL.length})`);
 console.log("animated previews cycle:", seen.size >= 2 ? "✓" : "✗", `(${seen.size} distinct frames)`);
 console.log(errors.length === 0 && allListed && seen.size >= 2 ? "\nALL PASS ✓ (glyph gallery)" : "\nFAILED ✗");

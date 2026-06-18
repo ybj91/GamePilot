@@ -65,6 +65,10 @@ export class Renderer {
   }
 
   private drawEntity(e: Entity, time: number): void {
+    if (e.parts?.length) {
+      this.drawParts(e);
+      return;
+    }
     if (e.frames?.length) {
       this.drawGlyph(e, time);
       return;
@@ -100,11 +104,25 @@ export class Renderer {
     return Math.min(n - 1, Math.max(0, Math.floor(t * n)));
   }
 
-  /** Draw a pixel-grid glyph scaled to the entity's box, rotated to face its heading. */
+  /** Draw a pixel-grid glyph (current animation frame) scaled to the entity's box. */
   private drawGlyph(e: Entity, time: number): void {
+    const rows = e.frames![this.frameIndex(e, time)]!;
+    const color = e.flash > 0 ? e.flashColor : e.color;
+    this.drawBitmap(e, rows, color, e.flash > 0 ? 20 : 8);
+  }
+
+  /** Draw a composed glyph: each layer's bitmap in its own color, back-to-front. */
+  private drawParts(e: Entity): void {
+    const flashing = e.flash > 0;
+    for (const layer of e.parts!) {
+      const color = flashing ? e.flashColor : layer.color ?? e.color;
+      this.drawBitmap(e, layer.rows, color, flashing ? 20 : 8);
+    }
+  }
+
+  /** Fill an "on"-cell bitmap scaled to the entity's box, rotated to its heading. */
+  private drawBitmap(e: Entity, rows: string[], color: string, glow: number): void {
     const ctx = this.ctx;
-    const fr = e.frames!;
-    const rows = fr[this.frameIndex(e, time)]!;
     const nrows = rows.length;
     const ncols = Math.max(...rows.map((r) => r.length));
     if (!nrows || !ncols) return;
@@ -113,17 +131,16 @@ export class Renderer {
     const ch = span / nrows;
     ctx.save();
     ctx.translate(e.x, e.y);
-    // Glyph is authored facing "up" (0,-1); rotate to the entity's heading.
+    // Bitmaps are authored facing "up" (0,-1); rotate to the entity's heading.
     if (e.rotate) ctx.rotate(Math.atan2(e.hy, e.hx) + Math.PI / 2);
-    const color = e.flash > 0 ? e.flashColor : e.color;
     ctx.shadowColor = color;
-    ctx.shadowBlur = e.flash > 0 ? 20 : 8;
+    ctx.shadowBlur = glow;
     ctx.fillStyle = color;
     for (let r = 0; r < nrows; r++) {
       const row = rows[r]!;
       for (let c = 0; c < row.length; c++) {
-        const ch2 = row[c]!;
-        if (ch2 !== " " && ch2 !== "." && ch2 !== "0") {
+        const cell = row[c]!;
+        if (cell !== " " && cell !== "." && cell !== "0") {
           // +0.5 overlap avoids hairline seams between cells.
           ctx.fillRect(-span / 2 + c * cw, -span / 2 + r * ch, cw + 0.5, ch + 0.5);
         }

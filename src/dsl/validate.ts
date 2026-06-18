@@ -15,7 +15,7 @@ import type {
   Shape,
   Control,
 } from "./types";
-import { GLYPH_PRESET_NAMES } from "./glyphs";
+import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES } from "./glyphs";
 import { DSL_VERSION, parseVersion, isVersionSupported } from "./version";
 
 const isRows = (v: unknown): v is string[] =>
@@ -95,11 +95,29 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
   if (e.solid !== undefined && typeof e.solid !== "boolean") errs.push(`${where}: solid must be a boolean`);
   if (e.glyph !== undefined) {
     if (typeof e.glyph === "string") {
-      if (!GLYPH_PRESET_NAMES.includes(e.glyph)) {
-        errs.push(`${where}: glyph "${e.glyph}" is not a known preset (one of: ${GLYPH_PRESET_NAMES.join(", ")})`);
+      if (!GLYPH_PRESET_NAMES.includes(e.glyph) && !COMPOSED_PRESET_NAMES.includes(e.glyph)) {
+        errs.push(`${where}: glyph "${e.glyph}" is not a known preset`);
       }
     } else if (!isRows(e.glyph)) {
       errs.push(`${where}: glyph must be a preset name or a non-empty array of grid rows`);
+    }
+  }
+  if (e.parts !== undefined) {
+    if (!Array.isArray(e.parts) || !e.parts.length) {
+      errs.push(`${where}: parts must be a non-empty array of layers`);
+    } else {
+      e.parts.forEach((p, i) => {
+        if (!p || typeof p !== "object") {
+          errs.push(`${where}: parts[${i}] must be an object { glyph, color? }`);
+          return;
+        }
+        if (typeof p.glyph === "string") {
+          if (!GLYPH_PRESET_NAMES.includes(p.glyph)) errs.push(`${where}: parts[${i}].glyph "${p.glyph}" is not a known preset`);
+        } else if (!isRows(p.glyph)) {
+          errs.push(`${where}: parts[${i}].glyph must be a preset name or grid rows`);
+        }
+        if (p.color !== undefined && !isStr(p.color)) errs.push(`${where}: parts[${i}].color must be a string`);
+      });
     }
   }
   if (e.frames !== undefined && (!Array.isArray(e.frames) || !e.frames.length || !e.frames.every(isRows))) {

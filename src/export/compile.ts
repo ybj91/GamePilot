@@ -44,6 +44,7 @@ export function canCompile(spec: GameSpec): { ok: boolean; unsupported: string[]
   for (const e of spec.entities) {
     if (e.glyph) bad.push(`entity "${e.id}": glyph`);
     if (e.frames) bad.push(`entity "${e.id}": frames`);
+    if (e.parts) bad.push(`entity "${e.id}": parts (composed glyph)`);
     if (e.solid) bad.push(`entity "${e.id}": solid`);
     if (e.flashColor) bad.push(`entity "${e.id}": flashColor`);
     if (e.control === "follow-pointer-x") bad.push(`entity "${e.id}": control follow-pointer-x`);

@@ -384,6 +384,27 @@ check("platformer + nature presets validate",
 check("animated goomba resolves to multiple frames",
   (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "goomba" }] }, 1).firstOf("player")!.frames?.length ?? 0) >= 2);
 
+// 14f. composed multi-colour glyphs (parts) + composed presets.
+{
+  const partsSpec: GameSpec = {
+    ...glyphSpec,
+    entities: [{ ...glyphSpec.entities[0]!, glyph: undefined, parts: [
+      { glyph: ["..X..", ".XXX.", "XXXXX"], color: "#7a4a23" },  // inline layer
+      { glyph: "tree", color: "#2e8b3d" },                        // reuse a preset, recoloured
+    ] }],
+  };
+  check("parts spec validates (inline rows + preset reuse + colours)", validateGameSpec(partsSpec).ok);
+  const pe = new World(partsSpec, 1).firstOf("player")!;
+  check("parts resolve to coloured layers on the entity",
+    pe.parts?.length === 2 && pe.parts[1]!.color === "#2e8b3d");
+  check("a composed glyph carries no monochrome frames", pe.frames === undefined);
+}
+check("composed preset name validates", validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }).ok);
+check("a composed preset resolves to multiple layers",
+  (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }, 1).firstOf("player")!.parts?.length ?? 0) >= 2);
+check("bad parts rejected (unknown preset string)",
+  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, parts: [{ glyph: "nope" }] }] }).ok);
+
 // 14c. explicit frames + fps — GIF-like animation authored inline.
 const animSpec: GameSpec = {
   ...glyphSpec,

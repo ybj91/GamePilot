@@ -13,7 +13,7 @@
  */
 
 import { growAndSlow } from "./samples/growAndSlow";
-import { GLYPH_PRESET_NAMES } from "./glyphs";
+import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES } from "./glyphs";
 import { DSL_VERSION } from "./version";
 
 /** The essentials — entities, rules, effects, conditions, win/lose. */
@@ -135,11 +135,12 @@ Recipe — base defense (enemies pour in from the top and advance on a base at t
   },
   {
     id: "glyphs",
-    title: "Glyphs (pixel shapes, animation & hit-flash)",
-    summary: "draw entities as a bitmap / named preset / GIF-like animation; rotate to show direction; flash bright on a hit",
-    doc: `Glyphs — represent an entity as a tiny pixel grid instead of a bare shape (still no assets, just data). Three ways, cheapest first:
-- "glyph": "<preset>"  — a built-in common shape. Presets: ${GLYPH_PRESET_NAMES.join(", ")}. Some (invader, blob, flame) are multi-frame and ANIMATE on their own, so the entity looks alive with zero extra work. Prefer a preset when one fits.
-- "glyph": [ "<row>", ... ]  — raw rows of a small bitmap (3x3, 5x5, any size) when no preset fits. A cell is "on" for any char except space, "." or "0". Drawn scaled to the entity's box in its color. Author it FACING UP.
+    title: "Glyphs (pixel shapes, animation, hit-flash & composition)",
+    summary: "draw entities as a bitmap / named preset / GIF-like animation / composed multi-colour sprite; rotate; flash on hit",
+    doc: `Glyphs — represent an entity as a tiny pixel grid instead of a bare shape (still no assets, just data). Ways, cheapest first:
+- "glyph": "<preset>"  — a built-in MONOCHROME shape. Presets: ${GLYPH_PRESET_NAMES.join(", ")}. Some (invader, blob, flame) are multi-frame and ANIMATE on their own. Prefer a preset when one fits.
+- "glyph": [ "<row>", ... ]  — raw rows of a small bitmap (3x3, 5x5, 8x8, any size) when no preset fits. A cell is "on" for any char except space, "." or "0". Drawn scaled to the entity's box in its color. Author it FACING UP. Bigger grids (8x8+) = more detail.
+- COMPOSED multi-COLOUR glyph (a little sprite): "parts": [ { "glyph": <rows or preset>, "color": "#rrggbb" }, ... ]  — a stack of layers drawn back-to-front, each its own bitmap + colour, so one entity can be e.g. a tree (brown trunk layer + green canopy layer). Each part's "glyph" is inline rows (any size, 8x8 recommended) or a monochrome preset name to reuse; "color" defaults to the entity color. Or use a built-in composed preset by name: ${COMPOSED_PRESET_NAMES.join(", ")} (e.g. "glyph": "pinetree"). "parts" overrides "glyph"/"frames".
 - "frames": [ [ "<row>", ... ], [ "<row>", ... ], ... ] + "fps": <number>  — explicit GIF-like animation: a list of bitmap frames cycled at fps (default 6). Overrides "glyph". Use it for a walk cycle / pulse / spin so the entity feels alive.
 - "loop": false  — play a multi-frame glyph ONCE instead of looping. If the entity also has a "ttl", the frames spread across its lifetime then it despawns — exactly what a one-shot effect (an "explosion") wants. Default true (loop forever).
 - "rotate": true  — turn the glyph to the entity's facing (the way it last moved), so it visibly points its direction. Composes with any of the above (the current frame is rotated). Great for tanks/ships.
@@ -150,6 +151,7 @@ Recipes:
   • preset, animated for free:   { "id":"bug","kind":"enemy","shape":"square","color":"#9be15d","size":14,"behavior":"wander","glyph":"invader","spawn":{"count":5} }
   • a tank that points the way it drives:  { "id":"player","kind":"player","shape":"square","color":"#8cb33a","size":15,"control":"arrows","glyph":"tank","rotate":true,"spawn":{"x":400,"y":520} }
   • a custom 2-frame pulsing pickup:  { "id":"gem","kind":"food","shape":"dot","color":"#ffd23f","size":9,"frames":[["..X..",".XXX.","XXXXX",".XXX.","..X.."],[".....","..X..",".XXX.","..X..","....."]],"fps":4,"spawn":{"random":true,"maintain":6} }
+  • a COMPOSED multi-colour tree (one entity, two coloured layers):  { "id":"tree","kind":"obstacle","shape":"square","color":"#2e8b3d","size":24,"control":"none","parts":[{"glyph":["........","........","........","........","........","........","...XX...","...XX..."],"color":"#7a4a23"},{"glyph":["...XX...","..XXXX..",".XXXXXX.","XXXXXXXX",".XXXXXX.","..XXXX..","........","........"],"color":"#2e8b3d"}],"spawn":{"x":200,"y":300} }   (or just "glyph":"pinetree")
   • an explosion on a kill (juice): a one-shot effect entity spawned where the enemy died, that plays once and vanishes —
       { "id":"boom","kind":"effect","shape":"dot","color":"#ff9a3c","size":18,"control":"none","glyph":"explosion","loop":false,"spawn":{"count":0},"props":{"ttl":0.4} }
       { "on":"collision","between":["bullet","enemy"],"effects":[{"op":"spawn","target":"boom","from":"other"},{"op":"destroy","target":"self"},{"op":"destroy","target":"other"},{"op":"score","value":1}] }

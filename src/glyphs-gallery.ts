@@ -6,7 +6,7 @@
  * subtle glow. Plain DOM, no framework.
  */
 
-import { GLYPH_PRESETS } from "./dsl/glyphs";
+import { GLYPH_PRESETS, COMPOSED_PRESETS, resolveParts } from "./dsl/glyphs";
 import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
@@ -26,12 +26,12 @@ const PX = 96; // canvas size
 
 const on = (ch: string) => ch !== " " && ch !== "." && ch !== "0";
 
-function drawFrame(ctx: CanvasRenderingContext2D, rows: string[] | undefined, color: string): void {
+/** Paint one bitmap layer in a color (does NOT clear — so layers can stack). */
+function paint(ctx: CanvasRenderingContext2D, rows: string[] | undefined, color: string): void {
   if (!rows) return;
   const nrows = rows.length;
   const ncols = Math.max(...rows.map((r) => r.length));
   if (!nrows || !ncols) return;
-  ctx.clearRect(0, 0, PX, PX);
   const pad = PX * 0.16;
   const span = PX - pad * 2;
   const cw = span / ncols;
@@ -49,6 +49,12 @@ function drawFrame(ctx: CanvasRenderingContext2D, rows: string[] | undefined, co
   ctx.restore();
 }
 
+/** Clear then paint a single monochrome frame. */
+function drawFrame(ctx: CanvasRenderingContext2D, rows: string[] | undefined, color: string): void {
+  ctx.clearRect(0, 0, PX, PX);
+  paint(ctx, rows, color);
+}
+
 interface Animated { ctx: CanvasRenderingContext2D; frames: string[][]; color: string; }
 
 const gallery = document.getElementById("gallery") as HTMLDivElement;
@@ -56,7 +62,8 @@ const countEl = document.getElementById("count") as HTMLSpanElement;
 const animated: Animated[] = [];
 
 const names = Object.keys(GLYPH_PRESETS);
-countEl.textContent = `${names.length} presets · DSL v${DSL_VERSION}`;
+const composedNames = Object.keys(COMPOSED_PRESETS);
+countEl.textContent = `${names.length + composedNames.length} presets · DSL v${DSL_VERSION}`;
 
 for (const name of names) {
   const frames = GLYPH_PRESETS[name]!;
@@ -81,6 +88,27 @@ for (const name of names) {
   tag.className = isAnim ? "tag anim" : "tag";
   tag.textContent = isAnim ? `▸ ${frames.length} frames` : `${frames[0]!.length}×${Math.max(...frames[0]!.map((r) => r.length))}`;
 
+  card.append(canvas, nameEl, tag);
+  gallery.appendChild(card);
+}
+
+// Composed, multi-colour presets (glyph lib v2): draw their layers stacked.
+for (const name of composedNames) {
+  const layers = resolveParts(name) ?? [];
+  const card = document.createElement("div");
+  card.className = "card";
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = PX;
+  canvas.style.width = canvas.style.height = "84px";
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, PX, PX);
+  for (const layer of layers) paint(ctx, layer.rows, layer.color ?? "#9be15d");
+  const nameEl = document.createElement("div");
+  nameEl.className = "name";
+  nameEl.textContent = name;
+  const tag = document.createElement("div");
+  tag.className = "tag anim";
+  tag.textContent = `◆ ${layers.length} layers`;
   card.append(canvas, nameEl, tag);
   gallery.appendChild(card);
 }

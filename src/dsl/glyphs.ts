@@ -11,6 +11,8 @@
  * This is the single source of truth for preset names; validate.ts checks
  * against it, entity.ts resolves through it, reference.ts lists it.
  */
+import type { GlyphPart } from "./types";
+
 export const GLYPH_PRESETS: Record<string, string[][]> = {
   // --- single-frame common shapes ---
   tank: [["..X..", ".XXX.", "XXXXX", "XXXXX", "X.X.X"]],
@@ -85,6 +87,67 @@ export const GLYPH_PRESETS: Record<string, string[][]> = {
 
 /** All preset names (for validation messages + the reference menu). */
 export const GLYPH_PRESET_NAMES = Object.keys(GLYPH_PRESETS);
+
+/**
+ * Composed, multi-COLOUR presets (glyph lib "v2") — a stack of layers, each its
+ * own bitmap + colour, authored at 8x8 for detail. Drawn back-to-front, so each
+ * is a little colored sprite (still pure data, no assets). Usable by name via
+ * `glyph: "<name>"`, or compose your own with the `parts` field.
+ */
+export const COMPOSED_PRESETS: Record<string, GlyphPart[]> = {
+  pinetree: [
+    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "........", "........"], color: "#2e8b3d" },
+    { glyph: ["........", "........", "........", "........", "........", "........", "...XX...", "...XX..."], color: "#7a4a23" },
+  ],
+  cottage: [
+    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", "........", "........", "........", "........"], color: "#c0392b" },
+    { glyph: ["........", "........", "........", "........", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX."], color: "#e0c089" },
+    { glyph: ["........", "........", "........", "........", "........", "...XX...", "...XX...", "...XX..."], color: "#6b4423" },
+  ],
+  daisy: [
+    { glyph: ["........", "........", "........", "........", "...X....", ".X.X....", "...XX...", "...X...."], color: "#4caf50" },
+    { glyph: [".X.XX.X.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "...X....", "........", "........", "........"], color: "#ff7eb6" },
+    { glyph: ["........", "...XX...", "...XX...", "........", "........", "........", "........", "........"], color: "#ffd23f" },
+  ],
+  toadstool: [
+    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "........", "........", "........", "........"], color: "#d23b3b" },
+    { glyph: ["........", "..X..X..", ".....X..", "..X.....", "........", "........", "........", "........"], color: "#ffffff" },
+    { glyph: ["........", "........", "........", "........", "..XXXX..", "..X..X..", "..X..X..", "..XXXX.."], color: "#efe6c8" },
+  ],
+};
+
+export const COMPOSED_PRESET_NAMES = Object.keys(COMPOSED_PRESETS);
+
+/** One resolved layer: concrete bitmap rows + optional colour (else entity colour). */
+export interface ResolvedLayer {
+  rows: string[];
+  color?: string;
+}
+
+/** Rows for a part's glyph: inline rows, or the first frame of a monochrome preset. */
+function partRows(g: string[] | string): string[] | undefined {
+  if (typeof g === "string") return GLYPH_PRESETS[g]?.[0];
+  return g.length ? g : undefined;
+}
+
+/**
+ * Resolve a composed glyph (the `parts` field, or a COMPOSED_PRESETS name in
+ * `glyph`) into concrete layers. Returns undefined for plain/monochrome glyphs
+ * (those go through resolveFrames instead).
+ */
+export function resolveParts(
+  glyph?: string[] | string,
+  parts?: GlyphPart[],
+): ResolvedLayer[] | undefined {
+  const src = parts && parts.length ? parts : typeof glyph === "string" ? COMPOSED_PRESETS[glyph] : undefined;
+  if (!src) return undefined;
+  const layers: ResolvedLayer[] = [];
+  for (const p of src) {
+    const rows = partRows(p.glyph);
+    if (rows) layers.push({ rows, color: p.color });
+  }
+  return layers.length ? layers : undefined;
+}
 
 /**
  * Resolve an entity's `glyph`/`frames` spec into a concrete frame list (each a

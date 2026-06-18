@@ -17,6 +17,14 @@
 
 export type Shape = "circle" | "square" | "dot";
 
+/** One layer of a composed (multi-colour) glyph — see EntitySpec.parts. */
+export interface GlyphPart {
+  /** Inline bitmap rows (any size), or a monochrome preset name to reuse. */
+  glyph: string[] | string;
+  /** CSS colour for this layer; defaults to the entity's color. */
+  color?: string;
+}
+
 /**
  * How an entity type is controlled / moves on its own.
  *  - "follow-pointer"   chase the cursor in both axes (a blob)
@@ -152,6 +160,14 @@ export interface EntitySpec {
   frames?: string[][];
   /** Animation speed for a multi-frame glyph/preset, in frames per second. Default 6. */
   fps?: number;
+  /**
+   * Composed, multi-COLOUR glyph: a stack of layers drawn back-to-front, each its
+   * own bitmap + colour. Lets one entity be a little colored sprite — e.g. a tree
+   * = a brown trunk layer + a green canopy layer. Each layer's `glyph` is inline
+   * rows (any size, e.g. 8x8) or a monochrome preset name to reuse; `color`
+   * defaults to the entity color. Takes precedence over `glyph`/`frames`.
+   */
+  parts?: GlyphPart[];
   /**
    * Whether a multi-frame glyph loops (default true). Set false for a ONE-SHOT
    * animation: if the entity has a `ttl`, the frames play once spread across its

@@ -14,7 +14,7 @@
  *
  * Single source of truth — keep package.json's "version" in sync.
  */
-export const DSL_VERSION = "1.0.0";
+export const DSL_VERSION = "1.1.0";
 
 export interface SemVer {
   major: number;

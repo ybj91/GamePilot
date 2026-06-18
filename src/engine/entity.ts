@@ -7,7 +7,7 @@
  */
 
 import type { EntitySpec, Shape } from "../dsl/types";
-import { resolveFrames } from "../dsl/glyphs";
+import { resolveFrames, resolveParts, type ResolvedLayer } from "../dsl/glyphs";
 
 let nextId = 1;
 
@@ -44,6 +44,8 @@ export interface Entity {
    * from a raw glyph, a named preset, or explicit `frames`. One frame = static.
    */
   frames?: string[][];
+  /** Resolved composed glyph: colored layers drawn back-to-front (takes priority). */
+  parts?: ResolvedLayer[];
   /** Animation speed in frames/second for a multi-frame glyph. */
   fps: number;
   /** Whether a multi-frame glyph loops; false = one-shot (see ttl0). */
@@ -65,6 +67,8 @@ export interface Entity {
 export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
   const speed = spec.props?.speed ?? 0;
   const [verb, target] = (spec.behavior ?? "").split(":");
+  // A composed glyph (parts / a composed-preset name) wins over a plain glyph.
+  const parts = resolveParts(spec.glyph, spec.parts);
   return {
     iid: nextId++,
     type: spec.id,
@@ -84,7 +88,8 @@ export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
     control: spec.control ?? "none",
     solid: spec.solid ?? false,
     grounded: false,
-    frames: resolveFrames(spec.glyph, spec.frames),
+    parts,
+    frames: parts ? undefined : resolveFrames(spec.glyph, spec.frames),
     fps: spec.fps ?? 6,
     loop: spec.loop ?? true,
     ttl0: spec.props?.ttl ?? 0,

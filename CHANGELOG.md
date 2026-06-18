@@ -13,6 +13,17 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
+## 1.1.0 — composed, multi-colour glyphs
+
+- **MINOR** (backward-compatible): a new optional `parts` field on an entity — a
+  stack of glyph layers, each with its own bitmap + `color`, drawn back-to-front.
+  One entity can now be a little **multi-colour sprite** (a tree = brown trunk +
+  green canopy) instead of a monochrome silhouette. Each part's `glyph` is inline
+  rows (any size, 8×8 recommended) or a monochrome preset to reuse.
+- Built-in **composed presets** (glyph lib "v2", 8×8 multi-colour): `pinetree`,
+  `cottage`, `daisy`, `toadstool` — usable via `glyph: "<name>"`, shown at `/glyphs`.
+- Existing specs are unaffected (1.0.0 games still validate and play).
+
 ## 1.0.0 — baseline
 
 First versioned release of the contract. The DSL covers, as composable capabilities
