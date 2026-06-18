@@ -255,6 +255,38 @@ export const COMPOSED_PRESETS: Record<string, GlyphPart[] | GlyphPart[][]> = {
   grass2: [{ glyph: [".....", "X...X", "X.X.X", "X.X.X", "XXXXX"], color: "#4a9d4a" }, { glyph: [".....", "X...X", "X.X.X", ".....", "....."], color: "#7bc043" }],
   snowflake2: [{ glyph: ["..X..", "X.X.X", ".XXX.", "X.X.X", "..X.."], color: "#a8e0ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffffff" }],
   bird2: [{ glyph: [".....", "XX.XX", ".XXX.", "..X..", "....."], color: "#6cb4ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ff9a3c" }],
+
+  // --- TANK FLEET (8x8, authored facing UP — use rotate:true) — each a DIFFERENT
+  // silhouette, so a tank's TYPE reads from its shape, not just its colour. The
+  // hull layer omits its colour so the entity/faction colour tints it; tracks +
+  // barrel are fixed dark accents that read on any hull. Layers: tracks, hull,
+  // barrel, (insignia). ---
+  tankLight: [ // scout: small narrow body, stubby barrel (fast)
+    { glyph: ["........", "........", ".X....X.", ".X....X.", ".X....X.", ".X....X.", "........", "........"], color: "#2a2a2a" }, // tracks
+    { glyph: ["........", "........", "..XXXX..", "..XXXX..", "..XXXX..", "..XXXX..", "........", "........"] }, // hull (recolourable)
+    { glyph: ["...XX...", "...XX...", "........", "........", "........", "........", "........", "........"], color: "#383838" }, // barrel
+  ],
+  tankMedium: [ // standard battle tank
+    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#2a2a2a" }, // tracks
+    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........"] }, // hull
+    { glyph: ["...XX...", "...XX...", "...XX...", "........", "........", "........", "........", "........"], color: "#383838" }, // barrel
+  ],
+  tankHeavy: [ // wide bulky hull + TWIN barrels
+    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#2a2a2a" }, // tracks
+    { glyph: ["........", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "........"] }, // hull
+    { glyph: ["..X..X..", "..X..X..", "..X..X..", "........", "........", "........", "........", "........"], color: "#383838" }, // twin barrels
+  ],
+  tankArty: [ // artillery: compact body, LONG single gun
+    { glyph: ["........", "........", "........", "X......X", "X......X", "X......X", "X......X", "........"], color: "#2a2a2a" }, // tracks
+    { glyph: ["........", "........", "........", "..XXXX..", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........"] }, // hull
+    { glyph: ["...XX...", "...XX...", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#383838" }, // long barrel
+  ],
+  tankHero: [ // the player's tank: medium hull + a bright insignia so it stands out
+    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#2a2a2a" }, // tracks
+    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........"] }, // hull
+    { glyph: ["...XX...", "...XX...", "...XX...", "........", "........", "........", "........", "........"], color: "#383838" }, // barrel
+    { glyph: ["........", "........", "........", "...XX...", "...XX...", "........", "........", "........"], color: "#f2f2f2" }, // insignia
+  ],
 };
 
 /**
