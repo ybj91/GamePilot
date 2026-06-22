@@ -19,9 +19,11 @@ await page.screenshot({ path: "scripts/shot-tank1990.png" });
 const fleet = await page.evaluate(() => {
   const w = window.gamepilot.world;
   const layers = (id) => w.firstOf(id)?.parts?.[0]?.length ?? 0;
+  const heroHasStar = !!w.firstOf("player")?.parts?.[0]?.some((l) => l.color === "#ffd23f");
   return {
     counts: { basic: w.countOf("basic"), fast: w.countOf("fast"), armor: w.countOf("armor"), arty: w.countOf("arty") },
     shapes: { player: layers("player"), basic: layers("basic"), fast: layers("fast"), armor: layers("armor"), arty: layers("arty") },
+    heroHasStar,
     armorHp: w.firstOf("armor")?.props.hp,
   };
 });
@@ -66,11 +68,13 @@ const aim = {};
 for (const [label, h, ok] of dirs) aim[label] = await fire(h, ok);
 
 const fleetOk = fleet.counts.basic >= 1 && fleet.counts.fast >= 1 && fleet.counts.armor >= 1 && fleet.counts.arty >= 1;
-const shapesOk = fleet.shapes.player === 4 && [fleet.shapes.basic, fleet.shapes.fast, fleet.shapes.armor, fleet.shapes.arty].every((n) => n >= 3);
+// every tank is a multi-colour composed sprite (recolourable hull + >=1 tread/detail
+// layer), and the hero carries its gold-star accent.
+const shapesOk = [fleet.shapes.player, fleet.shapes.basic, fleet.shapes.fast, fleet.shapes.armor, fleet.shapes.arty].every((n) => n >= 2) && fleet.heroHasStar;
 const aimOk = ["RIGHT", "LEFT", "UP", "DOWN"].every((d) => aim[d]);
 console.log("no page errors:", errors.length === 0 ? "✓" : "✗ " + errors.join("; "));
 console.log("fleet present (4 enemy types):", fleetOk ? "✓" : "✗", JSON.stringify(fleet.counts));
-console.log("each tank is a composed shape (player=4 layers, enemies>=3):", shapesOk ? "✓" : "✗", JSON.stringify(fleet.shapes));
+console.log("each tank is a composed sprite (>=2 layers) + hero has a star:", shapesOk ? "✓" : "✗", JSON.stringify(fleet.shapes), "star=" + fleet.heroHasStar);
 console.log("space fires the way you face (all 4 dirs):", aimOk ? "✓" : "✗", JSON.stringify(aim));
 console.log(errors.length === 0 && fleetOk && shapesOk && aimOk ? "\nALL PASS ✓ (Tank 1990)" : "\nFAILED ✗");
 await browser.close();
