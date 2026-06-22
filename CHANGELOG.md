@@ -13,6 +13,27 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
+## 2.1.0 — bigger glyphs (up to 16×16) + non-blocking validator warnings
+
+- **MINOR** (backward-compatible): support larger hand-authored glyph grids with
+  guard-rails that keep them controllable.
+  - Raw `glyph` grids up to **16×16** are first-class (the renderer was always
+    size-agnostic; this makes the size budget explicit). 5×5/8×8 stay the sweet
+    spot — the cost of bigger isn't colour count, it's placing more cells right.
+  - **`ValidationResult` gains `warnings: string[]`** — non-blocking advisories
+    (`ok` ignores them). The validator now warns on: a glyph grid past 16×16, rows
+    of unequal width (a likely miscount), and a `palette` with more than ~6 colours.
+    None of these fail validation; they're guidance an authoring agent reads back.
+  - MCP `validate_game` returns `{ ok, errors, warnings }`; `create_game` /
+    `update_game` echo `warnings` alongside the saved id. `/api/validate` includes
+    them too. Existing consumers only read `ok`/`errors`, so the extra field is safe.
+  - `reference.ts` + `docs/dsl.md` updated: 16×16 allowed but author carefully
+    (equal-length rows, symmetry, double-check; compose big/structural art from
+    `tiles`); keep palettes ≤~6 colours.
+- We deliberately did NOT add a `parts`-style multi-layer path, a per-game raw grid
+  bigger than 16×16, or symmetry/scale helpers — bigger raw grids + warnings were
+  the chosen scope. Nothing breaks; old specs validate and play unchanged.
+
 ## 2.0.0 — single-layer palette glyphs (replaces multi-layer `parts`)
 
 - **MAJOR** (breaking): multi-colour glyphs are now ONE indexed grid + a small

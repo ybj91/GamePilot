@@ -427,6 +427,33 @@ check("an animated composed preset has multiple frames",
 check("a material preset stays recolourable (an entity-colour layer)",
   !!new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "brick2" }] }, 1).firstOf("player")!.parts?.[0]?.some((l) => l.color === undefined));
 
+// 14f-bis. bigger grids + SOFT warnings (non-blocking): a 16x16 raw grid is fully
+// supported; an oversized / ragged grid or an over-cap palette still validates
+// (ok:true) but surfaces a warning the authoring agent can read back.
+{
+  const row16 = "X".repeat(16);
+  const grid16 = Array.from({ length: 16 }, () => row16);
+  const big = validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: grid16 }] });
+  check("a 16x16 raw glyph validates with no warning", big.ok && big.warnings.length === 0);
+  const gp16 = new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: grid16 }] }, 1).firstOf("player")!;
+  check("a 16x16 glyph resolves to one 16-row frame", gp16.frames?.length === 1 && gp16.frames[0]!.length === 16);
+
+  const row18 = "X".repeat(18);
+  const over = validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: Array.from({ length: 18 }, () => row18) }] });
+  check("an 18x18 glyph still validates but WARNS (oversize)", over.ok && over.warnings.some((w) => w.includes("18×18")));
+
+  const ragged = validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: ["XXX", "XX", "XXX"] }] });
+  check("ragged rows still validate but WARN (likely miscount)", ragged.ok && ragged.warnings.some((w) => w.includes("same width")));
+
+  const palette7 = { A: "#111", B: "#222", C: "#333", D: "#444", E: "#555", F: "#666", G: "#777" };
+  const manyCols = validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: ["ABCDEFG"], palette: palette7 }] });
+  check("a >6-colour palette still validates but WARNS", manyCols.ok && manyCols.warnings.some((w) => w.includes("7 colours")));
+
+  // a normal small painted glyph is warning-free
+  check("a tidy 8x8 painted glyph has no warnings",
+    validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "tankHero" }] }).warnings.length === 0);
+}
+
 // 14g. tile-grid glyph: several tiles compose one big sprite on a single entity.
 {
   const tileSpec: GameSpec = {

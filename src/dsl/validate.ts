@@ -28,7 +28,19 @@ const isKnownGlyph = (name: string): boolean =>
 export interface ValidationResult {
   ok: boolean;
   errors: string[];
+  /**
+   * Non-blocking advisories — the spec is still valid (`ok` ignores these). Used
+   * for "this will work but you probably don't want it" guidance an authoring
+   * agent can read back, e.g. a too-large glyph grid or too many palette colours.
+   */
+  warnings: string[];
 }
+
+/** A hand-authored glyph grid bigger than this is allowed, but flagged: past ~16×16
+ *  an LLM placing cells by hand tends to miscount and skew the sprite. */
+const MAX_COMFY_GRID = 16;
+/** More palette colours than this is allowed, but flagged — keeps sprites cohesive. */
+const MAX_COMFY_PALETTE = 6;
 
 const SHAPES: Shape[] = ["circle", "square", "dot"];
 const CONTROLS: Control[] = ["none", "follow-pointer", "follow-pointer-x", "arrows", "runner", "platformer"];
@@ -73,7 +85,7 @@ function validateCondition(
   }
 }
 
-function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
+function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[], warns: string[]): void {
   const where = `entity "${e?.id ?? "?"}"`;
   if (!isStr(e.id)) errs.push(`${where}: missing id`);
   if (!isStr(e.kind)) errs.push(`${where}: missing kind`);
@@ -104,15 +116,31 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
       }
     } else if (!isRows(e.glyph)) {
       errs.push(`${where}: glyph must be a preset name or a non-empty array of grid rows`);
+    } else {
+      // Soft check: a hand-authored grid past ~16×16 is allowed but risky to type
+      // by hand (an LLM miscounts cells and skews the sprite). Flag oversize +
+      // ragged rows (rows of differing length usually mean a miscount).
+      const h = e.glyph.length;
+      const w = Math.max(...e.glyph.map((r) => r.length));
+      if (h > MAX_COMFY_GRID || w > MAX_COMFY_GRID) {
+        warns.push(`${where}: glyph grid is ${w}×${h} — larger than ${MAX_COMFY_GRID}×${MAX_COMFY_GRID} is hard to hand-author reliably; prefer ≤16×16 (or compose from \`tiles\`).`);
+      }
+      if (e.glyph.some((r) => r.length !== w)) {
+        warns.push(`${where}: glyph rows aren't all the same width — likely a miscounted row (it pads to the widest).`);
+      }
     }
   }
   if (e.palette !== undefined) {
     if (typeof e.palette !== "object" || e.palette === null || Array.isArray(e.palette)) {
       errs.push(`${where}: palette must be an object mapping a grid char to a colour`);
     } else {
-      for (const [k, v] of Object.entries(e.palette as Record<string, unknown>)) {
+      const entries = Object.entries(e.palette as Record<string, unknown>);
+      for (const [k, v] of entries) {
         if (k.length !== 1) errs.push(`${where}: palette key "${k}" must be a single character`);
         if (!isStr(v)) errs.push(`${where}: palette["${k}"] must be a colour string`);
+      }
+      if (entries.length > MAX_COMFY_PALETTE) {
+        warns.push(`${where}: palette has ${entries.length} colours — keep it to ~${MAX_COMFY_PALETTE} for a cohesive sprite (a char with no entry already uses the entity colour).`);
       }
     }
   }
@@ -216,9 +244,10 @@ function validateRule(r: Rule, ruleNo: number, errs: string[], declaredVars: Set
 
 export function validateGameSpec(spec: GameSpec): ValidationResult {
   const errors: string[] = [];
+  const warnings: string[] = [];
 
   if (!spec || typeof spec !== "object") {
-    return { ok: false, errors: ["spec is not an object"] };
+    return { ok: false, errors: ["spec is not an object"], warnings };
   }
   // Optional DSL version (Major.Minor.Patch). When set, the spec's MAJOR must
   // not be newer than the engine's — a future-major spec can't be played here.
@@ -265,7 +294,7 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
   }
 
   const ids = new Set<string>();
-  (spec.entities ?? []).forEach((e) => validateEntity(e, ids, errors));
+  (spec.entities ?? []).forEach((e) => validateEntity(e, ids, errors, warnings));
 
   // Tilemap: tile size + legend (char -> declared entity id) + rows of chars.
   if (spec.map !== undefined) {
@@ -305,5 +334,5 @@ export function validateGameSpec(spec: GameSpec): ValidationResult {
   if (spec.win) validateCondition(spec.win.when, "win.when", errors, declaredVars);
   if (spec.lose) validateCondition(spec.lose.when, "lose.when", errors, declaredVars);
 
-  return { ok: errors.length === 0, errors };
+  return { ok: errors.length === 0, errors, warnings };
 }

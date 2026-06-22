@@ -71,7 +71,7 @@ export function buildMcpServer(): McpServer {
     {
       title: "Validate a GameSpec",
       description:
-        "Check a GameSpec against the DSL without saving it. Returns { ok, errors }. Use this to verify your spec before create_game.",
+        "Check a GameSpec against the DSL without saving it. Returns { ok, errors, warnings }. `errors` block saving; `warnings` are non-blocking advisories (e.g. a glyph grid >16×16, or a palette with too many colours) you should usually act on. Use this to verify your spec before create_game.",
       inputSchema: { spec: specSchema },
     },
     async ({ spec }) => text(validateGameSpec(spec as unknown as GameSpec)),
@@ -82,7 +82,7 @@ export function buildMcpServer(): McpServer {
     {
       title: "Create a NEW playable game",
       description:
-        "Validate and save a NEW GameSpec, returning its id and play_url. Use this once to start a game (a minimal, playable skeleton), then refine it with update_game — do NOT call create_game again for tweaks, or you'll make duplicates. Fails (isError) with validation errors if the spec is invalid.",
+        "Validate and save a NEW GameSpec, returning its id and play_url. Use this once to start a game (a minimal, playable skeleton), then refine it with update_game — do NOT call create_game again for tweaks, or you'll make duplicates. Fails (isError) with validation errors if the spec is invalid. Any non-blocking `warnings` are returned alongside the id.",
       inputSchema: {
         spec: specSchema,
         idea: z.string().optional().describe("the natural-language idea this game came from"),
@@ -91,7 +91,8 @@ export function buildMcpServer(): McpServer {
     async ({ spec, idea }) => {
       try {
         const game = await saveGame(spec as unknown as GameSpec, { idea });
-        return text({ id: game.id, title: game.title, play_url: `${BASE_URL}/play/${game.id}` });
+        const { warnings } = validateGameSpec(spec as unknown as GameSpec);
+        return text({ id: game.id, title: game.title, play_url: `${BASE_URL}/play/${game.id}`, ...(warnings.length ? { warnings } : {}) });
       } catch (err) {
         if (err instanceof InvalidSpecError) return errorText(err.message);
         throw err;
@@ -104,7 +105,7 @@ export function buildMcpServer(): McpServer {
     {
       title: "Refine an existing game",
       description:
-        "Overwrite an existing game's spec in place to refine it (this is how you iterate). Typically: get_game(id) to read the current spec, change what the user asked for, then update_game(id, newSpec). The id and play_url stay the same and any open browser tab hot-reloads, so the user sees the change live. Fails (isError) if the id is unknown or the new spec is invalid.",
+        "Overwrite an existing game's spec in place to refine it (this is how you iterate). Typically: get_game(id) to read the current spec, change what the user asked for, then update_game(id, newSpec). The id and play_url stay the same and any open browser tab hot-reloads, so the user sees the change live. Fails (isError) if the id is unknown or the new spec is invalid. Any non-blocking `warnings` are returned alongside the id.",
       inputSchema: {
         id: z.string(),
         spec: specSchema,
@@ -115,7 +116,8 @@ export function buildMcpServer(): McpServer {
       try {
         const game = await updateGame(id, spec as unknown as GameSpec, { idea });
         if (!game) return errorText(`No game with id "${id}". Use create_game for a new game.`);
-        return text({ id: game.id, title: game.title, play_url: `${BASE_URL}/play/${game.id}`, updated: true });
+        const { warnings } = validateGameSpec(spec as unknown as GameSpec);
+        return text({ id: game.id, title: game.title, play_url: `${BASE_URL}/play/${game.id}`, updated: true, ...(warnings.length ? { warnings } : {}) });
       } catch (err) {
         if (err instanceof InvalidSpecError) return errorText(err.message);
         throw err;
