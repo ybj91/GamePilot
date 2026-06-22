@@ -13,6 +13,22 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
+## 2.3.0 — tank fleet redrawn at 16×16
+
+- **MINOR**: the five tank presets (`tankLight`, `tankMedium`, `tankHeavy`,
+  `tankArty`, `tankHero`) are **redrawn at 16×16** (were 8×8), giving each a clearer
+  silhouette — the heavy's twin barrels, the artillery's long gun, the hero's star
+  insignia all read now. Same names, same palette convention (`Y` tracks, `X`
+  recolourable hull → entity colour, `Z` barrel, `W` accent), still authored facing
+  up for `rotate:true`. **No game change needed** — Tank 1990 picks up the upgraded
+  art automatically (re-seeded; verified it still plays: full fleet, each a composed
+  shape, fires the way it faces).
+- The `/glyphs` gallery now shows the tanks in the **"16×16 — detail sprites"**
+  section (they were under v2) at the larger canvas; `BIG16_PRESET_NAMES` includes
+  the fleet, and the gallery has faction-colour fallbacks for each.
+- Purely art + gallery placement; no DSL/API/schema change. The 8×8 versions had no
+  other consumers, so nothing is orphaned.
+
 ## 2.2.0 — 16×16 detail-sprite preset set
 
 - **MINOR** (additive): ten built-in **16×16 detail sprites** (grid + palette), the

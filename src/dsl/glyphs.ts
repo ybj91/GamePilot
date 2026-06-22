@@ -159,14 +159,114 @@ export const COMPOSED_PRESETS: Record<string, PaintedGlyph> = {
   snowflake2: { grid: ["..Y..", "Y.Y.Y", ".YZY.", "Y.Y.Y", "..Y.."], palette: { Y: "#a8e0ff", Z: "#ffffff" } },
   bird2: { grid: [".....", "YY.YY", ".YZY.", "..Y..", "....."], palette: { Y: "#6cb4ff", Z: "#ff9a3c" } },
 
-  // --- TANK FLEET — each a DIFFERENT silhouette (8x8, authored facing UP; use
+  // --- TANK FLEET — each a DIFFERENT silhouette (16x16, authored facing UP; use
   // rotate:true). 'X' (no palette entry) = the recolourable HULL → entity colour;
-  // 'Y' = tracks, 'Z' = barrel, 'W' = insignia (fixed accents). ---
-  tankLight: { grid: [".Y.ZZ.Y.", ".YXZZXY.", ".YXXXXY.", ".YXXXXY.", ".YXXXXY.", ".YXXXXY.", ".YXXXXY.", "........"], palette: { Y: "#2a2a2a", Z: "#383838" } },
-  tankMedium: { grid: ["Y..ZZ..Y", "Y..ZZ..Y", "Y.XZZX.Y", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "Y.XXXX.Y", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838" } },
-  tankHeavy: { grid: ["Y.Z..Z.Y", "YXZXXZXY", "YXZXXZXY", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838" } },
-  tankArty: { grid: ["...ZZ...", "...ZZ...", "Y.XZZX.Y", "Y.XZZX.Y", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "........"], palette: { Y: "#2a2a2a", Z: "#383838" } },
-  tankHero: { grid: ["Y..ZZ..Y", "Y..ZZ..Y", "Y.XZZX.Y", "YXXWWXXY", "YXXWWXXY", "YXXXXXXY", "Y.XXXX.Y", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838", W: "#f2f2f2" } },
+  // 'Y' = tracks, 'Z' = barrel, 'W' = insignia/detail (fixed accents). ---
+  tankLight: { // scout: slim hull, short single barrel (fast)
+    grid: [
+      "................",
+      "......ZZ........",
+      "......ZZ........",
+      "......ZZ........",
+      ".YY..XXXX..YY...",
+      ".YY.XXXXXX.YY...",
+      ".YY.XXXXXX.YY...",
+      ".YY.XXWWXX.YY...",
+      ".YY.XXWWXX.YY...",
+      ".YY.XXXXXX.YY...",
+      ".YY.XXXXXX.YY...",
+      ".YY.XXXXXX.YY...",
+      ".YY..XXXX..YY...",
+      ".YY........YY...",
+      ".YY........YY...",
+      "................",
+    ],
+    palette: { Y: "#2a2a2a", Z: "#383838", W: "#4a5560" },
+  },
+  tankMedium: { // standard battle tank: round turret, medium barrel
+    grid: [
+      ".......ZZ.......",
+      ".......ZZ.......",
+      ".......ZZ.......",
+      "YYY...XXXX...YYY",
+      "YYY..XXXXXX..YYY",
+      "YYY.XXXXXXXX.YYY",
+      "YYY.XXXWWXXX.YYY",
+      "YYY.XXWWWWXX.YYY",
+      "YYY.XXWWWWXX.YYY",
+      "YYY.XXXWWXXX.YYY",
+      "YYY.XXXXXXXX.YYY",
+      "YYY..XXXXXX..YYY",
+      "YYY...XXXX...YYY",
+      "YYY..........YYY",
+      "YYY..........YYY",
+      "................",
+    ],
+    palette: { Y: "#2a2a2a", Z: "#383838", W: "#4a5560" },
+  },
+  tankHeavy: { // heavy: wide hull, TWIN barrels, big body
+    grid: [
+      "....ZZ..ZZ......",
+      "....ZZ..ZZ......",
+      "....ZZ..ZZ......",
+      "YYYY.XXXXXX.YYYY",
+      "YYYYXXXXXXXXYYYY",
+      "YYYYXXXXXXXXYYYY",
+      "YYYYXXWWWWXXYYYY",
+      "YYYYXWWWWWWXYYYY",
+      "YYYYXWWWWWWXYYYY",
+      "YYYYXXWWWWXXYYYY",
+      "YYYYXXXXXXXXYYYY",
+      "YYYYXXXXXXXXYYYY",
+      "YYYY.XXXXXX.YYYY",
+      "YYYY........YYYY",
+      "YYYY........YYYY",
+      "................",
+    ],
+    palette: { Y: "#2a2a2a", Z: "#383838", W: "#4a5560" },
+  },
+  tankArty: { // artillery: compact hull, very LONG barrel
+    grid: [
+      ".......ZZ.......",
+      ".......ZZ.......",
+      ".......ZZ.......",
+      ".......ZZ.......",
+      ".......ZZ.......",
+      "YYY...XXXX...YYY",
+      "YYY..XXXXXX..YYY",
+      "YYY.XXXXXXXX.YYY",
+      "YYY.XXWWWWXX.YYY",
+      "YYY.XXWWWWXX.YYY",
+      "YYY.XXXXXXXX.YYY",
+      "YYY..XXXXXX..YYY",
+      "YYY...XXXX...YYY",
+      "YYY..........YYY",
+      "YYY..........YYY",
+      "................",
+    ],
+    palette: { Y: "#2a2a2a", Z: "#383838", W: "#4a5560" },
+  },
+  tankHero: { // the player's tank: medium hull + a bright star insignia
+    grid: [
+      ".......ZZ.......",
+      ".......ZZ.......",
+      ".......ZZ.......",
+      "YYY...XXXX...YYY",
+      "YYY..XXXXXX..YYY",
+      "YYY.XXXXXXXX.YYY",
+      "YYY.XXX..XXX.YYY",
+      "YYY.XX.WW.XX.YYY",
+      "YYY.XXWWWWXX.YYY",
+      "YYY.XX.WW.XX.YYY",
+      "YYY.XXX..XXX.YYY",
+      "YYY.XXXXXXXX.YYY",
+      "YYY...XXXX...YYY",
+      "YYY..........YYY",
+      "YYY..........YYY",
+      "................",
+    ],
+    palette: { Y: "#2a2a2a", Z: "#383838", W: "#ffd23f" },
+  },
 
   // --- 16x16 DETAIL SPRITES (one entity each; grid+palette). Authored at 16 wide
   // to show the bigger budget: every row is exactly 16 chars, <=6 palette colours.
@@ -409,9 +509,12 @@ export const GLYPH_V2_OF: Record<string, string> = {
 
 export const COMPOSED_PRESET_NAMES = Object.keys(COMPOSED_PRESETS);
 
-/** The 16×16 detail-sprite presets (a subset of COMPOSED_PRESETS, names end "16").
- *  Shown in their own gallery section — they showcase the larger glyph budget. */
-export const BIG16_PRESET_NAMES = COMPOSED_PRESET_NAMES.filter((n) => n.endsWith("16"));
+/** The 16×16 detail-sprite presets shown in their own gallery section — the
+ *  ones whose name ends "16", plus the tank fleet (also 16×16 now, kept under
+ *  their original names so Tank 1990 keeps working). They showcase the larger
+ *  glyph budget. */
+const TANK_FLEET = ["tankLight", "tankMedium", "tankHeavy", "tankArty", "tankHero"];
+export const BIG16_PRESET_NAMES = COMPOSED_PRESET_NAMES.filter((n) => n.endsWith("16") || TANK_FLEET.includes(n));
 
 /** One resolved layer: concrete bitmap rows + optional colour (else entity colour). */
 export interface ResolvedLayer {

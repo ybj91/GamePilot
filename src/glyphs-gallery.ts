@@ -27,6 +27,8 @@ const COLORS: Record<string, string> = {
   knight16: "#9aa3b0", dragon16: "#3aa54a", chest16: "#8b5a2b", potion16: "#a86bd6",
   robot16: "#9aa3b0", ufo16: "#9aa3b0", planet16: "#5b8bf0", bigtree16: "#3aa54a",
   campfire16: "#ff7a18", racecar16: "#e2554e",
+  // tank fleet (16×16) — hull-colour fallback so each reads as its faction
+  tankHero: "#8cb33a", tankMedium: "#e2554e", tankLight: "#46c7d0", tankHeavy: "#a86bd6", tankArty: "#e0a23a",
 };
 
 /** The v1 name a composed (v2) preset remakes — to pick a natural fallback colour
