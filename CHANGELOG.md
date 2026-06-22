@@ -13,6 +13,28 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
+## 2.0.0 — single-layer palette glyphs (replaces multi-layer `parts`)
+
+- **MAJOR** (breaking): multi-colour glyphs are now ONE indexed grid + a small
+  `palette`, instead of a stack of `parts` layers. The colours in our tiny sprites
+  are spatially disjoint, so stacking mostly-empty grids was wasteful — an indexed
+  palette is more compact, more readable, unambiguous (one colour per cell), and
+  easier for an agent to emit.
+  - **New**: `EntitySpec.palette` — `{ "<char>": "#rrggbb" }`. With a palette, the
+    `glyph` rows are read as an INDEXED bitmap (each cell its own colour). A grid
+    char with NO palette entry renders in the ENTITY colour (so a cell stays
+    recolourable); "."/" "/"0" is empty. Composes with inline rows or a preset name.
+  - **Removed**: `EntitySpec.parts` and the `GlyphPart` type. Added `PaintedGlyph`
+    + `GlyphPalette`. `resolveParts` → `resolvePainted`.
+  - All 43 composed presets (`brick2`, `tankHero`, `invader2`, …) reimplemented as
+    grid+palette with IDENTICAL pixels/colours — **their names are unchanged**, so
+    games using `glyph: "<name>"` are unaffected. Recolourable material presets keep
+    a no-palette-entry body. Only hand-written inline `parts` specs need migrating
+    (e.g. `parts:[{glyph,color},…]` → `glyph` rows + `palette`).
+  - The `/glyphs` gallery tags now read "N colours" instead of "N layers".
+- Old 1.x specs that used inline `parts` no longer render that glyph (the field is
+  ignored); preset-by-name and every other field still validate and play.
+
 ## 1.3.0 — tank fleet + projectiles pass through solids
 
 - **MINOR** (backward-compatible): a **tank fleet** of composed glyph presets, each

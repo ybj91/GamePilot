@@ -6,7 +6,7 @@
  * subtle glow. Plain DOM, no framework.
  */
 
-import { GLYPH_PRESETS, FABRIC_PRESET_NAMES, COMPOSED_PRESETS, GLYPH_V2_OF, TILE_EXAMPLES, resolveParts, resolveTiles, type ResolvedLayer } from "./dsl/glyphs";
+import { GLYPH_PRESETS, FABRIC_PRESET_NAMES, COMPOSED_PRESETS, GLYPH_V2_OF, TILE_EXAMPLES, resolvePainted, resolveTiles, type ResolvedLayer } from "./dsl/glyphs";
 import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
@@ -148,20 +148,20 @@ function monoCanvas(name: string, px: string): HTMLCanvasElement {
   if (frames.length > 1) animated.push({ ctx, frames, color });
   return canvas;
 }
-/** A tag showing a composed preset's layer count, or its frame count if animated. */
+/** A tag showing a composed preset's colour count, or its frame count if animated. */
 function composedTag(name: string): HTMLDivElement {
-  const f = resolveParts(name);
+  const f = resolvePainted(name);
   const anim = !!f && f.length > 1;
   const div = el("div", anim ? "tag anim" : "tag") as HTMLDivElement;
-  div.textContent = anim ? `▸ ${f!.length} frames` : `${f?.[0]?.length ?? 0} layers`;
+  div.textContent = anim ? `▸ ${f!.length} frames` : `${f?.[0]?.length ?? 0} colours`;
   return div;
 }
 
-/** Paint a composed (layered) preset onto a fresh canvas (animates if multi-frame). */
+/** Paint a composed (painted) preset onto a fresh canvas (animates if multi-frame). */
 function composedCanvas(name: string, px: string): HTMLCanvasElement {
   const canvas = newCanvas(px);
   const ctx = canvas.getContext("2d")!;
-  const frames = resolveParts(name) ?? [];
+  const frames = resolvePainted(name) ?? [];
   const color = repColor(name);
   paintComposedFrame(ctx, frames[0], color);
   if (frames.length > 1) animatedComposed.push({ ctx, frames, color });
@@ -183,7 +183,7 @@ for (const name of names) {
 }
 
 // --- Section 2: v2 composed remakes, shown next to their v1 for comparison ---
-section("v2 — composed colour", "multi-layer sprites · v1 → v2");
+section("v2 — composed colour", "indexed-palette sprites · v1 → v2");
 const paired = new Set<string>();
 for (const [v1, v2] of Object.entries(GLYPH_V2_OF)) {
   if (!GLYPH_PRESETS[v1] || !COMPOSED_PRESETS[v2]) continue;

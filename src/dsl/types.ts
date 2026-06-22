@@ -17,21 +17,32 @@
 
 export type Shape = "circle" | "square" | "dot";
 
-/** One layer of a composed (multi-colour) glyph — see EntitySpec.parts. */
-export interface GlyphPart {
-  /** Inline bitmap rows (any size), or a monochrome preset name to reuse. */
-  glyph: string[] | string;
-  /** CSS colour for this layer; defaults to the entity's color. */
-  color?: string;
+/**
+ * A palette for an indexed multi-COLOUR glyph (see EntitySpec.palette): maps a
+ * single grid char to a CSS colour. A grid char with NO entry (and not empty:
+ * "."/" "/"0") is drawn in the ENTITY's colour — that's how a cell stays
+ * recolourable. Keep it small (a few colours): e.g. { "Y":"#2a2a2a","Z":"#383838" }.
+ */
+export type GlyphPalette = Record<string, string>;
+
+/**
+ * A built-in composed preset: one indexed grid (or several animation frames) plus
+ * the palette its chars index into. The single-layer successor to stacked layers.
+ */
+export interface PaintedGlyph {
+  /** The indexed bitmap: one frame (rows) or many (frames of rows = animated). */
+  grid: string[] | string[][];
+  /** Char → colour. A char with no entry renders in the entity colour. */
+  palette: GlyphPalette;
 }
 
 /**
  * One cell of a tile-grid glyph (see EntitySpec.tiles):
- *  - a preset name (drawn in the entity's color),
+ *  - a preset name (mono OR composed; drawn in the entity's color),
  *  - a { glyph, color } object (a tile in its own colour; glyph = preset or rows),
  *  - or null / "" / "." for an empty cell (a gap).
  */
-export type GlyphTile = string | GlyphPart | null;
+export type GlyphTile = string | { glyph: string[] | string; color?: string } | null;
 
 /**
  * How an entity type is controlled / moves on its own.
@@ -169,13 +180,15 @@ export interface EntitySpec {
   /** Animation speed for a multi-frame glyph/preset, in frames per second. Default 6. */
   fps?: number;
   /**
-   * Composed, multi-COLOUR glyph: a stack of layers drawn back-to-front, each its
-   * own bitmap + colour. Lets one entity be a little colored sprite — e.g. a tree
-   * = a brown trunk layer + a green canopy layer. Each layer's `glyph` is inline
-   * rows (any size, e.g. 8x8) or a monochrome preset name to reuse; `color`
-   * defaults to the entity color. Takes precedence over `glyph`/`frames`.
+   * Multi-COLOUR glyph in ONE layer: a `palette` mapping grid chars to colours, so
+   * the `glyph` rows are read as an INDEXED bitmap (each cell its own colour)
+   * instead of monochrome. A char with no palette entry renders in the entity
+   * colour (so it stays recolourable); "."/" "/"0" is empty. Lets one entity be a
+   * little coloured sprite — e.g. a tank = "Y" tracks + "X" hull (entity colour) +
+   * "Z" barrel — without stacking layers. Composes with `glyph` (rows) or a
+   * built-in composed preset name. Takes precedence over plain `glyph`/`frames`.
    */
-  parts?: GlyphPart[];
+  palette?: GlyphPalette;
   /**
    * A tile-GRID glyph: rows of small tiles assembled into one big composite sprite
    * on this single entity. Each cell is a `GlyphTile` (a preset name, a

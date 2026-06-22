@@ -11,7 +11,7 @@
  * This is the single source of truth for preset names; validate.ts checks
  * against it, entity.ts resolves through it, reference.ts lists it.
  */
-import type { GlyphPart, GlyphTile } from "./types";
+import type { GlyphPalette, PaintedGlyph, GlyphTile } from "./types";
 
 export const GLYPH_PRESETS: Record<string, string[][]> = {
   // --- single-frame common shapes ---
@@ -105,188 +105,68 @@ export const GLYPH_PRESET_NAMES = Object.keys(GLYPH_PRESETS);
 export const FABRIC_PRESET_NAMES = ["brickwork", "planks", "stone", "shingle", "window", "water", "sand", "arch"];
 
 /**
- * Composed, multi-COLOUR presets (glyph lib "v2") — a stack of layers, each its
- * own bitmap + colour, authored at 8x8 for detail. Drawn back-to-front, so each
- * is a little colored sprite (still pure data, no assets). Usable by name via
- * `glyph: "<name>"`, or compose your own with the `parts` field.
+ * Composed, multi-COLOUR presets (glyph lib "v2") — each an INDEXED grid + a small
+ * palette (char → colour), 5x5 or 8x8. One frame = static; an array of frames =
+ * animated. A grid char with NO palette entry renders in the ENTITY colour, so
+ * material presets (brick2/pipe2/...) stay recolourable. Pure data, no assets;
+ * usable by name: glyph: "<name>".
  */
-export const COMPOSED_PRESETS: Record<string, GlyphPart[] | GlyphPart[][]> = {
-  pinetree: [
-    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "........", "........"], color: "#2e8b3d" },
-    { glyph: ["........", "........", "........", "........", "........", "........", "...XX...", "...XX..."], color: "#7a4a23" },
-  ],
-  cottage: [
-    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", "........", "........", "........", "........"], color: "#c0392b" },
-    { glyph: ["........", "........", "........", "........", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX."], color: "#e0c089" },
-    { glyph: ["........", "........", "........", "........", "........", "...XX...", "...XX...", "...XX..."], color: "#6b4423" },
-  ],
-  daisy: [
-    { glyph: ["........", "........", "........", "........", "...X....", ".X.X....", "...XX...", "...X...."], color: "#4caf50" },
-    { glyph: [".X.XX.X.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "...X....", "........", "........", "........"], color: "#ff7eb6" },
-    { glyph: ["........", "...XX...", "...XX...", "........", "........", "........", "........", "........"], color: "#ffd23f" },
-  ],
-  toadstool: [
-    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "........", "........", "........", "........"], color: "#d23b3b" },
-    { glyph: ["........", "..X..X..", ".....X..", "..X.....", "........", "........", "........", "........"], color: "#ffffff" },
-    { glyph: ["........", "........", "........", "........", "..XXXX..", "..X..X..", "..X..X..", "..XXXX.."], color: "#efe6c8" },
-  ],
+export const COMPOSED_PRESETS: Record<string, PaintedGlyph> = {
+  pinetree: { grid: ["...YY...", "..YYYY..", ".YYYYYY.", "YYYYYYYY", ".YYYYYY.", "..YYYY..", "...ZZ...", "...ZZ..."], palette: { Y: "#2e8b3d", Z: "#7a4a23" } },
+  cottage: { grid: ["...YY...", "..YYYY..", ".YYYYYY.", "YYYYYYYY", ".ZZZZZZ.", ".ZZWWZZ.", ".ZZWWZZ.", ".ZZWWZZ."], palette: { Y: "#c0392b", Z: "#e0c089", W: "#6b4423" } },
+  daisy: { grid: [".Z.ZZ.Z.", "ZZZWWZZZ", ".ZZWWZZ.", "..ZZZZ..", "...Z....", ".Y.Y....", "...YY...", "...Y...."], palette: { Y: "#4caf50", Z: "#ff7eb6", W: "#ffd23f" } },
+  toadstool: { grid: ["..YYYY..", ".YZYYZY.", "YYYYYZYY", "YYZYYYYY", "..WWWW..", "..W..W..", "..W..W..", "..WWWW.."], palette: { Y: "#d23b3b", Z: "#ffffff", W: "#efe6c8" } },
 
-  // --- v2 remakes of iconic v1 monochrome glyphs (multi-colour, 8x8) ---
-  tank2: [
-    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#333333" }, // tracks
-    { glyph: ["..XXXX..", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "..XXXX.."], color: "#5a8a3a" }, // hull
-    { glyph: ["...XX...", "...XX...", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#444444" }, // barrel
-  ],
-  heart2: [
-    { glyph: [".XX..XX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "...XX...", "........"], color: "#e0394b" },
-    { glyph: [".X......", "XX......", ".X......", "........", "........", "........", "........", "........"], color: "#ff9aa8" }, // shine
-  ],
-  star2: [
-    { glyph: ["...XX...", "...XX...", "XXXXXXXX", ".XXXXXX.", "..XXXX..", ".XX..XX.", ".X....X.", "........"], color: "#ffcf3a" },
-    { glyph: ["........", "........", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#fff3b0" }, // core
-  ],
-  coin2: [
-    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "..XXXX.."], color: "#b8860b" }, // edge
-    { glyph: ["........", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........"], color: "#ffd23f" }, // face
-    { glyph: ["........", "...X....", "..X.....", "........", "........", "........", "........", "........"], color: "#fffbe6" }, // shine
-  ],
-  face2: [
-    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "..XXXX.."], color: "#ffd23f" },
-    { glyph: ["........", "........", "..X..X..", "..X..X..", "........", ".X....X.", "..XXXX..", "........"], color: "#3a2d10" }, // eyes + smile
-  ],
-  hero2: [
-    { glyph: ["..XXXX..", ".XXXXXX.", "........", "........", "........", "........", "........", "........"], color: "#e23d3d" }, // hat
-    { glyph: ["........", "........", "..XXXX..", "..XXXX..", "........", "........", "........", "........"], color: "#f0b890" }, // face
-    { glyph: ["........", "........", "........", "........", "..XXXX..", "..XXXX..", "..XXXX..", "........"], color: "#3a5fcd" }, // body
-    { glyph: ["........", "........", "........", "........", "........", "........", "........", "..X..X.."], color: "#333333" }, // legs
-  ],
+  // --- v2 remakes of iconic v1 monochrome glyphs ---
+  tank2: { grid: ["Y.ZWWZ.Y", "Y.ZWWZ.Y", "YZZWWZZY", "YZZWWZZY", "YZZZZZZY", "YZZZZZZY", "Y.ZZZZ.Y", "Y.ZZZZ.Y"], palette: { Y: "#333333", Z: "#5a8a3a", W: "#444444" } },
+  heart2: { grid: [".ZY..YY.", "ZZYYYYYY", "YZYYYYYY", "YYYYYYYY", ".YYYYYY.", "..YYYY..", "...YY...", "........"], palette: { Y: "#e0394b", Z: "#ff9aa8" } },
+  star2: { grid: ["...YY...", "...YY...", "YYYZZYYY", ".YYZZYY.", "..YYYY..", ".YY..YY.", ".Y....Y.", "........"], palette: { Y: "#ffcf3a", Z: "#fff3b0" } },
+  coin2: { grid: ["..YYYY..", ".YZWZZY.", "YZWZZZZY", "YZZZZZZY", "YZZZZZZY", "YZZZZZZY", ".YZZZZY.", "..YYYY.."], palette: { Y: "#b8860b", Z: "#ffd23f", W: "#fffbe6" } },
+  face2: { grid: ["..YYYY..", ".YYYYYY.", "YYZYYZYY", "YYZYYZYY", "YYYYYYYY", "YZYYYYZY", ".YZZZZY.", "..YYYY.."], palette: { Y: "#ffd23f", Z: "#3a2d10" } },
+  hero2: { grid: ["..YYYY..", ".YYYYYY.", "..ZZZZ..", "..ZZZZ..", "..WWWW..", "..WWWW..", "..WWWW..", "..V..V.."], palette: { Y: "#e23d3d", Z: "#f0b890", W: "#3a5fcd", V: "#333333" } },
 
-  // --- more v2 object/scenery remakes (multi-colour, 8x8) ---
-  ship2: [
-    { glyph: ["...XX...", "..XXXX..", "..XXXX..", ".XXXXXX.", ".XXXXXX.", "XXXXXXXX", "X.XXXX.X", "........"], color: "#c8d0d8" },
-    { glyph: ["........", "........", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#4a90e2" }, // window
-    { glyph: ["........", "........", "........", "........", "........", "........", "...XX...", "..X..X.."], color: "#ff7a18" }, // flame
-  ],
-  skull2: [
-    { glyph: [".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", ".X.XX.X.", "........"], color: "#e8e4d8" },
-    { glyph: ["........", ".XX..XX.", ".XX..XX.", "....X...", "........", "........", "........", "........"], color: "#222222" }, // eyes + nose
-  ],
-  alien2: [
-    { glyph: ["..XXXX..", ".XXXXXX.", "XXXXXXXX", "XX.XX.XX", "XXXXXXXX", "X.XXXX.X", "X......X", "........"], color: "#6ee06e" },
-    { glyph: ["........", "........", "..X..X..", "........", "........", "........", "........", "........"], color: "#1b3a1b" }, // eyes
-  ],
-  brick2: [
-    { glyph: ["XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"] }, // body — recolourable (entity/cell color)
-    { glyph: ["XXXXXXXX", "X...X...", "XXXXXXXX", "...X...X", "XXXXXXXX", "X...X...", "XXXXXXXX", "...X...X"], color: "#6b3a1a" }, // mortar
-  ],
-  flag2: [
-    { glyph: ["X.......", "X.......", "X.......", "X.......", "X.......", "X.......", "X.......", "X......."], color: "#8b6914" }, // pole
-    { glyph: [".XXXXX..", ".XXXXXX.", ".XXXXX..", ".XXX....", "........", "........", "........", "........"], color: "#e23d3d" }, // flag
-  ],
-  pipe2: [
-    { glyph: ["XXXXXXXX", "XXXXXXXX", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX."] }, // body — recolourable
-    { glyph: ["XXXXXXXX", "X......X", "........", "........", "........", "........", "........", "........"], color: "#1a8a4a" }, // rim
-  ],
-  key2: [
-    { glyph: [".XXX....", "X...X...", "X...X...", ".XXX....", "..X.....", "..X.....", "..XX....", "..X.X..."], color: "#ffd23f" },
-    { glyph: ["........", "..X.....", "..X.....", "........", "........", "........", "........", "........"], color: "#8b6914" }, // hole
-  ],
-  crown2: [
-    { glyph: ["........", "X..X..X.", "XX.XX.XX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "........", "........"], color: "#ffcf3a" },
-    { glyph: ["........", "........", "........", "...X....", "........", "........", "........", "........"], color: "#e23d3d" }, // gem
-  ],
-  sun2: [
-    { glyph: ["........", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........", "........"], color: "#ffd23f" },
-    { glyph: ["...XX...", "........", "X......X", "........", "........", "X......X", "........", "...XX..."], color: "#ff9a3c" }, // rays
-  ],
-  cloud2: [
-    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "........", "........"] }, // body — recolourable
-    { glyph: ["........", "...XX...", "..XXX...", ".XXX....", "........", "........", "........", "........"], color: "#ffffff" }, // highlight
-  ],
-  bush2: [
-    { glyph: ["........", "..X.X...", ".XXXXX..", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "........"] }, // body — recolourable
-    { glyph: ["........", "..X.X...", ".XXXXX..", ".XXXX...", "........", "........", "........", "........"], color: "#5fae5f" }, // highlight
-  ],
-  mountain2: [
-    { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"] }, // rock — recolourable
-    { glyph: ["...XX...", "..XXXX..", "..X.X...", "........", "........", "........", "........", "........"], color: "#ffffff" }, // snow cap
-  ],
-  drop2: [
-    { glyph: ["...X....", "...X....", "..XXX...", ".XXXXX..", ".XXXXX..", ".XXXXX..", "..XXX...", "........"] }, // body — recolourable
-    { glyph: ["........", "........", "........", "..X.....", "..X.....", "........", "........", "........"], color: "#cfeaff" }, // shine
-  ],
-  leaf2: [
-    { glyph: ["....XX..", "...XXX..", "..XXXX..", ".XXXX...", "XXXX....", "XXX.....", "X.......", "........"] }, // blade — recolourable
-    { glyph: ["....X...", "...X....", "..X.....", ".X......", "X.......", "........", "........", "........"], color: "#2e7d32" }, // vein
-  ],
+  // --- more v2 object/scenery remakes ---
+  ship2: { grid: ["...YY...", "..YYYY..", "..YZZY..", ".YYZZYY.", ".YYYYYY.", "YYYYYYYY", "Y.YWWY.Y", "..W..W.."], palette: { Y: "#c8d0d8", Z: "#4a90e2", W: "#ff7a18" } },
+  skull2: { grid: [".YYYYYY.", "YZZYYZZY", "YZZYYZZY", "YYYYZYYY", "YYYYYYYY", ".YYYYYY.", ".Y.YY.Y.", "........"], palette: { Y: "#e8e4d8", Z: "#222222" } },
+  alien2: { grid: ["..YYYY..", ".YYYYYY.", "YYZYYZYY", "YY.YY.YY", "YYYYYYYY", "Y.YYYY.Y", "Y......Y", "........"], palette: { Y: "#6ee06e", Z: "#1b3a1b" } },
+  brick2: { grid: ["YYYYYYYY", "YXXXYXXX", "YYYYYYYY", "XXXYXXXY", "YYYYYYYY", "YXXXYXXX", "YYYYYYYY", "XXXYXXXY"], palette: { Y: "#6b3a1a" } },
+  flag2: { grid: ["YZZZZZ..", "YZZZZZZ.", "YZZZZZ..", "YZZZ....", "Y.......", "Y.......", "Y.......", "Y......."], palette: { Y: "#8b6914", Z: "#e23d3d" } },
+  pipe2: { grid: ["YYYYYYYY", "YXXXXXXY", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX."], palette: { Y: "#1a8a4a" } },
+  key2: { grid: [".YYY....", "Y.Z.Y...", "Y.Z.Y...", ".YYY....", "..Y.....", "..Y.....", "..YY....", "..Y.Y..."], palette: { Y: "#ffd23f", Z: "#8b6914" } },
+  crown2: { grid: ["........", "Y..Y..Y.", "YY.YY.YY", "YYYZYYYY", "YYYYYYYY", "YYYYYYYY", "........", "........"], palette: { Y: "#ffcf3a", Z: "#e23d3d" } },
+  sun2: { grid: ["...ZZ...", "..YYYY..", "ZYYYYYYZ", ".YYYYYY.", ".YYYYYY.", "Z.YYYY.Z", "........", "...ZZ..."], palette: { Y: "#ffd23f", Z: "#ff9a3c" } },
+  cloud2: { grid: ["........", "...YY...", "..YYYX..", ".YYYXXX.", "XXXXXXXX", "XXXXXXXX", "........", "........"], palette: { Y: "#ffffff" } },
+  bush2: { grid: ["........", "..Y.Y...", ".YYYYY..", "XYYYYXXX", "XXXXXXXX", "XXXXXXXX", ".XXXXXX.", "........"], palette: { Y: "#5fae5f" } },
+  mountain2: { grid: ["...YY...", "..YYYY..", ".XYXYXX.", ".XXXXXX.", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX", "XXXXXXXX"], palette: { Y: "#ffffff" } },
+  drop2: { grid: ["...X....", "...X....", "..XXX...", ".XYXXX..", ".XYXXX..", ".XXXXX..", "..XXX...", "........"], palette: { Y: "#cfeaff" } },
+  leaf2: { grid: ["....YX..", "...YXX..", "..YXXX..", ".YXXX...", "YXXX....", "XXX.....", "X.......", "........"], palette: { Y: "#2e7d32" } },
 
-  // --- animated v2 remakes (frames of layers — colour + keeps moving) ---
-  invader2: [
-    [{ glyph: ["X...X", ".XXX.", "XXXXX", "X.X.X", "X...X"], color: "#5fae5f" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#ffffff" }],
-    [{ glyph: ["X...X", ".XXX.", "XXXXX", ".XXX.", ".X.X."], color: "#5fae5f" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#ffffff" }],
-  ],
-  blob2: [
-    [{ glyph: [".....", ".XXX.", "XXXXX", ".XXX.", "....."], color: "#a86bd6" }, { glyph: [".....", "..X..", ".....", ".....", "....."], color: "#e3c6ff" }],
-    [{ glyph: [".XXX.", "XXXXX", "XXXXX", "XXXXX", ".XXX."], color: "#a86bd6" }, { glyph: [".X...", ".....", ".....", ".....", "....."], color: "#e3c6ff" }],
-  ],
-  flame2: [
-    [{ glyph: ["..X..", ".XXX.", ".XXX.", "XXXXX", "XX.XX"], color: "#ff7a18" }, { glyph: [".....", "..X..", "..X..", ".XXX.", "....."], color: "#ffe066" }],
-    [{ glyph: [".X.X.", ".XXX.", "XXXXX", "XXXXX", "X.X.X"], color: "#ff7a18" }, { glyph: [".....", ".XXX.", "..X..", ".XXX.", "....."], color: "#ffe066" }],
-  ],
-  explosion2: [
-    [{ glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffd23f" }],
-    [{ glyph: [".....", "..X..", ".XXX.", "..X..", "....."], color: "#ff9a3c" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffe066" }],
-    [{ glyph: ["X.X.X", ".XXX.", "XXXXX", ".XXX.", "X.X.X"], color: "#ff7a18" }, { glyph: [".....", ".XXX.", ".XXX.", ".XXX.", "....."], color: "#ffe066" }],
-    [{ glyph: ["X...X", "..X..", "X.X.X", "..X..", "X...X"], color: "#ff7a18" }],
-    [{ glyph: ["X...X", ".....", ".....", ".....", "X...X"], color: "#c0392b" }],
-  ],
-  goomba2: [
-    [{ glyph: [".XXX.", "XXXXX", "X.X.X", "XXXXX", "X...X"], color: "#9a6324" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#3a2510" }],
-    [{ glyph: [".XXX.", "XXXXX", "X.X.X", "XXXXX", ".X.X."], color: "#9a6324" }, { glyph: [".....", ".X.X.", ".....", ".....", "....."], color: "#3a2510" }],
-  ],
+  // --- animated v2 remakes (frames + a shared palette — colour + keeps moving) ---
+  invader2: { grid: [["Y...Y", ".ZYZ.", "YYYYY", "Y.Y.Y", "Y...Y"], ["Y...Y", ".ZYZ.", "YYYYY", ".YYY.", ".Y.Y."]], palette: { Y: "#5fae5f", Z: "#ffffff" } },
+  blob2: { grid: [[".....", ".YZY.", "YYYYY", ".YYY.", "....."], [".ZYY.", "YYYYY", "YYYYY", "YYYYY", ".YYY."]], palette: { Y: "#a86bd6", Z: "#e3c6ff" } },
+  flame2: { grid: [["..Y..", ".YZY.", ".YZY.", "YZZZY", "YY.YY"], [".Y.Y.", ".ZZZ.", "YYZYY", "YZZZY", "Y.Y.Y"]], palette: { Y: "#ff7a18", Z: "#ffe066" } },
+  explosion2: { grid: [[".....", ".....", "..Y..", ".....", "....."], [".....", "..Z..", ".ZWZ.", "..Z..", "....."], ["V.V.V", ".WWW.", "VWWWV", ".WWW.", "V.V.V"], ["V...V", "..V..", "V.V.V", "..V..", "V...V"], ["U...U", ".....", ".....", ".....", "U...U"]], palette: { Y: "#ffd23f", Z: "#ff9a3c", W: "#ffe066", V: "#ff7a18", U: "#c0392b" } },
+  goomba2: { grid: [[".YYY.", "YZYZY", "Y.Y.Y", "YYYYY", "Y...Y"], [".YYY.", "YZYZY", "Y.Y.Y", "YYYYY", ".Y.Y."]], palette: { Y: "#9a6324", Z: "#3a2510" } },
 
   // --- abstract icon v2s (a colour accent on the v1 shape) ---
-  arrow2: [{ glyph: ["..X..", ".XXX.", "XXXXX", "..X..", "..X.."], color: "#ffd23f" }, { glyph: ["..X..", ".....", ".....", ".....", "....."], color: "#fff3b0" }],
-  diamond2: [{ glyph: ["..X..", ".XXX.", "XXXXX", ".XXX.", "..X.."], color: "#4ad7e0" }, { glyph: [".....", "..X..", ".....", ".....", "....."], color: "#ffffff" }],
-  plus2: [{ glyph: ["..X..", "..X..", "XXXXX", "..X..", "..X.."], color: "#e23d3d" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffffff" }],
-  ring2: [{ glyph: [".XXX.", "X...X", "X...X", "X...X", ".XXX."], color: "#ffd23f" }, { glyph: [".X...", ".....", ".....", ".....", "....."], color: "#fff3b0" }],
-  moon2: [{ glyph: [".XXX.", "XX...", "XX...", "XX...", ".XXX."], color: "#e6e6c0" }, { glyph: [".....", "X....", "X....", ".....", "....."], color: "#fffdf0" }],
-  rock2: [{ glyph: [".....", ".XX..", "XXXXX", "XXXXX", "....."] }, { glyph: [".....", ".....", ".....", "XXXXX", "....."], color: "#6b6b73" }], // body recolourable + shadow
-  grass2: [{ glyph: [".....", "X...X", "X.X.X", "X.X.X", "XXXXX"], color: "#4a9d4a" }, { glyph: [".....", "X...X", "X.X.X", ".....", "....."], color: "#7bc043" }],
-  snowflake2: [{ glyph: ["..X..", "X.X.X", ".XXX.", "X.X.X", "..X.."], color: "#a8e0ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ffffff" }],
-  bird2: [{ glyph: [".....", "XX.XX", ".XXX.", "..X..", "....."], color: "#6cb4ff" }, { glyph: [".....", ".....", "..X..", ".....", "....."], color: "#ff9a3c" }],
+  arrow2: { grid: ["..Z..", ".YYY.", "YYYYY", "..Y..", "..Y.."], palette: { Y: "#ffd23f", Z: "#fff3b0" } },
+  diamond2: { grid: ["..Y..", ".YZY.", "YYYYY", ".YYY.", "..Y.."], palette: { Y: "#4ad7e0", Z: "#ffffff" } },
+  plus2: { grid: ["..Y..", "..Y..", "YYZYY", "..Y..", "..Y.."], palette: { Y: "#e23d3d", Z: "#ffffff" } },
+  ring2: { grid: [".ZYY.", "Y...Y", "Y...Y", "Y...Y", ".YYY."], palette: { Y: "#ffd23f", Z: "#fff3b0" } },
+  moon2: { grid: [".YYY.", "ZY...", "ZY...", "YY...", ".YYY."], palette: { Y: "#e6e6c0", Z: "#fffdf0" } },
+  rock2: { grid: [".....", ".XX..", "XXXXX", "YYYYY", "....."], palette: { Y: "#6b6b73" } },
+  grass2: { grid: [".....", "Z...Z", "Z.Z.Z", "Y.Y.Y", "YYYYY"], palette: { Y: "#4a9d4a", Z: "#7bc043" } },
+  snowflake2: { grid: ["..Y..", "Y.Y.Y", ".YZY.", "Y.Y.Y", "..Y.."], palette: { Y: "#a8e0ff", Z: "#ffffff" } },
+  bird2: { grid: [".....", "YY.YY", ".YZY.", "..Y..", "....."], palette: { Y: "#6cb4ff", Z: "#ff9a3c" } },
 
-  // --- TANK FLEET (8x8, authored facing UP — use rotate:true) — each a DIFFERENT
-  // silhouette, so a tank's TYPE reads from its shape, not just its colour. The
-  // hull layer omits its colour so the entity/faction colour tints it; tracks +
-  // barrel are fixed dark accents that read on any hull. Layers: tracks, hull,
-  // barrel, (insignia). ---
-  tankLight: [ // scout: slim narrow body, stubby barrel (fast)
-    { glyph: [".X....X.", ".X....X.", ".X....X.", ".X....X.", ".X....X.", ".X....X.", ".X....X.", "........"], color: "#2a2a2a" }, // tracks
-    { glyph: ["........", "..XXXX..", "..XXXX..", "..XXXX..", "..XXXX..", "..XXXX..", "..XXXX..", "........"] }, // hull (recolourable)
-    { glyph: ["...XX...", "...XX...", "........", "........", "........", "........", "........", "........"], color: "#383838" }, // barrel
-  ],
-  tankMedium: [ // standard battle tank
-    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#2a2a2a" }, // tracks
-    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........"] }, // hull
-    { glyph: ["...XX...", "...XX...", "...XX...", "........", "........", "........", "........", "........"], color: "#383838" }, // barrel
-  ],
-  tankHeavy: [ // wide bulky hull + TWIN barrels
-    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#2a2a2a" }, // tracks
-    { glyph: ["........", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "........"] }, // hull
-    { glyph: ["..X..X..", "..X..X..", "..X..X..", "........", "........", "........", "........", "........"], color: "#383838" }, // twin barrels
-  ],
-  tankArty: [ // artillery: solid body, LONG single gun
-    { glyph: ["........", "........", "X......X", "X......X", "X......X", "X......X", "X......X", "........"], color: "#2a2a2a" }, // tracks
-    { glyph: ["........", "........", "..XXXX..", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "........"] }, // hull
-    { glyph: ["...XX...", "...XX...", "...XX...", "...XX...", "........", "........", "........", "........"], color: "#383838" }, // long barrel
-  ],
-  tankHero: [ // the player's tank: medium hull + a bright insignia so it stands out
-    { glyph: ["X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X", "X......X"], color: "#2a2a2a" }, // tracks
-    { glyph: ["........", "...XX...", "..XXXX..", ".XXXXXX.", ".XXXXXX.", ".XXXXXX.", "..XXXX..", "........"] }, // hull
-    { glyph: ["...XX...", "...XX...", "...XX...", "........", "........", "........", "........", "........"], color: "#383838" }, // barrel
-    { glyph: ["........", "........", "........", "...XX...", "...XX...", "........", "........", "........"], color: "#f2f2f2" }, // insignia
-  ],
+  // --- TANK FLEET — each a DIFFERENT silhouette (8x8, authored facing UP; use
+  // rotate:true). 'X' (no palette entry) = the recolourable HULL → entity colour;
+  // 'Y' = tracks, 'Z' = barrel, 'W' = insignia (fixed accents). ---
+  tankLight: { grid: [".Y.ZZ.Y.", ".YXZZXY.", ".YXXXXY.", ".YXXXXY.", ".YXXXXY.", ".YXXXXY.", ".YXXXXY.", "........"], palette: { Y: "#2a2a2a", Z: "#383838" } },
+  tankMedium: { grid: ["Y..ZZ..Y", "Y..ZZ..Y", "Y.XZZX.Y", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "Y.XXXX.Y", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838" } },
+  tankHeavy: { grid: ["Y.Z..Z.Y", "YXZXXZXY", "YXZXXZXY", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838" } },
+  tankArty: { grid: ["...ZZ...", "...ZZ...", "Y.XZZX.Y", "Y.XZZX.Y", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "........"], palette: { Y: "#2a2a2a", Z: "#383838" } },
+  tankHero: { grid: ["Y..ZZ..Y", "Y..ZZ..Y", "Y.XZZX.Y", "YXXWWXXY", "YXXWWXXY", "YXXXXXXY", "Y.XXXX.Y", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838", W: "#f2f2f2" } },
 };
 
 /**
@@ -312,52 +192,64 @@ export interface ResolvedLayer {
   color?: string;
 }
 
-/** Rows for a part's glyph: inline rows, or the first frame of a monochrome preset. */
-function partRows(g: string[] | string): string[] | undefined {
+/** Rows for a tile cell's glyph: inline rows, or the first frame of a monochrome preset. */
+function monoRows(g: string[] | string): string[] | undefined {
   if (typeof g === "string") return GLYPH_PRESETS[g]?.[0];
   return g.length ? g : undefined;
 }
 
-/** Resolve a list of parts into concrete layers (skipping any with no bitmap). */
-function resolveLayers(parts: GlyphPart[]): ResolvedLayer[] {
+const ON_CELL = (ch: string): boolean => ch !== "." && ch !== " " && ch !== "0";
+
+/**
+ * Resolve ONE indexed frame into non-overlapping layers — one per distinct grid
+ * char. A char with a palette entry gets that colour; a char with NO entry gets
+ * colour undefined (= the entity colour, so it stays recolourable).
+ */
+function paintFrame(grid: string[], palette: GlyphPalette): ResolvedLayer[] {
+  const chars = new Set<string>();
+  for (const row of grid) for (const ch of row) if (ON_CELL(ch)) chars.add(ch);
   const layers: ResolvedLayer[] = [];
-  for (const p of parts) {
-    const rows = partRows(p.glyph);
-    if (rows) layers.push({ rows, color: p.color });
+  for (const ch of chars) {
+    const rows = grid.map((row) => {
+      let s = "";
+      for (const c of row) s += c === ch ? "X" : ".";
+      return s;
+    });
+    layers.push({ rows, color: palette[ch] });
   }
   return layers;
 }
 
 /**
- * Resolve a composed glyph (the `parts` field, or a COMPOSED_PRESETS name in
- * `glyph`) into FRAMES of layers (one frame = static; many = animated, cycled
- * like `frames`). Returns undefined for plain/monochrome glyphs (those go through
- * resolveFrames instead).
+ * Resolve a PAINTED (indexed multi-colour) glyph — a COMPOSED_PRESETS name in
+ * `glyph`, or inline `glyph` rows + a `palette` — into FRAMES of layers (one frame
+ * = static; many = animated, cycled like `frames`). Returns undefined for a plain
+ * monochrome glyph (no palette, not a composed preset) — those use resolveFrames.
  */
-export function resolveParts(
+export function resolvePainted(
   glyph?: string[] | string,
-  parts?: GlyphPart[],
+  palette?: GlyphPalette,
 ): ResolvedLayer[][] | undefined {
-  if (parts && parts.length) {
-    const l = resolveLayers(parts);
-    return l.length ? [l] : undefined;
+  let grids: string[][];
+  let pal: GlyphPalette;
+  if (typeof glyph === "string") {
+    const preset = COMPOSED_PRESETS[glyph];
+    if (!preset) return undefined;
+    grids = (Array.isArray(preset.grid[0]) ? preset.grid : [preset.grid]) as string[][];
+    pal = preset.palette;
+  } else if (Array.isArray(glyph) && palette && Object.keys(palette).length) {
+    grids = [glyph]; // inline rows + palette = one painted frame
+    pal = palette;
+  } else {
+    return undefined;
   }
-  if (typeof glyph !== "string") return undefined;
-  const preset = COMPOSED_PRESETS[glyph];
-  if (!preset) return undefined;
-  // A preset is either GlyphPart[] (one frame) or GlyphPart[][] (frames).
-  const frames = Array.isArray(preset[0]) ? (preset as GlyphPart[][]) : [preset as GlyphPart[]];
-  const out: ResolvedLayer[][] = [];
-  for (const f of frames) {
-    const l = resolveLayers(f);
-    if (l.length) out.push(l);
-  }
-  return out.length ? out : undefined;
+  const frames = grids.map((g) => paintFrame(g, pal)).filter((l) => l.length);
+  return frames.length ? frames : undefined;
 }
 
 /**
  * Resolve one tile-grid cell into its LAYERS (bottom-first), or null (a gap). A
- * cell may name a composed (multi-layer) v2 preset as well as a mono one; an
+ * cell may name a painted (multi-colour) v2 preset as well as a mono one; an
  * object cell's `color` sets the MAIN colour — it fills any colour-less layer
  * (the recolourable body of a material v2) while fixed accent layers (mortar,
  * highlights) keep theirs. That's what lets the same tile drop into any palette.
@@ -366,16 +258,16 @@ function resolveTile(cell: GlyphTile): ResolvedLayer[] | null {
   if (cell == null) return null;
   if (typeof cell === "string") {
     if (cell === "" || cell === "." || cell === " ") return null;
-    const composed = resolveParts(cell); // a composed preset name → its layers
-    if (composed) return composed[0] ?? null; // tiles are static: take frame 0
+    const painted = resolvePainted(cell); // a composed preset name → its layers
+    if (painted) return painted[0] ?? null; // tiles are static: take frame 0
     const rows = GLYPH_PRESETS[cell]?.[0]; // else a mono preset → one layer
     return rows ? [{ rows }] : null;
   }
   if (typeof cell.glyph === "string") {
-    const composed = resolveParts(cell.glyph); // {glyph:"brick2",color} → recoloured layers
-    if (composed) return (composed[0] ?? []).map((l) => ({ rows: l.rows, color: l.color ?? cell.color }));
+    const painted = resolvePainted(cell.glyph); // {glyph:"brick2",color} → recoloured layers
+    if (painted) return (painted[0] ?? []).map((l) => ({ rows: l.rows, color: l.color ?? cell.color }));
   }
-  const rows = partRows(cell.glyph);
+  const rows = monoRows(cell.glyph);
   return rows ? [{ rows, color: cell.color }] : null;
 }
 
@@ -394,7 +286,7 @@ export function resolveTiles(tiles?: GlyphTile[][]): (ResolvedLayer[] | null)[][
 // Example tile-grids for the gallery / docs — big items built by tiling small
 // RECOLOURABLE tiles together (the `tiles` field). Mostly single-layer "fabric"
 // material tiles, plus a recoloured material v2 (brick2 = body + mortar accent) to
-// show a multi-layer tile dropping into a palette. Same tiles, different colours.
+// show a painted material tile dropping into a palette. Same tiles, different colours.
 const St: GlyphTile = { glyph: "stone", color: "#9aa0aa" };     // grey stone
 const Bk: GlyphTile = { glyph: "brick2", color: "#c8743a" };    // recoloured v2 brick (body + dark mortar)
 const Bw: GlyphTile = { glyph: "brickwork", color: "#cf8a5a" }; // tan brick wall

@@ -7,7 +7,7 @@
  */
 
 import type { EntitySpec, Shape } from "../dsl/types";
-import { resolveFrames, resolveParts, resolveTiles, type ResolvedLayer } from "../dsl/glyphs";
+import { resolveFrames, resolvePainted, resolveTiles, type ResolvedLayer } from "../dsl/glyphs";
 
 let nextId = 1;
 
@@ -44,7 +44,7 @@ export interface Entity {
    * from a raw glyph, a named preset, or explicit `frames`. One frame = static.
    */
   frames?: string[][];
-  /** Resolved composed glyph: frames of colored layers (one frame = static, many = animated). */
+  /** Resolved painted glyph: frames of per-colour layers (one frame = static, many = animated). */
   parts?: ResolvedLayer[][];
   /** Resolved tile-grid glyph: a 2D grid where each cell is a stack of layers (top priority). */
   tiles?: (ResolvedLayer[] | null)[][];
@@ -69,9 +69,9 @@ export interface Entity {
 export function createEntity(spec: EntitySpec, x: number, y: number): Entity {
   const speed = spec.props?.speed ?? 0;
   const [verb, target] = (spec.behavior ?? "").split(":");
-  // Priority: a tile-grid > a composed (parts) glyph > a plain glyph/frames.
+  // Priority: a tile-grid > a painted (palette) glyph > a plain glyph/frames.
   const tiles = resolveTiles(spec.tiles);
-  const parts = tiles ? undefined : resolveParts(spec.glyph, spec.parts);
+  const parts = tiles ? undefined : resolvePainted(spec.glyph, spec.palette);
   return {
     iid: nextId++,
     type: spec.id,

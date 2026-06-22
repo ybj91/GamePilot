@@ -15,7 +15,7 @@ import { Input, type InputEnv } from "./input";
 import { growAndSlow } from "../dsl/samples/growAndSlow";
 import { validateGameSpec } from "../dsl/validate";
 import { DSL_VERSION, parseVersion, isVersionSupported } from "../dsl/version";
-import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES, GLYPH_V2_OF, resolveParts } from "../dsl/glyphs";
+import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES, GLYPH_V2_OF, resolvePainted } from "../dsl/glyphs";
 import type { GameSpec } from "../dsl/types";
 
 let failures = 0;
@@ -400,29 +400,32 @@ check("platformer + nature presets validate",
 check("animated goomba resolves to multiple frames",
   (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "goomba" }] }, 1).firstOf("player")!.frames?.length ?? 0) >= 2);
 
-// 14f. composed multi-colour glyphs (parts) + composed presets.
+// 14f. painted multi-colour glyphs (glyph rows + palette) + composed presets.
 {
-  const partsSpec: GameSpec = {
+  // grid uses Y, X (no palette entry → entity colour), Z → three colour groups
+  const paintSpec: GameSpec = {
     ...glyphSpec,
-    entities: [{ ...glyphSpec.entities[0]!, glyph: undefined, parts: [
-      { glyph: ["..X..", ".XXX.", "XXXXX"], color: "#7a4a23" },  // inline layer
-      { glyph: "tree", color: "#2e8b3d" },                        // reuse a preset, recoloured
-    ] }],
+    entities: [{ ...glyphSpec.entities[0]!, glyph: ["YXY", "XXX", "Z.Z"], palette: { Y: "#7a4a23", Z: "#2e8b3d" } }],
   };
-  check("parts spec validates (inline rows + preset reuse + colours)", validateGameSpec(partsSpec).ok);
-  const pe = new World(partsSpec, 1).firstOf("player")!;
-  check("parts resolve to coloured layers (one frame, two layers)",
-    pe.parts?.length === 1 && pe.parts[0]!.length === 2 && pe.parts[0]![1]!.color === "#2e8b3d");
-  check("a composed glyph carries no monochrome frames", pe.frames === undefined);
+  check("painted spec validates (glyph rows + palette)", validateGameSpec(paintSpec).ok);
+  const pe = new World(paintSpec, 1).firstOf("player")!;
+  check("painted glyph resolves to one frame of per-colour layers",
+    pe.parts?.length === 1 && pe.parts[0]!.length === 3);
+  check("a palette char gets its colour; X (no entry) inherits the entity colour",
+    !!pe.parts?.[0]?.some((l) => l.color === "#7a4a23") && !!pe.parts?.[0]?.some((l) => l.color === undefined));
+  check("a painted glyph carries no monochrome frames", pe.frames === undefined);
+  check("bad palette rejected (non-string colour)",
+    !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: ["XY"], palette: { Y: 5 } as unknown as Record<string, string> }] }).ok);
 }
 check("composed preset name validates", validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }).ok);
-check("a composed preset resolves to layers",
+check("a composed preset resolves to coloured layers",
   ((new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "pinetree" }] }, 1).firstOf("player")!.parts?.[0]?.length) ?? 0) >= 2);
 // an animated composed preset (invader2) resolves to multiple frames of layers
 check("an animated composed preset has multiple frames",
   (new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "invader2" }] }, 1).firstOf("player")!.parts?.length ?? 0) >= 2);
-check("bad parts rejected (unknown preset string)",
-  !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, parts: [{ glyph: "nope" }] }] }).ok);
+// a material preset (brick2) keeps a recolourable layer (no palette entry → entity colour)
+check("a material preset stays recolourable (an entity-colour layer)",
+  !!new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "brick2" }] }, 1).firstOf("player")!.parts?.[0]?.some((l) => l.color === undefined));
 
 // 14g. tile-grid glyph: several tiles compose one big sprite on a single entity.
 {
@@ -452,7 +455,7 @@ check("bad parts rejected (unknown preset string)",
   const re = new World(recolorSpec, 1).firstOf("player")!;
   const cell = re.tiles![0]![0]!;
   check("a recoloured v2 tile: base inherits cell colour, accent keeps its own",
-    cell.length === 2 && cell[0]!.color === "#9aa0aa" && cell[1]!.color === "#6b3a1a");
+    cell.length === 2 && cell.some((l) => l.color === "#9aa0aa") && cell.some((l) => l.color === "#6b3a1a"));
 }
 check("bad tiles rejected (unknown preset cell)",
   !validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, tiles: [["brick", "nope"]] }] }).ok);
@@ -460,8 +463,8 @@ check("bad tiles rejected (unknown preset cell)",
 check("a fabric tile (brickwork) is a known single-layer preset",
   validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "brickwork" }] }).ok);
 // every composed preset is well-formed, and the v1->v2 map points at real presets
-check("every composed preset resolves to >=1 frame with >=1 layer",
-  COMPOSED_PRESET_NAMES.every((n) => { const f = resolveParts(n); return !!f && f.length >= 1 && f.every((fr) => fr.length >= 1); }));
+check("every composed preset resolves to >=1 frame with >=1 colour layer",
+  COMPOSED_PRESET_NAMES.every((n) => { const f = resolvePainted(n); return !!f && f.length >= 1 && f.every((fr) => fr.length >= 1); }));
 check("v1->v2 remake map is consistent (v1 mono exists, v2 composed exists)",
   Object.entries(GLYPH_V2_OF).every(([v1, v2]) => GLYPH_PRESET_NAMES.includes(v1) && COMPOSED_PRESET_NAMES.includes(v2)));
 

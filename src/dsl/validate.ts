@@ -106,22 +106,14 @@ function validateEntity(e: EntitySpec, ids: Set<string>, errs: string[]): void {
       errs.push(`${where}: glyph must be a preset name or a non-empty array of grid rows`);
     }
   }
-  if (e.parts !== undefined) {
-    if (!Array.isArray(e.parts) || !e.parts.length) {
-      errs.push(`${where}: parts must be a non-empty array of layers`);
+  if (e.palette !== undefined) {
+    if (typeof e.palette !== "object" || e.palette === null || Array.isArray(e.palette)) {
+      errs.push(`${where}: palette must be an object mapping a grid char to a colour`);
     } else {
-      e.parts.forEach((p, i) => {
-        if (!p || typeof p !== "object") {
-          errs.push(`${where}: parts[${i}] must be an object { glyph, color? }`);
-          return;
-        }
-        if (typeof p.glyph === "string") {
-          if (!GLYPH_PRESET_NAMES.includes(p.glyph)) errs.push(`${where}: parts[${i}].glyph "${p.glyph}" is not a known preset`);
-        } else if (!isRows(p.glyph)) {
-          errs.push(`${where}: parts[${i}].glyph must be a preset name or grid rows`);
-        }
-        if (p.color !== undefined && !isStr(p.color)) errs.push(`${where}: parts[${i}].color must be a string`);
-      });
+      for (const [k, v] of Object.entries(e.palette as Record<string, unknown>)) {
+        if (k.length !== 1) errs.push(`${where}: palette key "${k}" must be a single character`);
+        if (!isStr(v)) errs.push(`${where}: palette["${k}"] must be a colour string`);
+      }
     }
   }
   if (e.tiles !== undefined) {

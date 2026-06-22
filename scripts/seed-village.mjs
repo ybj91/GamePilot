@@ -1,20 +1,18 @@
-// Composed-glyph showcase (glyph lib v2): multi-COLOUR sprites built from layered
-// `parts` and composed presets — a tree with a brown trunk + green canopy, a
-// cottage with a red roof, etc. Walk the hero around with the arrows.
+// Painted-glyph showcase (glyph lib v2): multi-COLOUR sprites from one grid + a
+// `palette`, and built-in painted presets — a tree with a brown trunk + green
+// canopy, a cottage with a red roof, etc. Walk the hero around with the arrows.
 const BASE = process.env.BASE || "http://127.0.0.1:4321";
 const ground = (id, x, y) => ({ id, kind: "obstacle", shape: "square", color: "#4a9d4a", size: 16, control: "none", spawn: { x, y, count: 1 } });
 const at = (id, glyph, size, x, y, color = "#888") => ({ id, kind: "obstacle", shape: "square", color, size, control: "none", glyph, spawn: { x, y, count: 1 } });
 
 const spec = {
-  meta: { title: "Village (composed glyphs)", idea: "a little village of multi-colour composed glyph sprites" },
+  meta: { title: "Village (painted glyphs)", idea: "a little village of multi-colour painted glyph sprites" },
   world: { width: 720, height: 400, background: "#7ec0ee", edges: "wall" },
   entities: [
-    // a custom composed tree via `parts` (two coloured layers)
+    // a custom painted tree: one grid + palette (X = canopy in the entity colour, T = trunk)
     { id: "tree", kind: "obstacle", shape: "square", color: "#2e8b3d", size: 34, control: "none",
-      parts: [
-        { glyph: ["........", "........", "........", "........", "........", "........", "...XX...", "...XX..."], color: "#7a4a23" },
-        { glyph: ["...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "........", "........"], color: "#2e8b3d" },
-      ], spawn: { x: 140, y: 300, count: 1 } },
+      glyph: ["...XX...", "..XXXX..", ".XXXXXX.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "...TT...", "...TT..."],
+      palette: { T: "#7a4a23" }, spawn: { x: 140, y: 300, count: 1 } },
     // built-in composed presets
     at("cottage", "cottage", 40, 320, 296, "#c0392b"),
     at("pine", "pinetree", 30, 470, 306, "#2e8b3d"),
