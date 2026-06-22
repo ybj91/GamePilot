@@ -13,6 +13,22 @@ Bump policy:
   field, or glyph preset). Old specs keep playing; new specs may use new tokens.
 - **PATCH** — a fix or clarification with no schema change.
 
+## 2.2.0 — 16×16 detail-sprite preset set
+
+- **MINOR** (additive): ten built-in **16×16 detail sprites** (grid + palette), the
+  showcase for the larger glyph budget — one entity each, every row exactly 16
+  chars, ≤6 palette colours, `X` (no entry) = the entity colour where a recolourable
+  body helps. Across four themes:
+  - **Fantasy/RPG** — `knight16`, `dragon16`, `chest16`, `potion16`
+  - **Sci-fi** — `robot16`, `ufo16`, `planet16`
+  - **Nature** — `bigtree16`, `campfire16`
+  - **Vehicles** — `racecar16`
+- New `BIG16_PRESET_NAMES` export; the `/glyphs` gallery gains a dedicated
+  **"16×16 — detail sprites"** section (larger canvas) so they're not mixed in with
+  the 5×5/8×8 icons.
+- Usable like any preset: `glyph: "knight16"`. Purely additive — existing specs and
+  presets are unchanged.
+
 ## 2.1.0 — bigger glyphs (up to 16×16) + non-blocking validator warnings
 
 - **MINOR** (backward-compatible): support larger hand-authored glyph grids with

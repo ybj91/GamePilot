@@ -167,6 +167,229 @@ export const COMPOSED_PRESETS: Record<string, PaintedGlyph> = {
   tankHeavy: { grid: ["Y.Z..Z.Y", "YXZXXZXY", "YXZXXZXY", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838" } },
   tankArty: { grid: ["...ZZ...", "...ZZ...", "Y.XZZX.Y", "Y.XZZX.Y", "YXXXXXXY", "YXXXXXXY", "YXXXXXXY", "........"], palette: { Y: "#2a2a2a", Z: "#383838" } },
   tankHero: { grid: ["Y..ZZ..Y", "Y..ZZ..Y", "Y.XZZX.Y", "YXXWWXXY", "YXXWWXXY", "YXXXXXXY", "Y.XXXX.Y", "Y......Y"], palette: { Y: "#2a2a2a", Z: "#383838", W: "#f2f2f2" } },
+
+  // --- 16x16 DETAIL SPRITES (one entity each; grid+palette). Authored at 16 wide
+  // to show the bigger budget: every row is exactly 16 chars, <=6 palette colours.
+  // 'X' (no palette entry) = the entity colour where a recolourable body helps.
+  // names end in "16". ---
+
+  // Fantasy / RPG
+  knight16: {
+    grid: [
+      "......XX......XX",
+      ".....XCCX....XCX",
+      ".....XCCXXXXXCCX",
+      "......XCCCCCCCX.",
+      ".......XSSSSX...",
+      "......XSSSSSSX..",
+      ".....XSDSSDSSX..",
+      ".....XSSSSSSSX..",
+      "......XSSSSSX...",
+      ".....XAASSAAX...",
+      "....XAAASSAAAX..",
+      "...XAAAASSAAAAX.",
+      "...XAAAXSSXAAAX.",
+      "....XXX.SS.XXX..",
+      "......XBBBBX....",
+      ".....XB....BX...",
+    ],
+    palette: { C: "#d23b3b", S: "#c8d0d8", D: "#2a2a2a", A: "#4a78c8", B: "#7a4a23" },
+  },
+  dragon16: {
+    grid: [
+      ".G............G.",
+      ".GG..........GG.",
+      ".GGG.GGGGGG.GGG.",
+      "..GGGGEEEEGGGG..",
+      "...GGEWHHWEGG...",
+      "..GGGEHHHHEGGG..",
+      ".GGGGGEHHEGGGGG.",
+      "GGGGGGGGGGGGGGGG",
+      ".GGGGGGGGGGGGGG.",
+      "..GGGGGGGGGGGG..",
+      "...RRGGGGGGRR...",
+      "..RRRRGGGGRRRR..",
+      ".RR..GGGGGG..RR.",
+      ".....GG..GG.....",
+      "....GG....GG....",
+      "...GG......GG...",
+    ],
+    palette: { G: "#3aa54a", E: "#1b3a1b", W: "#ffd23f", H: "#e2554e", R: "#c0392b" },
+  },
+  chest16: {
+    grid: [
+      "................",
+      "...WWWWWWWWWW...",
+      "..WGGGGGGGGGGW..",
+      ".WGGWWWWWWWWGGW.",
+      ".WGWLLLLLLLLWGW.",
+      ".WGWLLLLLLLLWGW.",
+      ".WWWWWWKKWWWWWW.",
+      ".BBBBBBKKBBBBBB.",
+      ".BWWWWWKKWWWWWB.",
+      ".BWLLLLLLLLLLWB.",
+      ".BWLLLLLLLLLLWB.",
+      ".BWLLLLLLLLLLWB.",
+      ".BWWWWWWWWWWWWB.",
+      ".BBBBBBBBBBBBBB.",
+      "..B..........B..",
+      "................",
+    ],
+    palette: { W: "#8b5a2b", G: "#ffd23f", L: "#c8902b", K: "#fff3b0", B: "#5a3a1a" },
+  },
+  potion16: {
+    grid: [
+      "......XXXX......",
+      "......X..X......",
+      "......X..X......",
+      ".......XX.......",
+      "......XKKX......",
+      ".....XKKKKX.....",
+      "....XKKKKKKX....",
+      "...XKLLLLLLKX...",
+      "..XKLPPPPPPLKX..",
+      "..XLPPPPPPPPLX..",
+      "..XLPPWPPPPPLX..",
+      "..XLPPPPPPPPLX..",
+      "..XKLPPPPPPLKX..",
+      "...XKLLLLLLKX...",
+      "....XKKKKKKX....",
+      ".....XXXXXX.....",
+    ],
+    palette: { X: "#2a2a2a", K: "#9ad0ff", L: "#5bb8ff", P: "#a86bd6", W: "#ffffff" },
+  },
+
+  // Sci-fi
+  robot16: {
+    grid: [
+      "....X......X....",
+      "....X......X....",
+      "...XXXXXXXXXX...",
+      "..XGGGGGGGGGGX..",
+      "..XGEEGGGGEEGX..",
+      "..XGEEGGGGEEGX..",
+      "..XGGGGGGGGGGX..",
+      "..XGGRRRRRRGGX..",
+      "...XGGGGGGGGX...",
+      "..XXGGGGGGGGXX..",
+      ".XGGXBBBBBBXGGX.",
+      ".XGGXBBBBBBXGGX.",
+      ".XXX.XBBBBX.XXX.",
+      "....XBB..BBX....",
+      "....XB....BX....",
+      "...XXX....XXX...",
+    ],
+    palette: { X: "#5a6470", G: "#9aa3b0", E: "#4ad7e0", R: "#e2554e", B: "#383f48" },
+  },
+  ufo16: {
+    grid: [
+      "................",
+      "................",
+      ".....GGGGGG.....",
+      "....GWWWWWWG....",
+      "...GWHHHHHHWG...",
+      "...GWHHHHHHWG...",
+      "..SSSSSSSSSSSS..",
+      ".SSCSSCSSCSSCSS.",
+      ".SSCSSCSSCSSCSS.",
+      "..SSSSSSSSSSSS..",
+      "...L.L.L.L.L....",
+      "..L.L.L.L.L.L...",
+      ".L...L...L...L..",
+      "................",
+      "................",
+      "................",
+    ],
+    palette: { G: "#9aa3b0", W: "#cfeaff", H: "#4ad7e0", S: "#5a6470", C: "#ffd23f", L: "#9be15d" },
+  },
+  planet16: {
+    grid: [
+      ".....BBBBBB.....",
+      "...BBPPPPPPBB...",
+      "..BPPPPCCPPPPB..",
+      ".BPPCCPPPPPPPPB.",
+      ".BPPPPPPPPCCPPB.",
+      "BPPPPCCPPPPPPPPB",
+      "RRRRRRRRRRRRRRRR",
+      "ORRRRRRRRRRRRRRO",
+      "BPPPPPPPPCCPPPPB",
+      ".BPPCCPPPPPPPPB.",
+      ".BPPPPPPPPCCPPB.",
+      "..BPPPPCCPPPPB..",
+      "...BBPPPPPPBB...",
+      ".....BBBBBB.....",
+      "................",
+      "................",
+    ],
+    palette: { B: "#3a5fcd", P: "#5b8bf0", C: "#9ad0ff", R: "#e0a23a", O: "#ffd23f" },
+  },
+
+  // Nature / scenery
+  bigtree16: {
+    grid: [
+      ".....GGGGG......",
+      "...GGGGGGGGG....",
+      "..GGGGGGGGGGG...",
+      ".GGGGGDGGGGGGG..",
+      ".GGGGGGGGGGGGG..",
+      "GGGGGGGGGGGGGGG.",
+      "GGGGDGGGGGDGGGG.",
+      ".GGGGGGGGGGGGG..",
+      "..GGGGGGGGGGG...",
+      "...GGGGGGGGG....",
+      ".....BBBBB......",
+      ".....BBBBB......",
+      "....BBBBBBB.....",
+      "....BBBBBBB.....",
+      "...HHHHHHHHH....",
+      "..HHHHHHHHHHH...",
+    ],
+    palette: { G: "#3aa54a", D: "#2e7d32", B: "#7a4a23", H: "#5a8a3a" },
+  },
+  campfire16: {
+    grid: [
+      ".......F........",
+      "......FOF.......",
+      "......FOF.......",
+      ".....FOOOF......",
+      ".....FOWOF......",
+      "....FOOWOOF.....",
+      "....FOWWWOF.....",
+      "...FOOWWWOOF....",
+      "...FOOWWWOOF....",
+      "..FOOOWWWOOOF...",
+      "..LLLLLLLLLLLL..",
+      ".LBBLLBBLLBBLBL.",
+      "LBBLLBBLLBBLLBBL",
+      ".LL..LL..LL..LL.",
+      "................",
+      "................",
+    ],
+    palette: { F: "#ffd23f", O: "#ff7a18", W: "#ffe066", L: "#7a4a23", B: "#5a3a1a" },
+  },
+
+  // Vehicles / mecha
+  racecar16: {
+    grid: [
+      ".......XX.......",
+      "......XXXX......",
+      "......XCCX......",
+      ".....XCCCCX.....",
+      ".....XCCCCX.....",
+      "....XXCCCCXX....",
+      "...XCCCWWCCCX...",
+      "..XCCCCWWCCCCX..",
+      "..XCCCCWWCCCCX..",
+      "..XCCCCCCCCCCX..",
+      ".KKXCCCCCCCCXKK.",
+      "KBBKXCCCCCCXKBBK",
+      "KBBKXCWWWWCXKBBK",
+      "KBBKXCCCCCCXKBBK",
+      ".KKXCCCCCCCCXKK.",
+      "...XX......XX...",
+    ],
+    palette: { X: "#2a2a2a", C: "#e2554e", W: "#9ad0ff", K: "#383f48", B: "#5a6470" },
+  },
 };
 
 /**
@@ -185,6 +408,10 @@ export const GLYPH_V2_OF: Record<string, string> = {
 };
 
 export const COMPOSED_PRESET_NAMES = Object.keys(COMPOSED_PRESETS);
+
+/** The 16×16 detail-sprite presets (a subset of COMPOSED_PRESETS, names end "16").
+ *  Shown in their own gallery section — they showcase the larger glyph budget. */
+export const BIG16_PRESET_NAMES = COMPOSED_PRESET_NAMES.filter((n) => n.endsWith("16"));
 
 /** One resolved layer: concrete bitmap rows + optional colour (else entity colour). */
 export interface ResolvedLayer {

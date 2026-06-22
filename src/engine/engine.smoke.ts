@@ -15,7 +15,7 @@ import { Input, type InputEnv } from "./input";
 import { growAndSlow } from "../dsl/samples/growAndSlow";
 import { validateGameSpec } from "../dsl/validate";
 import { DSL_VERSION, parseVersion, isVersionSupported } from "../dsl/version";
-import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES, GLYPH_V2_OF, resolvePainted } from "../dsl/glyphs";
+import { GLYPH_PRESET_NAMES, COMPOSED_PRESET_NAMES, BIG16_PRESET_NAMES, COMPOSED_PRESETS, GLYPH_V2_OF, resolvePainted } from "../dsl/glyphs";
 import type { GameSpec } from "../dsl/types";
 
 let failures = 0;
@@ -452,6 +452,23 @@ check("a material preset stays recolourable (an entity-colour layer)",
   // a normal small painted glyph is warning-free
   check("a tidy 8x8 painted glyph has no warnings",
     validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: "tankHero" }] }).warnings.length === 0);
+}
+
+// 14f-ter. the built-in 16×16 detail-sprite presets: each is exactly 16×16, uses a
+// preset name (so it validates warning-free), and resolves to per-colour layers.
+{
+  check("there are 16×16 detail-sprite presets", BIG16_PRESET_NAMES.length >= 8);
+  let allOk = true, allSquare = true;
+  for (const name of BIG16_PRESET_NAMES) {
+    const v = validateGameSpec({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: name }] });
+    if (!v.ok || v.warnings.length) allOk = false;
+    const grid = COMPOSED_PRESETS[name]!.grid as string[];
+    if (grid.length !== 16 || grid.some((r) => r.length !== 16)) allSquare = false;
+    const layers = new World({ ...glyphSpec, entities: [{ ...glyphSpec.entities[0]!, glyph: name }] }, 1).firstOf("player")!.parts;
+    if (!layers || !layers[0]?.length) allOk = false;
+  }
+  check("every 16×16 preset validates warning-free and resolves to layers", allOk);
+  check("every 16×16 preset grid is exactly 16×16 (no ragged rows)", allSquare);
 }
 
 // 14g. tile-grid glyph: several tiles compose one big sprite on a single entity.

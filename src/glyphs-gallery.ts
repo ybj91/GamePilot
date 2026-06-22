@@ -6,7 +6,7 @@
  * subtle glow. Plain DOM, no framework.
  */
 
-import { GLYPH_PRESETS, FABRIC_PRESET_NAMES, COMPOSED_PRESETS, GLYPH_V2_OF, TILE_EXAMPLES, resolvePainted, resolveTiles, type ResolvedLayer } from "./dsl/glyphs";
+import { GLYPH_PRESETS, FABRIC_PRESET_NAMES, COMPOSED_PRESETS, BIG16_PRESET_NAMES, GLYPH_V2_OF, TILE_EXAMPLES, resolvePainted, resolveTiles, type ResolvedLayer } from "./dsl/glyphs";
 import { DSL_VERSION } from "./dsl/version";
 
 /** A fitting color per preset (falls back to a soft green). Visual only. */
@@ -23,6 +23,10 @@ const COLORS: Record<string, string> = {
   // fabric / material tiles
   brickwork: "#cf8a5a", planks: "#b5793c", stone: "#9aa0aa", shingle: "#c0392b",
   window: "#7ec0ee", water: "#4aa3ff", sand: "#e2c489", arch: "#6b4a2a",
+  // 16×16 detail sprites — fallback for their recolourable (X / no-entry) cells
+  knight16: "#9aa3b0", dragon16: "#3aa54a", chest16: "#8b5a2b", potion16: "#a86bd6",
+  robot16: "#9aa3b0", ufo16: "#9aa3b0", planet16: "#5b8bf0", bigtree16: "#3aa54a",
+  campfire16: "#ff7a18", racecar16: "#e2554e",
 };
 
 /** The v1 name a composed (v2) preset remakes — to pick a natural fallback colour
@@ -31,7 +35,7 @@ const COLORS: Record<string, string> = {
 const V1_OF: Record<string, string> = Object.fromEntries(
   Object.entries(GLYPH_V2_OF).map(([v1, v2]) => [v2, v1]),
 );
-const repColor = (composedName: string): string => COLORS[V1_OF[composedName] ?? ""] ?? "#9be15d";
+const repColor = (composedName: string): string => COLORS[composedName] ?? COLORS[V1_OF[composedName] ?? ""] ?? "#9be15d";
 
 const PX = 96; // canvas size
 
@@ -122,9 +126,10 @@ function paintComposedFrame(ctx: CanvasRenderingContext2D, layers: ResolvedLayer
 }
 
 const fabricSet = new Set(FABRIC_PRESET_NAMES);
+const big16Set = new Set(BIG16_PRESET_NAMES);
 const names = Object.keys(GLYPH_PRESETS).filter((n) => !fabricSet.has(n)); // fabric tiles get their own section
-const composedNames = Object.keys(COMPOSED_PRESETS);
-countEl.textContent = `${names.length} mono + ${composedNames.length} composed + ${FABRIC_PRESET_NAMES.length} fabric · DSL v${DSL_VERSION}`;
+const composedNames = Object.keys(COMPOSED_PRESETS).filter((n) => !big16Set.has(n)); // 16×16 sprites get their own section
+countEl.textContent = `${names.length} mono + ${composedNames.length} composed + ${BIG16_PRESET_NAMES.length} 16×16 + ${FABRIC_PRESET_NAMES.length} fabric · DSL v${DSL_VERSION}`;
 
 const el = (tag: string, cls: string) => Object.assign(document.createElement(tag), { className: cls });
 function newCanvas(px: string): HTMLCanvasElement {
@@ -212,7 +217,20 @@ for (const name of composedNames) {
   gallery.appendChild(card);
 }
 
-// --- Section 3: "fabric" material tiles — single-layer, recolourable, made to combine ---
+// --- Section 3: 16×16 detail sprites — the larger glyph budget, one entity each ---
+section("16×16 — detail sprites", "one entity · grid + palette at 16×16 · X = entity colour");
+for (const name of BIG16_PRESET_NAMES) {
+  const card = el("div", "card");
+  const nameEl = el("div", "name");
+  nameEl.textContent = name;
+  const tag = el("div", "tag");
+  const pal = COMPOSED_PRESETS[name]?.palette ?? {};
+  tag.textContent = `16×16 · ${Object.keys(pal).length} colours`;
+  card.append(composedCanvas(name, "108px"), nameEl, tag);
+  gallery.appendChild(card);
+}
+
+// --- Section 4: "fabric" material tiles — single-layer, recolourable, made to combine ---
 section("fabric — tileable", "single-layer material patterns · recolour & combine");
 for (const name of FABRIC_PRESET_NAMES) {
   const card = el("div", "card");
@@ -224,7 +242,7 @@ for (const name of FABRIC_PRESET_NAMES) {
   gallery.appendChild(card);
 }
 
-// --- Section 4: combined-tile examples (one big sprite assembled from tiles) ---
+// --- Section 5: combined-tile examples (one big sprite assembled from tiles) ---
 section("tiles — combined", "a big item built from small tiles · one entity");
 for (const [name, grid] of Object.entries(TILE_EXAMPLES)) {
   const card = el("div", "card");
